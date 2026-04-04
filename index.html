@@ -587,7 +587,7 @@
               <button class="btn" style="background:var(--success-color); margin:0; height:44px; font-size:12px;" onclick="xuatExcelTienDoLenh()"><i class="ph-fill ph-file-xls"></i> EXCEL TIẾN ĐỘ</button>
           </div>
           
-          <div class="dashboard-grid">
+       <div class="dashboard-grid" style="grid-template-columns: repeat(4, 1fr);">
               <div class="dash-box">
                   <div class="dash-box-title">KẾ HOẠCH</div>
                   <div class="dash-box-val val-success" id="dash-tong-lenh">0 Tấn</div>
@@ -597,8 +597,12 @@
                   <div class="dash-box-val val-warning" id="dash-tong-xuat">0 Tấn</div>
               </div>
               <div class="dash-box">
+                  <div class="dash-box-title" style="color: var(--danger-color);">KHÔNG CẤP</div>
+                  <div class="dash-box-val val-danger" style="color: var(--danger-color);" id="dash-tong-khong-cap">0 Tấn</div>
+              </div>
+              <div class="dash-box">
                   <div class="dash-box-title">CÒN NỢ</div>
-                  <div class="dash-box-val val-danger" id="dash-tong-no">0 Tấn</div>
+                  <div class="dash-box-val val-primary" style="color: var(--primary-color);" id="dash-tong-no">0 Tấn</div>
               </div>
           </div>
 
@@ -2092,13 +2096,32 @@
               let targetLenhId = type === 'DRAFT_XE_ITEM' ? record.lenhId : record.lenhId;
               let lenhGoc = STATE.lenh.find(l => l.id === targetLenhId);
               if (lenhGoc && lenhGoc.danhSachLo && lenhGoc.danhSachLo.length > 0) {
-                  vungGoiY.style.display = 'block';
-                  let chipsHtml = lenhGoc.danhSachLo.map(lo => {
-                      return `<button class="chip-lo" onclick="dienNhanhGoiYLo('${escapeHTML(lo.tenLo)}', ${lo.sl})">
-                                   ${escapeHTML(lo.tenLo)} <span style="opacity:0.6; font-weight: 500;">(${fmtNum(lo.sl)})</span>
-                               </button>`;
-                  }).join('');
-                  document.getElementById('danh-sach-chip-goi-y').innerHTML = chipsHtml;
+                  // MỚI: Lọc bỏ Lô đã xuất hết
+                  let tatCaThucHienLenh = STATE.thucHien.filter(t => t.lenhId === lenhGoc.id);
+                  let chipsHtml = '';
+                  
+                  lenhGoc.danhSachLo.forEach(lo => {
+                      let slDaCapLo = 0;
+                      tatCaThucHienLenh.forEach(t => {
+                          if (t.danhSachLo) {
+                              let matched = t.danhSachLo.filter(m => m.tenLo.trim() === lo.tenLo.trim());
+                              slDaCapLo += matched.reduce((sum, m) => sum + m.sl, 0);
+                          }
+                      });
+                      let conLaiLo = lo.sl - slDaCapLo;
+                      if (conLaiLo > 0) { // Chỉ hiển thị Lô còn dư
+                          chipsHtml += `<button class="chip-lo" onclick="dienNhanhGoiYLo('${escapeHTML(lo.tenLo)}', ${conLaiLo})">
+                                           ${escapeHTML(lo.tenLo)} <span style="opacity:0.6; font-weight: 500;">(${fmtNum(conLaiLo)})</span>
+                                       </button>`;
+                      }
+                  });
+
+                  if (chipsHtml !== '') {
+                      vungGoiY.style.display = 'block';
+                      document.getElementById('danh-sach-chip-goi-y').innerHTML = chipsHtml;
+                  } else {
+                      vungGoiY.style.display = 'none';
+                  }
               } else {
                   vungGoiY.style.display = 'none';
               }
@@ -2208,7 +2231,7 @@
                   }).join('');
 
                   container.innerHTML = `
-                  <div class="table-container" style="border: 1px solid var(--border-light); border-radius: 12px; box-shadow: var(--card-shadow); padding: 0; background: var(--bg-card); overflow: hidden;">
+                  <div style="overflow-x: auto; border: 1px solid var(--border-light); border-radius: 12px; box-shadow: var(--card-shadow); padding: 0; background: var(--bg-card);">
                       <table style="width: 100%; min-width: 500px; border-collapse: collapse;">
                           <thead>
                               <tr style="background: var(--input-bg);">
@@ -2793,12 +2816,14 @@
       container.innerHTML = html;
   }
 
-  function renderTinhTrangLenh() {
+ function renderTinhTrangLenh() {
       let container = document.getElementById('danh-sach-tinh-trang-lenh');
       
       if(STATE.lenh.length === 0) { 
           document.getElementById('dash-tong-lenh').innerText = "0 Tấn";
           document.getElementById('dash-tong-xuat').innerText = "0 Tấn";
+          let elKhongCap = document.getElementById('dash-tong-khong-cap');
+          if (elKhongCap) elKhongCap.innerText = "0 Tấn";
           document.getElementById('dash-tong-no').innerText = "0 Tấn";
           container.innerHTML = `<div style="padding:40px; text-align:center; color:var(--text-sub);"><i class="ph-bold ph-receipt" style="font-size:32px; opacity:0.5; margin-bottom:8px;"></i><br>Chưa có Lệnh nào được tạo.</div>`; 
           return; 
@@ -2807,9 +2832,10 @@
       let groups = {};
       let globalTongLenh = 0;
       let globalTongXuat = 0;
+      let globalTongKhongCap = 0;
 
       STATE.lenh.forEach(item => {
-          if(!groups[item.soLenh]) groups[item.soLenh] = { items: [], tongTanLenh: 0, tongTanDaXuat: 0 };
+          if(!groups[item.soLenh]) groups[item.soLenh] = { items: [], tongTanLenh: 0, tongTanDaXuat: 0, tongTanKhongCap: 0 };
           let klr = layKLRTuTenDan(item.ten);
           
           let tatCaLoDaXuat = [];
@@ -2818,17 +2844,20 @@
               if(t.danhSachLo) tatCaLoDaXuat.push(...t.danhSachLo);
           });
           
+          let slKhongCap = item.isKhongCap ? (item.sl - slDaXuat) : 0;
+          let conLai = item.isKhongCap ? 0 : (item.sl - slDaXuat);
+
           let tanLenh = (item.sl * klr) / 1000; 
           let tanDaXuat = (slDaXuat * klr) / 1000;
+          let tanKhongCap = (slKhongCap * klr) / 1000;
 
           groups[item.soLenh].tongTanLenh += tanLenh; 
           groups[item.soLenh].tongTanDaXuat += tanDaXuat;
+          groups[item.soLenh].tongTanKhongCap += tanKhongCap;
+
           globalTongLenh += tanLenh;
           globalTongXuat += tanDaXuat;
-
-          // Xử lý logic Không Cấp
-          let slKhongCap = item.isKhongCap ? (item.sl - slDaXuat) : 0;
-          let conLai = item.isKhongCap ? 0 : (item.sl - slDaXuat);
+          globalTongKhongCap += tanKhongCap;
 
           groups[item.soLenh].items.push({ 
               id: item.id, ten: item.ten, dvt: item.dvt, cap: item.cap, 
@@ -2840,14 +2869,18 @@
 
       document.getElementById('dash-tong-lenh').innerText = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(globalTongLenh) + " Tấn";
       document.getElementById('dash-tong-xuat').innerText = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(globalTongXuat) + " Tấn";
-      document.getElementById('dash-tong-no').innerText = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(globalTongLenh - globalTongXuat) + " Tấn";
+      
+      let elKhongCap = document.getElementById('dash-tong-khong-cap');
+      if (elKhongCap) elKhongCap.innerText = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(globalTongKhongCap) + " Tấn";
+      
+      document.getElementById('dash-tong-no').innerText = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(globalTongLenh - globalTongXuat - globalTongKhongCap) + " Tấn";
 
       let html = '';
       for(let soLenh in groups) {
           let g = groups[soLenh];
           let formatTanLenh = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 3 }).format(g.tongTanLenh);
           let formatTanDaXuat = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 3 }).format(g.tongTanDaXuat);
-          let formatTanConLai = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 3 }).format(g.tongTanLenh - g.tongTanDaXuat);
+          let formatTanConLai = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 3 }).format(g.tongTanLenh - g.tongTanDaXuat - g.tongTanKhongCap);
           
           let percent = g.tongTanLenh > 0 ? (g.tongTanDaXuat / g.tongTanLenh) * 100 : 0;
           if(percent > 100) percent = 100;
