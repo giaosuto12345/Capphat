@@ -1,97 +1,75 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kho Đạn"><meta name="mobile-web-app-capable" content="yes"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>Quản lý Xuất Đạn Dược Pro</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><script src="https://unpkg.com/@phosphor-icons/web"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Quản lý Xuất Đạn Dược Pro</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
 <style>
 :root{--bg-body:#F2F2F7;--bg-card:#FFFFFF;--text-main:#000000;--text-sub:#8E8E93;--border-light:rgba(60,60,67,0.15);--input-bg:#E5E5EA;--card-shadow:0 4px 16px rgba(0,0,0,0.05);--primary-color:#007AFF;--primary-light:#E5F1FF;--success-color:#34C759;--warning-color:#FF9500;--danger-color:#FF3B30;--nav-bg:rgba(255,255,255,0.85);--header-bg:rgba(242,242,247,0.85);--info-color:#5856D6;}
 @media(prefers-color-scheme:dark){:root{--bg-body:#000000;--bg-card:#1C1C1E;--text-main:#FFFFFF;--text-sub:#EBEBF5;--border-light:rgba(235,235,245,0.15);--input-bg:#2C2C2E;--card-shadow:0 4px 12px rgba(0,0,0,0.4);--primary-color:#0A84FF;--primary-light:rgba(10,132,255,0.15);--success-color:#30D158;--warning-color:#FF9F0A;--danger-color:#FF453A;--nav-bg:rgba(28,28,30,0.85);--header-bg:rgba(0,0,0,0.85);}}
 *{-webkit-tap-highlight-color:transparent;box-sizing:border-box;}
-body{margin:0;-webkit-font-smoothing:antialiased;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Arial,sans-serif;background:var(--bg-body);color:var(--text-main);padding-bottom:calc(85px + env(safe-area-inset-bottom));overflow-x:hidden;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Arial,sans-serif;background:var(--bg-body);color:var(--text-main);padding-bottom:calc(85px + env(safe-area-inset-bottom));overflow-x:hidden;}
 body.modal-open{overflow:hidden;touch-action:none;height:100dvh;}
 .container{max-width:900px;margin:0 auto;padding:0 16px;}
-.dash-header{padding:calc(16px + env(safe-area-inset-top)) 16px 12px 16px;display:flex;justify-content:space-between;align-items:center;background:var(--header-bg);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);position:sticky;top:0;z-index:50;border-bottom:0.5px solid var(--border-light);}
-.dash-header h2{color:var(--text-main);margin:0;font-size:26px;font-weight:900;letter-spacing:-0.5px;}
+.dash-header{padding:calc(12px + env(safe-area-inset-top)) 16px 12px 16px;display:flex;justify-content:space-between;align-items:center;background:var(--header-bg);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);position:sticky;top:0;z-index:50;}
+.dash-header h2{color:var(--text-main);margin:0;font-size:28px;font-weight:800;letter-spacing:-0.5px;}
 .sys-btn{background:var(--input-bg);color:var(--primary-color);border:none;border-radius:16px;padding:8px 14px;font-weight:700;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:6px;transition:0.2s;}
-.sys-btn:active{filter:brightness(0.9);transform:scale(0.96);}
-.card{background:var(--bg-card);border-radius:16px;padding:16px;box-shadow:var(--card-shadow);margin-top:12px;margin-bottom:12px;}
-.btn{width:100%;height:50px;font-size:15px;font-weight:700;border:none;border-radius:14px;background:var(--primary-color);color:#fff;cursor:pointer;transition:0.2s;display:flex;justify-content:center;align-items:center;gap:8px;}
-.btn:active{transform:scale(0.96);opacity:0.9;}
+.card{background:var(--bg-card);border-radius:16px;padding:16px;box-shadow:var(--card-shadow);margin:12px 0;}
+.btn{width:100%;height:50px;font-size:15px;font-weight:700;border:none;border-radius:14px;background:var(--primary-color);color:#fff;cursor:pointer;display:flex;justify-content:center;align-items:center;gap:8px;}
 .form-group{display:flex;flex-direction:column;width:100%;}
-.form-group label{display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;}
-.form-control{width:100%;height:48px;padding:0 16px;font-size:16px;font-weight:600;border-radius:12px;border:none;background:var(--input-bg);color:var(--text-main);-webkit-appearance:none;appearance:none;font-family:inherit;transition:0.2s;}
-.form-control:focus{outline:none;box-shadow:0 0 0 3px var(--primary-light);background:var(--bg-card);border:1px solid var(--primary-color);}
-.form-control::placeholder{color:#A8A8AA;font-weight:500;}
-select.form-control{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238E8E93' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;background-size:14px;padding-right:40px;}
-input[type="date"].form-control{text-align:left;} input[type="date"]::-webkit-date-and-time-value{text-align:left;white-space:nowrap;}
-.form-row{display:flex;gap:16px;width:100%;align-items:flex-end;margin-bottom:16px;} .form-row .form-group{flex:1 1 0%;min-width:0;}
-.card > .form-group{margin-bottom:16px;}
-@supports not (gap:16px){.form-row .form-group:not(:last-child){margin-right:16px;}}
-@media(max-width:480px){.form-row.responsive{flex-direction:column;align-items:stretch;gap:16px;margin-bottom:16px;}.form-row.responsive .form-group{width:100%;}}
-.btn-sm{padding:0;font-size:18px;border-radius:8px;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;transition:0.2s;}
-.btn-del{background:rgba(255,59,48,0.1);color:var(--danger-color);} .btn-edit{background:var(--primary-light);color:var(--primary-color);} .btn-sm:active{transform:scale(0.9);}
-.search-bar-container{display:flex;gap:10px;margin-bottom:12px;} .search-input{flex:1;padding:0 16px!important;height:48px;font-size:16px!important;border-radius:14px!important;border:none!important;background:var(--input-bg)!important;color:var(--text-main)!important;}
-.action-btn{display:flex;align-items:center;justify-content:center;width:48px;height:48px;color:white;border-radius:14px;font-size:22px;border:none;cursor:pointer;flex-shrink:0;transition:0.2s;} .action-btn:active{transform:scale(0.9);}
-.setting-panel{background:var(--input-bg);border:1px solid var(--border-light);border-radius:12px;padding:12px;margin-bottom:12px;display:none;}
-.set-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:13px;font-weight:600;padding-bottom:8px;border-bottom:0.5px solid var(--border-light);} .set-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
-.table-container{overflow-x:auto;max-height:55vh;overflow-y:auto;border-radius:12px;border:1px solid var(--border-light);-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:6px;text-transform:uppercase;}
+.form-control{width:100%;height:46px;padding:0 14px;font-size:16px;font-weight:600;border-radius:12px;border:none;background:var(--input-bg);color:var(--text-main);-webkit-appearance:none;appearance:none;font-family:inherit;}
+.form-row{display:flex;gap:8px;width:100%;align-items:flex-end;margin-bottom:16px;}
+.form-row .form-group{flex:1 1 0%;min-width:0;}
+.compact-input{padding:0 6px !important;font-size:13px !important;letter-spacing:-0.5px;}
+.btn-sm{padding:0;font-size:18px;border-radius:8px;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;}
+.btn-del{background:rgba(255,59,48,0.1);color:var(--danger-color);} .btn-edit{background:var(--primary-light);color:var(--primary-color);}
+.search-bar-container{display:flex;gap:10px;margin-bottom:12px;} .search-input{flex:1;padding:0 16px!important;height:46px;font-size:16px!important;border-radius:14px!important;border:none!important;background:var(--input-bg)!important;}
+.action-btn{width:46px;height:46px;color:white;border-radius:14px;font-size:22px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.table-container{overflow-x:auto;max-height:55vh;overflow-y:auto;border-radius:12px;border:1px solid var(--border-light);-webkit-overflow-scrolling:touch;}
 table{table-layout:auto;width:100%;border-collapse:separate;border-spacing:0;min-width:450px;background:var(--bg-card);}
-th{background:var(--bg-body);color:var(--text-sub);position:sticky;top:0;z-index:10;font-weight:700;font-size:11px;text-transform:uppercase;padding:12px 8px;border-bottom:1px solid var(--border-light);white-space:nowrap;text-align:center;vertical-align:middle;}
-td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:break-word;white-space:normal;text-align:center;font-size:13px;font-weight:600;line-height:1.4;vertical-align:middle;} tr:last-child td{border-bottom:none;}
-#bang-danh-muc th:first-child{position:sticky;left:0;z-index:12;} #bang-danh-muc td:first-child{position:sticky;left:0;z-index:11;background:var(--bg-card);font-weight:700;border-right:1px solid var(--border-light);}
+th{background:var(--bg-body);color:var(--text-sub);position:sticky;top:0;z-index:10;font-weight:700;font-size:11px;text-transform:uppercase;padding:12px 8px;border-bottom:1px solid var(--border-light);white-space:nowrap;text-align:center;}
+td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:break-word;white-space:normal;text-align:center;font-size:13px;font-weight:600;line-height:1.4;} tr:last-child td{border-bottom:none;}
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--nav-bg);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom)) 0;border-top:0.5px solid var(--border-light);z-index:9000;}
-.nav-item{position:relative;flex:1;text-align:center;font-size:9px;font-weight:600;color:var(--text-sub);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:0.2s;} .nav-item.active{color:var(--primary-color);} .nav-icon{font-size:22px;margin-bottom:0;}
+.nav-item{flex:1;text-align:center;font-size:9px;font-weight:600;color:var(--text-sub);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;} .nav-item.active{color:var(--primary-color);} .nav-icon{font-size:22px;margin-bottom:0;}
 .nav-badge{position:absolute;top:0px;right:15%;background:var(--danger-color);color:white;border-radius:50%;padding:2px 6px;font-size:9px;font-weight:800;border:2px solid var(--nav-bg);display:none;}
-.tab-content{display:none;animation:fadeIn 0.2s ease-out;} .tab-content.active{display:block;} @keyframes fadeIn{from{opacity:0;transform:scale(0.98);} to{opacity:1;transform:scale(1);}}
-.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:10000;display:none;align-items:center;justify-content:center;opacity:0;transition:0.3s;} #custom-dialog-wrapper{z-index:100500!important;} .modal-overlay.show{opacity:1;}
+.tab-content{display:none;} .tab-content.active{display:block;animation:fadeIn 0.2s ease-out;} @keyframes fadeIn{from{opacity:0;transform:scale(0.98);} to{opacity:1;transform:scale(1);}}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);z-index:10000;display:none;align-items:center;justify-content:center;opacity:0;transition:0.3s;} .modal-overlay.show{opacity:1;}
 .custom-dialog-box:not(.modal-full){background:var(--bg-card);width:85%;max-width:340px;border-radius:20px;padding:24px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.2);transform:scale(1.1);opacity:0;transition:0.3s;display:flex;flex-direction:column;} .modal-overlay.show .custom-dialog-box:not(.modal-full){transform:scale(1);opacity:1;}
 .custom-dialog-box.modal-full{width:100%;max-width:650px;background:var(--bg-body);padding:0;display:flex;flex-direction:column;justify-content:flex-start;transform:translateY(100%);margin-top:auto;border-radius:20px 20px 0 0;overflow:hidden;height:92dvh;transition:transform 0.4s;box-shadow:0 -10px 40px rgba(0,0,0,0.2);} .modal-overlay.show .custom-dialog-box.modal-full{transform:translateY(0);}
-.dialog-buttons{display:flex;gap:10px;margin-top:24px;} .btn-dialog{flex:1;height:48px;border-radius:12px;font-weight:700;border:none;cursor:pointer;color:white;font-size:15px;transition:0.2s;} .btn-dialog:active{transform:scale(0.95);}
-.toast-msg{position:fixed;top:-100px;left:50%;transform:translateX(-50%);background:rgba(30,30,30,0.9);color:#FFF;padding:12px 24px;border-radius:30px;font-size:14px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.15);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);z-index:999999;transition:0.4s;display:flex;align-items:center;gap:8px;white-space:nowrap;pointer-events:none;} @media(prefers-color-scheme:dark){.toast-msg{background:rgba(200,200,200,0.9);color:#000;}} .toast-msg.show{top:calc(20px + env(safe-area-inset-top));}
-.modal-full-header{position:sticky;top:0;background:var(--bg-card);padding:16px;border-bottom:1px solid var(--border-light);z-index:20;display:flex;justify-content:space-between;align-items:center;} .modal-list-container{flex:1;overflow-y:auto;text-align:left;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:16px;background:var(--bg-body);}
-.modal-footer{position:sticky;bottom:0;background:var(--bg-card);border-top:0.5px solid var(--border-light);padding:12px calc(12px + env(safe-area-inset-bottom));display:flex;justify-content:center;z-index:20;} .btn-modal-cancel-sm{background:var(--input-bg);color:var(--text-main);font-weight:700;font-size:14px;padding:0 32px;height:40px;border-radius:20px;border:none;cursor:pointer;transition:0.2s;} .btn-modal-cancel-sm:active{filter:brightness(0.9);transform:scale(0.95);}
-.item-edit-btn{width:0;padding:0;margin:0;opacity:0;border:none;overflow:hidden;transition:all 0.3s;background:rgba(0,122,255,0.15);color:var(--primary-color);border-radius:10px;display:flex;align-items:center;justify-content:center;height:32px;flex-shrink:0;cursor:pointer;} .global-edit-mode .item-edit-btn{width:32px;opacity:1;margin-left:12px;} .item-chevron{color:#C7C7CC;font-size:16px;margin-left:8px;transition:all 0.3s;display:block;width:16px;text-align:center;flex-shrink:0;cursor:pointer;} .global-edit-mode .item-chevron{width:0;opacity:0;margin-left:0;overflow:hidden;}
-.sticky-list-header{position:sticky;top:-1px;z-index:10;box-shadow:0 1px 2px rgba(0,0,0,0.05);}
-.modern-list{background:var(--bg-card);border-radius:16px;margin:16px 0;overflow:hidden;box-shadow:var(--card-shadow);border:1px solid var(--border-light);transition:0.3s;} .modern-list-header{padding:14px 16px;background:var(--bg-body);color:var(--text-sub);font-size:12px;font-weight:700;text-transform:uppercase;border-bottom:0.5px solid var(--border-light);} .modern-list-item{display:flex;align-items:center;padding:14px 16px;border-bottom:0.5px solid var(--border-light);background:var(--bg-card);transition:0.2s;} .modern-list-item:active{background:var(--input-bg);} .modern-list-item:last-child{border-bottom:none;} .modern-list-stt{width:28px;font-weight:700;color:var(--text-sub);font-size:13px;flex-shrink:0;} .modern-list-content{flex:1;padding:0 8px 0 0;min-width:0;} .modern-list-title{font-weight:700;color:var(--text-main);word-break:break-word;font-size:15px;line-height:1.3;} .modern-list-subtitle{font-size:12px;color:var(--text-sub);margin-top:4px;font-weight:500;} .modern-list-qty{font-weight:800;color:var(--primary-color);font-size:17px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;}
-.ios-checkbox{appearance:none;-webkit-appearance:none;width:24px;height:24px;border:2px solid var(--border-light);border-radius:50%;outline:none;cursor:pointer;transition:0.2s;position:relative;flex-shrink:0;margin-right:12px;background:var(--bg-body);} .ios-checkbox:checked{background-color:var(--primary-color);border-color:var(--primary-color);} .ios-checkbox:checked::after{content:'';position:absolute;top:6px;left:6px;width:9px;height:5px;border-left:2px solid white;border-bottom:2px solid white;transform:rotate(-45deg);}
+.dialog-buttons{display:flex;gap:10px;margin-top:24px;} .btn-dialog{flex:1;height:46px;border-radius:12px;font-weight:700;border:none;cursor:pointer;color:white;}
+.toast-msg{position:fixed;top:-100px;left:50%;transform:translateX(-50%);background:rgba(30,30,30,0.9);color:#FFF;padding:12px 24px;border-radius:30px;font-size:14px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.15);backdrop-filter:blur(20px);z-index:999999;transition:0.4s;display:flex;align-items:center;gap:8px;pointer-events:none;} .toast-msg.show{top:calc(20px + env(safe-area-inset-top));}
+.modal-full-header{position:sticky;top:0;background:var(--bg-card);padding:16px;border-bottom:1px solid var(--border-light);z-index:20;display:flex;justify-content:space-between;align-items:center;} .modal-list-container{flex:1;overflow-y:auto;padding:16px;background:var(--bg-body);}
+.modal-footer{position:sticky;bottom:0;background:var(--bg-card);border-top:0.5px solid var(--border-light);padding:12px;display:flex;justify-content:center;z-index:20;} .btn-modal-cancel-sm{background:var(--input-bg);color:var(--text-main);font-weight:700;font-size:14px;padding:0 32px;height:40px;border-radius:20px;border:none;cursor:pointer;}
+.modern-list{background:var(--bg-card);border-radius:16px;margin:16px 0;overflow:hidden;box-shadow:var(--card-shadow);border:1px solid var(--border-light);} .modern-list-header{padding:14px 16px;background:var(--bg-body);color:var(--text-sub);font-size:12px;font-weight:700;text-transform:uppercase;border-bottom:0.5px solid var(--border-light);} .modern-list-item{display:flex;align-items:center;padding:14px 16px;border-bottom:0.5px solid var(--border-light);background:var(--bg-card);} .modern-list-item:last-child{border-bottom:none;}
 .dashboard-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;} .dash-box{background:var(--bg-card);border-radius:14px;padding:12px 6px;text-align:center;box-shadow:var(--card-shadow);border:1px solid var(--border-light);} .dash-box-title{font-size:10px;font-weight:700;color:var(--text-sub);text-transform:uppercase;margin-bottom:6px;} .dash-box-val{font-size:15px;font-weight:800;color:var(--text-main);letter-spacing:-0.5px;}
-.modal-bottom-sheet{position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);z-index:20000;display:none;flex-direction:column;justify-content:flex-end;align-items:center;opacity:0;transition:opacity 0.3s;} .modal-bottom-sheet.show{opacity:1;} .sheet-content{background:var(--bg-body);width:100%;max-width:650px;height:95dvh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform 0.4s;box-shadow:0 -10px 40px rgba(0,0,0,0.1);} .modal-bottom-sheet.show .sheet-content{transform:translateY(0);} .sheet-header-fixed{flex-shrink:0;padding:10px 20px 12px 20px;background:var(--bg-body);border-bottom:0.5px solid var(--border-light);z-index:10;border-radius:20px 20px 0 0;} .sheet-body-scrollable{flex:1;overflow-y:auto;padding:16px 20px 40px 20px;background:var(--bg-body);-webkit-overflow-scrolling:touch;} .sheet-footer-fixed{flex-shrink:0;padding:16px 20px calc(16px + env(safe-area-inset-bottom));background:var(--bg-card);border-top:0.5px solid var(--border-light);display:flex;gap:12px;z-index:20;} .sheet-pill-wrapper{display:flex;justify-content:center;margin-bottom:12px;} .sheet-pill{width:40px;height:5px;background:rgba(0,0,0,0.2);border-radius:3px;} @media(prefers-color-scheme:dark){.sheet-pill{background:rgba(255,255,255,0.3);}}
-.bc-tab-container{display:flex;background:var(--input-bg);padding:4px;border-radius:12px;margin-bottom:16px;gap:4px;} .bc-tab-btn{flex:1;padding:10px 0;font-size:11px;font-weight:700;border:none;border-radius:10px;cursor:pointer;transition:0.2s;background:transparent;color:var(--text-sub);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;white-space:nowrap;} .bc-tab-btn i{font-size:20px;} .bc-tab-btn.active{background:var(--bg-card);color:var(--text-main);box-shadow:0 2px 8px rgba(0,0,0,0.05);} .chip-lo{display:inline-block;padding:8px 14px;border-radius:20px;font-size:14px;font-weight:700;margin:0;cursor:pointer;border:none;background:var(--primary-light);color:var(--primary-color);transition:0.2s;white-space:nowrap;box-shadow:0 2px 5px rgba(0,122,255,0.15);} .chip-lo:active{filter:brightness(0.9);transform:scale(0.95);}
-::-webkit-scrollbar{width:5px;height:5px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:10px;}
-.bg-segment-wrapper{background:var(--input-bg);padding:4px;border-radius:12px;display:flex;margin-bottom:16px;} .bg-segment-btn{flex:1;text-align:center;font-size:13px;font-weight:700;padding:10px 0;border-radius:10px;color:var(--text-sub);transition:0.2s;border:none;background:transparent;cursor:pointer;} .bg-segment-btn.active{background:var(--bg-card);color:var(--text-main);box-shadow:0 2px 8px rgba(0,0,0,0.1);} .bg-input-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;} .bg-input-le-container{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;} .bg-input-le-item{display:flex;align-items:center;background:var(--input-bg);border-radius:12px;padding:6px;padding-left:12px;flex:1;min-width:100px;border:1px solid var(--border-light);} .bg-input-le-item input{border:none;background:transparent;width:100%;font-size:16px;font-weight:800;color:var(--danger-color);outline:none;padding:4px 0;} .bg-input-le-item .del-le-btn{color:var(--text-sub);padding:4px;cursor:pointer;font-size:18px;transition:0.2s;} .bg-config-box{background:var(--bg-body);padding:12px;border-radius:12px;margin-bottom:16px;border:1px solid var(--border-light);}
-.sx-footer-fixed{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:0;right:0;padding:12px 16px;background:rgba(255,255,255,0.85);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:0.5px solid var(--border-light);z-index:100;} @media(prefers-color-scheme:dark){.sx-footer-fixed{background:rgba(28,28,30,0.85);}}
+.modal-bottom-sheet{position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);z-index:20000;display:none;flex-direction:column;justify-content:flex-end;align-items:center;opacity:0;transition:opacity 0.3s;} .modal-bottom-sheet.show{opacity:1;} .sheet-content{background:var(--bg-body);width:100%;max-width:650px;height:95dvh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform 0.4s;box-shadow:0 -10px 40px rgba(0,0,0,0.1);} .modal-bottom-sheet.show .sheet-content{transform:translateY(0);}
+.sheet-header-fixed{flex-shrink:0;padding:10px 20px 12px 20px;background:var(--bg-body);border-bottom:0.5px solid var(--border-light);z-index:10;border-radius:20px 20px 0 0;} .sheet-body-scrollable{flex:1;overflow-y:auto;padding:16px 20px 40px 20px;background:var(--bg-body);-webkit-overflow-scrolling:touch;} .sheet-footer-fixed{flex-shrink:0;padding:16px 20px calc(16px + env(safe-area-inset-bottom));background:var(--bg-card);border-top:0.5px solid var(--border-light);display:flex;gap:12px;z-index:20;} .sheet-pill-wrapper{display:flex;justify-content:center;margin-bottom:12px;} .sheet-pill{width:40px;height:5px;background:rgba(0,0,0,0.2);border-radius:3px;}
+.bc-tab-container{display:flex;background:var(--input-bg);padding:4px;border-radius:12px;margin-bottom:16px;gap:4px;} .bc-tab-btn{flex:1;padding:10px 0;font-size:11px;font-weight:700;border:none;border-radius:10px;cursor:pointer;background:transparent;color:var(--text-sub);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;white-space:nowrap;} .bc-tab-btn.active{background:var(--bg-card);color:var(--text-main);box-shadow:0 2px 8px rgba(0,0,0,0.05);}
+.chip-lo{display:inline-block;padding:8px 14px;border-radius:20px;font-size:14px;font-weight:700;margin:0;cursor:pointer;border:none;background:var(--primary-light);color:var(--primary-color);white-space:nowrap;box-shadow:0 2px 5px rgba(0,122,255,0.15);}
+.bg-segment-wrapper{background:var(--input-bg);padding:4px;border-radius:12px;display:flex;margin-bottom:16px;} .bg-segment-btn{flex:1;text-align:center;font-size:13px;font-weight:700;padding:10px 0;border-radius:10px;color:var(--text-sub);border:none;background:transparent;} .bg-segment-btn.active{background:var(--bg-card);color:var(--text-main);box-shadow:0 2px 8px rgba(0,0,0,0.1);}
 </style>
 </head>
 <body>
-
-<div class="dash-header">
-  <h2 id="app-title">DANH MỤC ĐẠN</h2>
-  <button class="sys-btn" onclick="moMenuHeThong()"><i class="ph-fill ph-gear"></i> Hệ Thống</button>
-</div>
-
+<div class="dash-header"><h2 id="app-title">DANH MỤC ĐẠN</h2><button class="sys-btn" onclick="moMenuHeThong()"><i class="ph-fill ph-gear"></i> Hệ Thống</button></div>
 <div class="container">
   <div id="tab-danh-muc" class="tab-content active">
     <div class="card">
       <div class="search-bar-container">
         <input type="text" id="search-danh-muc" class="search-input" placeholder="🔍 Tìm kiếm đạn..." onkeyup="debounceTimKiem()">
-        <button class="action-btn" style="background:var(--input-bg); color: var(--text-main);" onclick="toggleCaiDatDanhMuc(); haptic();"><i class="ph ph-faders"></i></button>
-        <button class="action-btn" style="background:var(--primary-color)" onclick="document.getElementById('excel-upload').click(); haptic();"><i class="ph ph-file-xls"></i></button>
+        <button class="action-btn" style="background:var(--primary-color)" onclick="document.getElementById('excel-upload').click();"><i class="ph ph-file-xls"></i></button>
         <input type="file" id="excel-upload" style="display:none;" accept=".xlsx, .xls, .csv" onchange="xuLyFileExcel(event)">
-      </div>
-      <div id="panel-cai-dat-danh-muc" class="setting-panel" style="background: var(--bg-card); box-shadow: var(--card-shadow); border: none;">
-          <div style="margin-bottom: 12px; color: var(--text-main); font-weight: 700; font-size: 15px;">Cài đặt cột hiển thị</div>
-          <div class="form-group"><label>Cỡ chữ bảng (px)</label><input type="number" id="set-fontsize" class="form-control" value="13" style="width: 100px;"></div>
-          <div id="danh-sach-cot-cai-dat" style="max-height: 180px; overflow-y: auto; margin-bottom: 12px; border: 1px solid var(--border-light); padding: 12px; border-radius: 12px; background: var(--bg-body);"></div>
-          <button class="btn" style="background: var(--text-main);" onclick="luuCaiDatDanhMuc()"><i class="ph ph-floppy-disk"></i> LƯU CÀI ĐẶT</button>
       </div>
       <div style="font-size: 11px; color: var(--text-sub); text-align: center;"><i class="ph ph-arrows-left-right"></i> Vuốt ngang bảng để xem thêm</div>
     </div>
     <div class="card" style="padding: 0; overflow: hidden; border: none; background: transparent; box-shadow: none;">
       <div class="table-container" style="background: var(--bg-card); border-radius: 16px; box-shadow: var(--card-shadow); border: none;">
-        <table id="bang-danh-muc">
-          <thead><tr id="dm-header"><th>DỮ LIỆU DANH MỤC</th></tr></thead>
-          <tbody id="dm-body"><tr><td style="color:var(--text-sub); padding: 50px;"><i class="ph ph-file-dashed" style="font-size: 40px; margin-bottom: 12px; opacity: 0.3;"></i><br>Chưa có dữ liệu.<br>Bấm icon Excel để tải.</td></tr></tbody>
-        </table>
+        <table id="bang-danh-muc"><thead><tr id="dm-header"><th>DỮ LIỆU DANH MỤC</th></tr></thead><tbody id="dm-body"><tr><td style="color:var(--text-sub); padding: 50px;"><i class="ph ph-file-dashed" style="font-size: 40px; margin-bottom: 12px; opacity: 0.3;"></i><br>Chưa có dữ liệu.<br>Bấm icon Excel để tải.</td></tr></tbody></table>
       </div>
     </div>
   </div>
@@ -100,22 +78,19 @@ td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:brea
     <div class="card">
       <button class="btn" style="background: var(--primary-light); color: var(--primary-color); margin-bottom: 16px;" onclick="moModalXemLenh()"><i class="ph-fill ph-chart-donut"></i> KIỂM TRA LỆNH ĐÃ NHẬP</button>
       <div class="form-row">
-          <div class="form-group" style="flex: 1.2;"><label>Số Lệnh/Phiếu</label><input type="text" id="lenh-so" list="ds-so-lenh" class="form-control" placeholder="VD: 01/PX"><datalist id="ds-so-lenh"></datalist></div>
-          <div class="form-group" style="flex: 1.8;"><label>Tên đạn</label><input type="text" id="lenh-ten" class="form-control input-clickable" placeholder="🔍 Bấm chọn..." readonly onclick="moModalChonDan()" style="cursor: pointer; color: var(--primary-color);"></div>
+          <div class="form-group" style="flex: 1.2;"><label>Số Lệnh</label><input type="text" id="lenh-so" list="ds-so-lenh" class="form-control compact-input" placeholder="VD: 01/PX"><datalist id="ds-so-lenh"></datalist></div>
+          <div class="form-group" style="flex: 1.8;"><label>Tên đạn</label><input type="text" id="lenh-ten" class="form-control compact-input" placeholder="🔍 Bấm chọn..." readonly onclick="moModalChonDan()" style="cursor: pointer; color: var(--primary-color);"></div>
       </div>
       <div class="form-row" style="margin-bottom:12px;">
-        <div class="form-group" style="flex: 1;"><label>ĐVT</label><input type="text" id="lenh-dvt" class="form-control" readonly style="background: transparent; border: 1px dashed var(--border-light); text-align: center;"></div>
-        <div class="form-group" style="flex: 1;"><label>Cấp</label><select id="lenh-cap" class="form-control" style="text-align:center;"><option value=""></option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-        <div class="form-group" style="flex: 1.5;"><label style="text-align: center;">Số lượng</label><input type="number" inputmode="decimal" pattern="[0-9]*" id="lenh-sl" class="form-control" style="text-align:center; font-weight: 800; color: var(--primary-color); font-size: 18px;"></div>
+        <div class="form-group" style="flex: 1;"><label>ĐVT</label><input type="text" id="lenh-dvt" class="form-control compact-input" readonly style="background: transparent; border: 1px dashed var(--border-light); text-align: center;"></div>
+        <div class="form-group" style="flex: 1;"><label>Cấp</label><select id="lenh-cap" class="form-control compact-input" style="text-align:center;"><option value=""></option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="form-group" style="flex: 1.5;"><label style="text-align: center;">Số lượng</label><input type="number" inputmode="decimal" id="lenh-sl" class="form-control compact-input" style="text-align:center; font-weight: 800; color: var(--primary-color); font-size: 18px;"></div>
       </div>
       <div class="form-row" style="margin-bottom:0;">
-          <div class="form-group" style="flex: 1.5;"><label>Loại bao gói (Trong)</label><input type="text" id="lenh-ten-bg" class="form-control" placeholder="VD: Cốp, Hòm..." list="dl-goi-y-bg"><datalist id="dl-goi-y-bg"><option value="Cốp"><option value="Hòm"><option value="Hộp"><option value="Thùng"></datalist></div>
-          <div class="form-group" style="flex: 1;"><label style="text-align: center;">SL / Bao gói</label><input type="number" inputmode="decimal" id="lenh-sl-bg" class="form-control" placeholder="VD: 920" style="text-align:center; font-weight: 700; color: var(--warning-color);"></div>
+          <div class="form-group" style="flex: 1.5;"><label>Loại bao gói</label><input type="text" id="lenh-ten-bg" class="form-control compact-input" placeholder="VD: Cốp, Hòm..." list="dl-goi-y-bg"><datalist id="dl-goi-y-bg"><option value="Cốp"><option value="Hòm"><option value="Hộp"><option value="Thùng"></datalist></div>
+          <div class="form-group" style="flex: 1;"><label style="text-align: center;">SL/Bao gói</label><input type="number" inputmode="decimal" id="lenh-sl-bg" class="form-control compact-input" placeholder="VD: 920" style="text-align:center; font-weight: 700; color: var(--warning-color);"></div>
       </div>
-      <div style="display:flex; gap:12px; margin-top: 12px;">
-          <button class="btn" id="btn-luu-lenh" onclick="xuLyLuuLenh()" style="margin-bottom:0; flex:1;"><i class="ph-bold ph-plus"></i> THÊM LỆNH</button>
-          <button class="btn" id="btn-huy-lenh" onclick="huySuaLenh()" style="margin-bottom:0; background:var(--input-bg); color: var(--text-main); display:none; flex:1;">HỦY SỬA</button>
-      </div>
+      <div style="display:flex; gap:12px; margin-top: 12px;"><button class="btn" id="btn-luu-lenh" onclick="xuLyLuuLenh()" style="margin-bottom:0; flex:1;"><i class="ph-bold ph-plus"></i> THÊM LỆNH</button><button class="btn" id="btn-huy-lenh" onclick="huySuaLenh()" style="margin-bottom:0; background:var(--input-bg); color: var(--text-main); display:none; flex:1;">HỦY SỬA</button></div>
     </div>
     <div class="card" style="padding:0; overflow:hidden; border:none; background: transparent; box-shadow: none;">
       <div class="table-container" style="background: var(--bg-card); border-radius: 16px; box-shadow: var(--card-shadow); border: none;">
@@ -126,20 +101,26 @@ td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:brea
 
   <div id="tab-soan-xe" class="tab-content">
     <div class="card" style="background: var(--primary-light); border: 1px dashed var(--primary-color);">
-        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
-            <div class="form-group"><label style="color: var(--primary-color);">Ngày xuất</label><input type="date" id="sx-ngay" class="form-control" style="background: var(--bg-card); color: var(--primary-color);" onchange="capNhatGoiYXe(); xuLyChonXeSoanXe();" onfocus="scrollUI(this)"></div>
-            <div class="form-group"><label style="color: var(--primary-color);">Số phiếu</label><input type="text" id="sx-phieu" class="form-control" placeholder="Tùy chọn" style="background: var(--bg-card);" onfocus="scrollUI(this)"></div>
+        <div class="form-row" style="margin-bottom: 12px;">
+            <div class="form-group" style="flex: 1;">
+                <label style="color: var(--primary-color);">Ngày xuất</label>
+                <input type="date" id="sx-ngay" class="form-control compact-input" style="background: var(--bg-card); color: var(--primary-color);" onchange="capNhatGoiYXe(); xuLyChonXeSoanXe();">
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label style="color: var(--primary-color);">Số phiếu</label>
+                <input type="text" id="sx-phieu" class="form-control compact-input" placeholder="Tùy chọn" style="background: var(--bg-card);">
+            </div>
         </div>
         <div class="form-group" style="margin-bottom: 0;">
             <label style="color: var(--primary-color);">Xe nhận (Bắt buộc)</label>
-            <select id="sx-xe-select" class="form-control" style="font-weight: 800; font-size: 16px; color: var(--danger-color); background: var(--bg-card); margin-bottom: 8px;" onchange="xuLyChonXeSoanXe()" onfocus="scrollUI(this)"><option value="NEW">✍️ Nhập số/tên xe mới...</option></select>
-            <input type="text" id="sx-xe-input" class="form-control" placeholder="Nhập tên/số xe mới..." style="font-weight: 800; font-size: 16px; color: var(--danger-color); background: var(--bg-card);" onfocus="scrollUI(this)">
+            <select id="sx-xe-select" class="form-control" style="font-weight: 800; font-size: 16px; color: var(--danger-color); background: var(--bg-card); margin-bottom: 8px;" onchange="xuLyChonXeSoanXe()"><option value="NEW">✍️ Nhập số/tên xe mới...</option></select>
+            <input type="text" id="sx-xe-input" class="form-control" placeholder="Nhập tên/số xe mới..." style="font-weight: 800; font-size: 16px; color: var(--danger-color); background: var(--bg-card);">
         </div>
     </div>
     <div class="card">
       <div style="font-size: 12px; font-weight: 800; color: var(--text-main); text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;"><i class="ph-bold ph-plus-circle" style="color: var(--primary-color); font-size: 18px;"></i> THÊM ĐẠN VÀO XE NÀY</div>
-      <div class="form-group"><label>Chọn Lệnh (Đã ẩn các lệnh xuất đủ/Bị hủy)</label><select id="sx-so-lenh" class="form-control" style="color: var(--info-color);" onchange="loadDanTheoLenhSoanXe()" onfocus="scrollUI(this)"><option value="">-- Chọn lệnh --</option></select></div>
-      <div class="form-group"><label>Chọn Đạn (Chỉ hiện đạn cần xuất)</label><select id="sx-chon-dan" class="form-control" onfocus="scrollUI(this)"><option value="">-- Chọn đạn --</option></select></div>
+      <div class="form-group"><label>Chọn Lệnh</label><select id="sx-so-lenh" class="form-control" style="color: var(--info-color);" onchange="loadDanTheoLenhSoanXe()"><option value="">-- Chọn lệnh --</option></select></div>
+      <div class="form-group"><label>Chọn Đạn</label><select id="sx-chon-dan" class="form-control"><option value="">-- Chọn đạn --</option></select></div>
       <button class="btn" onclick="batDauSoanLoChoXe()" style="height: 48px; background: var(--text-main); color: white; margin-top: 16px;"><i class="ph-bold ph-stack"></i> SOẠN LÔ & THÊM VÀO XE</button>
     </div>
     <div class="card" style="padding: 0; overflow: hidden; background: transparent; box-shadow: none; border: none;">
@@ -148,30 +129,36 @@ td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:brea
             <div style="text-align: center; padding: 40px; color: var(--text-sub); background: var(--bg-card); border-radius: 16px;"><i class="ph-bold ph-shopping-cart" style="font-size: 32px; opacity: 0.5; margin-bottom: 8px;"></i><br>Chưa có đạn nào trên xe.</div>
         </div>
     </div>
-    <div class="sx-footer-fixed">
+    <div style="position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); left: 0; right: 0; padding: 12px 16px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-top: 0.5px solid var(--border-light); z-index: 100;">
         <div class="container" style="display: flex; justify-content: space-between; align-items: center; padding: 0;">
             <div><div style="font-size: 11px; font-weight: 700; color: var(--text-sub); text-transform: uppercase;">Tổng tải trọng</div><div id="sx-tong-tan" style="font-size: 18px; font-weight: 900; color: var(--danger-color);">0 Tấn</div></div>
-            <button onclick="chotXuatXe()" style="background: var(--warning-color); color: white; border: none; padding: 0 24px; height: 46px; border-radius: 14px; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(255, 149, 0, 0.3);"><i class="ph-bold ph-check-square-offset"></i> CHỐT XUẤT XE</button>
+            <button onclick="chotXuatXe()" style="background: var(--warning-color); color: white; border: none; padding: 0 24px; height: 46px; border-radius: 14px; font-weight: 800; font-size: 15px; cursor: pointer;"><i class="ph-bold ph-check-square-offset"></i> CHỐT XUẤT XE</button>
         </div>
     </div>
   </div>
 
   <div id="tab-thuc-hien" class="tab-content">
     <div class="card">
-      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
-          <div class="form-group"><label>Ngày xuất</label><input type="date" id="th-ngay" class="form-control" style="color: var(--primary-color);" onchange="capNhatGoiYXe()" onfocus="scrollUI(this)"></div>
-          <div class="form-group"><label>Số phiếu</label><input type="text" id="th-phieu" class="form-control" placeholder="Tùy chọn" onfocus="scrollUI(this)"></div>
+      <div class="form-row">
+          <div class="form-group" style="flex: 1;">
+              <label>Ngày xuất</label>
+              <input type="date" id="th-ngay" class="form-control compact-input" style="color: var(--primary-color);" onchange="capNhatGoiYXe()">
+          </div>
+          <div class="form-group" style="flex: 1;">
+              <label>Số phiếu</label>
+              <input type="text" id="th-phieu" class="form-control compact-input" placeholder="Tùy chọn">
+          </div>
       </div>
       <div class="form-group">
           <label>Xe nhận</label>
-          <select id="th-xe-select" class="form-control" style="color: var(--warning-color);" onchange="xuLyChonXeThucHien()" onfocus="scrollUI(this)"><option value="AUTO">-- Tự động tăng xe mới --</option><option value="MANUAL">✍️ Nhập số/tên xe khác...</option></select>
-          <input type="text" id="th-xe-input" class="form-control" placeholder="Nhập tên/số xe..." style="display:none; margin-top: 10px; color: var(--warning-color);" onfocus="scrollUI(this)">
+          <select id="th-xe-select" class="form-control" style="color: var(--warning-color);" onchange="xuLyChonXeThucHien()"><option value="AUTO">-- Tự động tăng xe mới --</option><option value="MANUAL">✍️ Nhập số/tên xe khác...</option></select>
+          <input type="text" id="th-xe-input" class="form-control" placeholder="Nhập tên/số xe..." style="display:none; margin-top: 10px; color: var(--warning-color);">
       </div>
-      <div class="form-group"><label>Bước 1: Chọn Lệnh (Đã ẩn Lệnh xong/Hủy)</label><select id="th-so-lenh" class="form-control" style="color: var(--info-color);" onchange="loadDanTheoLenh()" onfocus="scrollUI(this)"><option value="">-- Chọn lệnh --</option></select></div>
-      <div class="form-group"><label>Bước 2: Chọn Đạn (Chỉ hiện đạn cần xuất)</label><select id="th-chon-dan" class="form-control" onchange="tuDongDienCapTuLenh()" onfocus="scrollUI(this)"><option value="">-- Chọn đạn --</option></select></div>
+      <div class="form-group"><label>Bước 1: Chọn Lệnh</label><select id="th-so-lenh" class="form-control" style="color: var(--info-color);" onchange="loadDanTheoLenh()"><option value="">-- Chọn lệnh --</option></select></div>
+      <div class="form-group"><label>Bước 2: Chọn Đạn</label><select id="th-chon-dan" class="form-control" onchange="tuDongDienCapTuLenh()"><option value="">-- Chọn đạn --</option></select></div>
       <div class="form-row" style="margin-bottom:0;">
-        <div class="form-group" style="flex: 1;"><label>Cấp</label><select id="th-cap" class="form-control" style="text-align:center;"><option value=""></option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-        <div class="form-group" style="flex: 1.5;"><label style="text-align: center;">Số Lượng Xuất</label><input type="number" inputmode="decimal" pattern="[0-9]*" id="th-sl" class="form-control" placeholder="0" style="text-align:center; font-weight: 800; font-size: 20px; color: var(--danger-color);" onfocus="scrollUI(this)"></div>
+        <div class="form-group" style="flex: 1;"><label>Cấp</label><select id="th-cap" class="form-control compact-input" style="text-align:center;"><option value=""></option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="form-group" style="flex: 1.5;"><label style="text-align: center;">Số Lượng Xuất</label><input type="number" inputmode="decimal" pattern="[0-9]*" id="th-sl" class="form-control compact-input" placeholder="0" style="text-align:center; font-weight: 800; font-size: 20px; color: var(--danger-color);"></div>
       </div>
       <div style="display:flex; gap:12px; margin-top: 16px;">
           <button class="btn" id="btn-ghi-xe" onclick="xuLyGhiXe()" style="margin-bottom:0; background:var(--warning-color); flex:1;"><i class="ph-bold ph-check"></i> GHI SỔ XE</button>
@@ -194,8 +181,8 @@ td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:brea
     <div id="vung-bao-cao-ngay">
         <div class="card" style="margin-top: 0px;">
             <div class="form-row" style="margin-bottom:0;">
-                <div class="form-group" style="flex:1;"><label>Ngày xuất</label><input type="date" id="bc-ngay" class="form-control" onchange="capNhatGoiYXe(); renderBaoCaoNgay();" style="color: var(--primary-color);"></div>
-                <div class="form-group" style="flex:1;"><label>Lọc Số Xe</label><select id="bc-xe" class="form-control" onchange="renderBaoCaoNgay()"><option value="">Tất cả xe...</option></select></div>
+                <div class="form-group" style="flex:1;"><label>Ngày xuất</label><input type="date" id="bc-ngay" class="form-control compact-input" onchange="capNhatGoiYXe(); renderBaoCaoNgay();" style="color: var(--primary-color);"></div>
+                <div class="form-group" style="flex:1;"><label>Lọc Số Xe</label><select id="bc-xe" class="form-control compact-input" onchange="renderBaoCaoNgay()"><option value="">Tất cả xe...</option></select></div>
             </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;">
@@ -245,16 +232,19 @@ td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:brea
     </div>
     <div class="sheet-body-scrollable">
         <div id="ql-lo-tong-hop-bg" style="display:none; font-size: 13px; font-weight: 700; color: var(--primary-color); background: var(--primary-light); padding: 8px 16px; border-radius: 12px; margin-bottom: 16px; text-align: center; border: 1px dashed var(--primary-color);">Tổng hợp: <span id="lbl-tong-hop-bg">...</span></div>
-        <div id="vung-goi-y-lo" style="display: none; margin-bottom: 16px; background: var(--bg-card); padding: 16px; border-radius: 16px; box-shadow: var(--card-shadow);"><div style="font-size: 13px; font-weight: 700; color: var(--text-sub); margin-bottom: 10px; text-transform: uppercase;"><i class="ph-bold ph-magic-wand"></i> Chọn nhanh Lô:</div><div id="danh-sach-chip-goi-y" style="display: flex; flex-wrap: wrap; gap: 8px;"></div></div>
+        <div id="vung-goi-y-lo" style="display: none; margin-bottom: 16px; background: var(--bg-card); padding: 16px; border-radius: 16px; box-shadow: var(--card-shadow);">
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-sub); margin-bottom: 10px; text-transform: uppercase;"><i class="ph-bold ph-magic-wand"></i> Chọn nhanh Lô:</div>
+            <div id="danh-sach-chip-goi-y" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+        </div>
         <div id="vung-nhap-lo-chinh" style="background: var(--bg-card); padding: 16px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 20px;">
             <div id="vung-goi-y-thong-minh" style="display: flex; gap: 8px; overflow-x: auto; margin-bottom: 10px; white-space: nowrap; -webkit-overflow-scrolling: touch; min-height: 0;"></div>
             <div class="bg-segment-wrapper" id="segment-che-do-nhap" style="display: flex;"><button class="bg-segment-btn active" id="btn-tab-nhap-sl" onclick="chuyenTabNhapLo('SL')">NHẬP SỐ LƯỢNG</button><button class="bg-segment-btn" id="btn-tab-nhap-bg" onclick="chuyenTabNhapLo('BG')">NHẬP BAO GÓI</button></div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 2px;"><label id="lbl-nhap-lo-title" style="font-size:12px; font-weight:700; color:var(--text-sub); text-transform: uppercase; margin:0;">Tên Lô (Thủ công)</label><button onclick="document.getElementById('excel-upload-lo').click()" style="background:var(--success-color); color:white; border:none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; display:flex; align-items:center; gap:4px; cursor:pointer;"><i class="ph-bold ph-file-xls"></i> TỪ EXCEL</button><input type="file" id="excel-upload-lo" style="display:none;" accept=".xlsx, .xls, .csv" onchange="xuLyNhapsLoTuExcel(event)"></div>
-            <input type="text" id="input-ql-ten-lo" class="form-control" style="font-weight:800; font-size: 18px; margin-bottom: 12px; border: 1px solid var(--border-light);" placeholder="VD: 203" autocomplete="off" oninput="xuLyGoiYLoAuto()" onfocus="scrollUI(this)">
-            <div id="view-nhap-sl" style="display: block;"><input type="number" id="input-ql-sl-lo" class="form-control" style="font-weight:800; color:var(--danger-color); text-align:center; font-size: 22px; height: 56px; border: 2px solid var(--border-light);" placeholder="Số lượng trực tiếp" inputmode="decimal" pattern="[0-9]*" onfocus="scrollUI(this)"></div>
+            <input type="text" id="input-ql-ten-lo" class="form-control" style="font-weight:800; font-size: 18px; margin-bottom: 12px; border: 1px solid var(--border-light);" placeholder="VD: 203" autocomplete="off" oninput="xuLyGoiYLoAuto()">
+            <div id="view-nhap-sl" style="display: block;"><input type="number" id="input-ql-sl-lo" class="form-control" style="font-weight:800; color:var(--danger-color); text-align:center; font-size: 22px; height: 56px; border: 2px solid var(--border-light);" placeholder="Số lượng trực tiếp" inputmode="decimal" pattern="[0-9]*"></div>
             <div id="view-nhap-bg" style="display: none;">
-                <div class="bg-config-box"><div style="display:flex; gap:12px;"><div style="flex: 1.5;"><label style="font-size:10px; font-weight:700; color:var(--text-sub); text-transform: uppercase;">Loại bao gói</label><input type="text" id="bg-input-loai" class="form-control" placeholder="Cốp, Hòm..." style="height: 40px; font-size:15px; font-weight: 700;" onfocus="scrollUI(this)"></div><div style="flex: 1;"><label style="font-size:10px; font-weight:700; color:var(--text-sub); text-transform: uppercase;">SL đạn/1 Bao</label><input type="number" id="bg-input-he-so" class="form-control" placeholder="920" oninput="tinhToanTongBaoGoi()" style="height: 40px; font-size:16px; font-weight:800; color: var(--primary-color);" onfocus="scrollUI(this)"></div></div></div>
-                <div class="bg-input-grid"><div><label style="font-size:12px; font-weight:700; color:var(--text-sub);">Số Bao Gói chẵn</label><input type="number" id="bg-input-chan" class="form-control" placeholder="0" inputmode="decimal" oninput="tinhToanTongBaoGoi()" style="font-weight:800; font-size: 18px; height: 50px;" onfocus="scrollUI(this)"></div><div style="display:flex; flex-direction:column; justify-content:flex-end;"><div style="font-size:11px; font-weight:700; color:var(--text-sub); margin-bottom:6px; text-align:right;">Tổng quy đổi</div><div id="bg-tong-hien-thi" style="font-size:26px; font-weight:900; color:var(--danger-color); text-align:right;">0</div></div></div>
+                <div class="bg-config-box"><div style="display:flex; gap:12px;"><div style="flex: 1.5;"><label style="font-size:10px; font-weight:700; color:var(--text-sub); text-transform: uppercase;">Loại bao gói</label><input type="text" id="bg-input-loai" class="form-control compact-input" placeholder="Cốp, Hòm..." style="height: 40px; font-size:15px; font-weight: 700;"></div><div style="flex: 1;"><label style="font-size:10px; font-weight:700; color:var(--text-sub); text-transform: uppercase;">SL đạn/1 Bao</label><input type="number" id="bg-input-he-so" class="form-control compact-input" placeholder="920" oninput="tinhToanTongBaoGoi()" style="height: 40px; font-size:16px; font-weight:800; color: var(--primary-color);"></div></div></div>
+                <div class="bg-input-grid"><div><label style="font-size:12px; font-weight:700; color:var(--text-sub);">Số Bao Gói chẵn</label><input type="number" id="bg-input-chan" class="form-control compact-input" placeholder="0" inputmode="decimal" oninput="tinhToanTongBaoGoi()" style="font-weight:800; font-size: 18px; height: 50px;"></div><div style="display:flex; flex-direction:column; justify-content:flex-end;"><div style="font-size:11px; font-weight:700; color:var(--text-sub); margin-bottom:6px; text-align:right;">Tổng quy đổi</div><div id="bg-tong-hien-thi" style="font-size:26px; font-weight:900; color:var(--danger-color); text-align:right;">0</div></div></div>
                 <label style="font-size:12px; font-weight:700; color:var(--text-sub); margin-top: 12px; display: block;">Nhập số lẻ (+)</label><div id="bg-ds-le" class="bg-input-le-container"></div><button onclick="themOLeBaoGoi()" style="background:var(--primary-light); color:var(--primary-color); border:none; padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor:pointer; width: 100%; transition: 0.2s;"><i class="ph-bold ph-plus"></i> THÊM KHUNG NHẬP LẺ</button>
             </div>
         </div>
@@ -275,7 +265,7 @@ td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:brea
 </div>
 
 <script>
-  window.scrollUI = function(element) { setTimeout(() => { element.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); };
+  // ================== CORE UTILITIES ==================
   const safeStorage = { getItem: function(k){try{return window.localStorage.getItem(k);}catch(e){return null;}}, setItem: function(k,v){try{window.localStorage.setItem(k,v);}catch(e){console.warn("Lỗi");}}, clear: function(){try{window.localStorage.clear();}catch(e){}} };
   function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
   function escapeHTML(str) { if (str == null) return ''; return String(str).replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag] || tag)); }
@@ -381,6 +371,7 @@ td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:brea
   let timeoutModal = null; function timKiemModalDan() { if(timeoutModal) clearTimeout(timeoutModal); timeoutModal = setTimeout(() => { let tk = document.getElementById('search-modal-dan').value.toLowerCase(); if(!tk) { renderListModalDan(STATE.excel.data); return; } renderListModalDan(STATE.excel.data.filter(h => trichXuatThongTinDan(h).ten.toLowerCase().includes(tk))); }, 300); }
   function chonDanTuModal(index) { haptic(); let info = trichXuatThongTinDan(STATE.excel.data[index]); document.getElementById('lenh-ten').value = info.ten; document.getElementById('lenh-dvt').value = info.dvt; dongModalChonDan(); }
 
+  // THÊM CHỌN NHANH LÔ VÀ BLACKLIST VÀO UI
   function xuLyGoiYLoAuto() {
       let vungGoiY = document.getElementById('vung-goi-y-thong-minh'); let tenDanHienTai = document.getElementById('ql-lo-ten-dan').innerText.split('\n')[0].trim(); let allHistoricalBatches = new Set();
       STATE.lenh.forEach(l => { if (l.ten === tenDanHienTai && l.danhSachLo) l.danhSachLo.forEach(lo => allHistoricalBatches.add(lo.tenLo.trim())); }); STATE.thucHien.forEach(t => { if (t.ten === tenDanHienTai && t.danhSachLo) t.danhSachLo.forEach(lo => allHistoricalBatches.add(lo.tenLo.trim())); });
@@ -392,6 +383,18 @@ td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:brea
               return `<div class="chip-lo" style="background: var(--info-color); color: white; padding: 6px 10px 6px 14px; display:inline-flex; align-items:center; gap:8px; border-radius: 20px;"><b onclick="appendGoiY('${sug}')" style="cursor:pointer; flex: 1;">${sug}</b><div style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 20px; height: 20px; display:flex; justify-content:center; align-items:center; cursor:pointer; transition:0.2s;" onclick="event.stopPropagation(); duaVaoBlacklist('${sug}')"><i class="ph-bold ph-x" style="font-size: 12px;"></i></div></div>`;
           }).join(''); vungGoiY.innerHTML = html;
       } else { vungGoiY.innerHTML = ''; }
+      
+      // HIỂN THỊ CẢ LÔ TỪ LỆNH CHO TAB SOẠN XE / THỰC HIỆN
+      let vungGoiYLo = document.getElementById('vung-goi-y-lo');
+      if (currentLoContext.type === 'THUCHIEN' || currentLoContext.type === 'DRAFT_XE_ITEM') {
+          let targetLenhId = currentLoContext.type === 'DRAFT_XE_ITEM' ? currentLoContext.id : STATE.thucHien.find(t=>t.id===currentLoContext.id)?.lenhId;
+          let lenhGoc = STATE.lenh.find(l => l.id === targetLenhId);
+          if (lenhGoc && lenhGoc.danhSachLo && lenhGoc.danhSachLo.length > 0) {
+              vungGoiYLo.style.display = 'block';
+              let chipsHtml = lenhGoc.danhSachLo.map(lo => `<button class="chip-lo" onclick="dienNhanhGoiYLo('${escapeHTML(lo.tenLo)}', ${lo.sl})">${escapeHTML(lo.tenLo)} <span style="opacity:0.6; font-weight: 500;">(${fmtNum(lo.sl)})</span></button>`).join('');
+              document.getElementById('danh-sach-chip-goi-y').innerHTML = chipsHtml;
+          } else { vungGoiYLo.style.display = 'none'; }
+      } else { vungGoiYLo.style.display = 'none'; }
   }
   function duaVaoBlacklist(tenLo) { haptic(); showDialog("Đánh dấu Hết Lô", `Lô <b>${tenLo}</b> đã hết ngoài thực tế?<br><span style="font-size:12px; color:var(--danger-color);">Ẩn lô này vĩnh viễn khỏi danh sách gợi ý.</span>`, "confirm", () => { if (!STATE.blacklistLo) STATE.blacklistLo = []; STATE.blacklistLo.push(tenLo); safeStorage.setItem('blacklistLo', JSON.stringify(STATE.blacklistLo)); xuLyGoiYLoAuto(); showToast(`Đã dọn dẹp lô ${tenLo}!`); }); }
   function appendGoiY(suffix) { haptic(); let inputEl = document.getElementById('input-ql-ten-lo'); if (inputEl.value.endsWith('-') && suffix.startsWith('-')) inputEl.value = inputEl.value.slice(0, -1); inputEl.value += suffix; if(cheDoNhapHienTai === 'BG') document.getElementById('bg-input-chan').focus(); else document.getElementById('input-ql-sl-lo').focus(); }
@@ -455,11 +458,7 @@ td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:brea
       let uniqueLenhAll = [...new Set(STATE.lenh.map(l => l.soLenh))];
       let activeLenh = uniqueLenhAll.filter(soL => {
           let itemsInOrder = STATE.lenh.filter(l => l.soLenh === soL);
-          return itemsInOrder.some(l => {
-              if (l.khongCap) return false;
-              let daXuat = STATE.thucHien.filter(t => t.soLenh === l.soLenh && t.ten === l.ten && t.cap == l.cap).reduce((sum, current) => sum + current.sl, 0);
-              return (l.sl - daXuat) > 0;
-          });
+          return itemsInOrder.some(l => { if (l.khongCap) return false; let daXuat = STATE.thucHien.filter(t => t.soLenh === l.soLenh && t.ten === l.ten && t.cap == l.cap).reduce((sum, current) => sum + current.sl, 0); return (l.sl - daXuat) > 0; });
       });
       let updateSelect = (selectId) => {
           let el = document.getElementById(selectId); let curVal = el.value;
@@ -473,10 +472,7 @@ td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:brea
       let selectDan = document.getElementById(selectDanId);
       if(!soLenhChon) { selectDan.innerHTML = '<option value="">-- Chọn Lệnh trước --</option>'; return; }
       let danTrongLenh = STATE.lenh.filter(l => l.soLenh === soLenhChon);
-      let danKemConLai = danTrongLenh.filter(l => !l.khongCap).map(l => {
-          let daXuat = STATE.thucHien.filter(t => t.soLenh === l.soLenh && t.ten === l.ten && t.cap == l.cap).reduce((sum, current) => sum + current.sl, 0);
-          return { ...l, conLai: l.sl - daXuat };
-      });
+      let danKemConLai = danTrongLenh.filter(l => !l.khongCap).map(l => { let daXuat = STATE.thucHien.filter(t => t.soLenh === l.soLenh && t.ten === l.ten && t.cap == l.cap).reduce((sum, current) => sum + current.sl, 0); return { ...l, conLai: l.sl - daXuat }; });
       let danCanXuat = danKemConLai.filter(l => l.conLai > 0);
       if (danCanXuat.length === 0) { selectDan.innerHTML = '<option value="">-- Lệnh này đã xuất xong! --</option>'; return; }
       selectDan.innerHTML = '<option value="">-- Chọn loại đạn --</option>' + danCanXuat.map(l => { return `<option value="${l.id}" data-conlai="${l.conLai}">${escapeHTML(l.ten)} (Cấp ${l.cap}) - Cần: ${fmtNum(l.conLai)} ${escapeHTML(l.dvt)}</option>`; }).join('');
@@ -594,7 +590,7 @@ td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:brea
   function xoaThucHien(id) { showDialog("Xác nhận", "Xóa lịch sử xuất này?", "confirm", () => { STATE.thucHien = STATE.thucHien.filter(i => i.id !== id); safeStorage.setItem('duLieuThucHien', JSON.stringify(STATE.thucHien)); renderBangThucHien(); capNhatGoiYXe(); if(document.getElementById('tab-thuc-hien').classList.contains('active')) loadDanTheoLenh(); }); }
   
   function renderBangThucHien() {
-      let tbody = document.getElementById('tbody-thuc-hien'); if(STATE.thucHien.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="padding:40px; text-align:center; color:var(--text-sub);"><i class="ph-bold ph-truck" style="font-size:32px; opacity:0.5; margin-bottom:8px;"></i><br>Chưa có dữ liệu.</td></tr>`; return; }
+      let tbody = document.getElementById('tbody-thuc-hien'); if(STATE.thucHien.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="padding:40px; text-align:center; color:var(--text-sub);"><i class="ph-bold ph-truck" style="font-size:32px; opacity:0.5; margin-bottom:8px;"></i><br>Chưa có dữ liệu xuất.</td></tr>`; return; }
       let withIndex = STATE.thucHien.map((t, i) => ({...t, _origIdx: i})); let sorted = withIndex.sort((a,b) => { let tA = a.time || 0; let tB = b.time || 0; if (tA !== tB) return tB - tA; return b._origIdx - a._origIdx; });
       tbody.innerHTML = sorted.map((item) => {
           let dsLo = item.danhSachLo || []; let slDaNhapLo = dsLo.reduce((sum, lo) => sum + lo.sl, 0); let trangThaiLoColor = slDaNhapLo === item.sl ? "var(--success-color)" : (slDaNhapLo > 0 ? "var(--warning-color)" : "var(--primary-color)");
@@ -665,12 +661,6 @@ td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:brea
       container.innerHTML = html;
   }
 
-  window.togglePhieuView = function(xeId) {
-      haptic(); let mergedView = document.getElementById('view-merged-' + xeId); let groupedView = document.getElementById('view-grouped-' + xeId); let btn = document.getElementById('btn-toggle-' + xeId); if(!mergedView || !groupedView) return;
-      if(mergedView.style.display === 'none') { mergedView.style.display = 'block'; groupedView.style.display = 'none'; if(btn) { btn.innerHTML = '<i class="ph-bold ph-list"></i> CHI TIẾT THEO PHIẾU'; btn.style.background = 'var(--primary-light)'; btn.style.color = 'var(--primary-color)'; } } else { mergedView.style.display = 'none'; groupedView.style.display = 'block'; if(btn) { btn.innerHTML = '<i class="ph-bold ph-caret-up"></i> THU GỌN VỀ 1 DANH SÁCH'; btn.style.background = 'var(--input-bg)'; btn.style.color = 'var(--text-main)'; } }
-  }
-  window.toggleGlobalEditModeXe = function() { haptic(); let container = document.getElementById('noidung-chi-tiet-xe'); let btn = document.getElementById('btn-global-edit-xe'); if(!container || !btn) return; container.classList.toggle('global-edit-mode'); if (container.classList.contains('global-edit-mode')) { btn.style.background = 'var(--primary-color)'; btn.style.color = 'white'; } else { btn.style.background = 'var(--primary-light)'; btn.style.color = 'var(--primary-color)'; } }
-
   function moModalXemChiTietXe() {
       haptic(); let locNgay = document.getElementById('bc-ngay').value; if (!locNgay) { showDialog("Lưu ý", "Chọn Ngày xuất.", "alert"); return; }
       let dataTrongNgay = STATE.thucHien.filter(t => t.ngay === locNgay); if (dataTrongNgay.length === 0) { showDialog("Trống", "Không có xe nào xuất trong ngày này.", "alert"); return; }
@@ -706,12 +696,13 @@ td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:brea
       let container = document.getElementById('noidung-chi-tiet-xe'); container.classList.remove('global-edit-mode'); let btnGlobalEdit = document.getElementById('btn-global-edit-xe'); if(btnGlobalEdit) { btnGlobalEdit.style.background = 'var(--primary-light)'; btnGlobalEdit.style.color = 'var(--primary-color)'; }
       container.innerHTML = html; openModal('modal-chi-tiet-xe');
   }
-  function dongModalXemChiTietXe() { closeModal('modal-chi-tiet-xe'); }
+  function dongModalXemChiTietXe() { closeModal('modal-chi-tiet-xe'); } window.togglePhieuView = function(xeId) { haptic(); let mergedView = document.getElementById('view-merged-' + xeId); let groupedView = document.getElementById('view-grouped-' + xeId); let btn = document.getElementById('btn-toggle-' + xeId); if(!mergedView || !groupedView) return; if(mergedView.style.display === 'none') { mergedView.style.display = 'block'; groupedView.style.display = 'none'; if(btn) { btn.innerHTML = '<i class="ph-bold ph-list"></i> CHI TIẾT THEO PHIẾU'; btn.style.background = 'var(--primary-light)'; btn.style.color = 'var(--primary-color)'; } } else { mergedView.style.display = 'none'; groupedView.style.display = 'block'; if(btn) { btn.innerHTML = '<i class="ph-bold ph-caret-up"></i> THU GỌN VỀ 1 DANH SÁCH'; btn.style.background = 'var(--input-bg)'; btn.style.color = 'var(--text-main)'; } } }
+  window.toggleGlobalEditModeXe = function() { haptic(); let container = document.getElementById('noidung-chi-tiet-xe'); let btn = document.getElementById('btn-global-edit-xe'); if(!container || !btn) return; container.classList.toggle('global-edit-mode'); if (container.classList.contains('global-edit-mode')) { btn.style.background = 'var(--primary-color)'; btn.style.color = 'white'; } else { btn.style.background = 'var(--primary-light)'; btn.style.color = 'var(--primary-color)'; } }
 
   function xuatExcelTienDoLenh() {
       haptic(); let exportData = []; if(STATE.lenh.length === 0) { showDialog("Lỗi", "Chưa có dữ liệu.", "alert"); return; }
-      STATE.lenh.forEach(item => { let slDaXuat = 0; STATE.thucHien.filter(t => t.soLenh === item.soLenh && t.ten === item.ten && t.cap == item.cap).forEach(t => { slDaXuat += t.sl; }); exportData.push({ "Số Lệnh": item.soLenh, "Tên Đạn": item.ten, "ĐVT": item.dvt, "Cấp": item.cap, "Kế Hoạch (SL)": item.sl, "Đã Xuất (SL)": slDaXuat, "Còn Nợ (SL)": item.khongCap ? "ĐÃ HỦY CẤP" : (item.sl - slDaXuat) }); });
-      showToast("Đang tạo file Excel...", "ph-fill ph-spinner-gap", "var(--warning-color)");
+      STATE.lenh.forEach(item => { let slDaXuat = 0; STATE.thucHien.filter(t => t.soLenh === item.soLenh && t.ten === item.ten && t.cap == item.cap).forEach(t => { slDaXuat += t.sl; }); let slHuy = item.khongCap ? Math.max(0, item.sl - slDaXuat) : 0; exportData.push({ "Số Lệnh": item.soLenh, "Tên Đạn": item.ten, "ĐVT": item.dvt, "Cấp": item.cap, "Kế Hoạch (SL)": item.sl, "Đã Xuất (SL)": slDaXuat, "Còn Nợ (SL)": item.khongCap ? "ĐÃ HỦY CẤP" : (item.sl - slDaXuat - slHuy) }); });
+      showToast("Đang tạo file...", "ph-fill ph-spinner-gap", "var(--warning-color)");
       setTimeout(() => { let ws = XLSX.utils.json_to_sheet(exportData); let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "TienDoLenh"); let fileName = `BaoCao_TienDoLenh_${getTodayString()}.xlsx`; XLSX.writeFile(wb, fileName); }, 500);
   }
 
@@ -780,99 +771,9 @@ td{padding:14px 8px;border-bottom:0.5px solid var(--border-light);word-wrap:brea
 
   function kiemTraVaResetLoSuaNhanh(record) {
       if(!record.danhSachLo || record.danhSachLo.length === 0) return; let slDaNhap = record.danhSachLo.reduce((sum, lo) => sum + lo.sl, 0);
-      if(slDaNhap > record.sl) { record.danhSachLo = []; setTimeout(() => showToast("Lô đã bị Reset do SL xuất giảm!", "ph-fill ph-warning-circle", "var(--warning-color)"), 1000); }
+      if(slDaNhap > record.sl) { record.danhSachLo = []; setTimeout(() => showToast("Lô bị reset do SL xuất giảm!", "ph-fill ph-warning-circle", "var(--warning-color)"), 1000); }
   }
   function hoanTatSuaNhanh(msg) { safeStorage.setItem('duLieuThucHien', JSON.stringify(STATE.thucHien)); moModalXemChiTietXe(); renderBangThucHien(); renderBaoCaoNgay(); showToast(msg); }
-  
-  /* LÔ QUẢN LÝ NÒNG CỐT (PHỤC HỒI) */
-  window.moModalQuanLyLo = function(type, id, viewData = null) {
-      haptic(); currentLoContext = { type, id, viewData }; huySuaLo(); 
-      let titleEl = document.getElementById('ql-lo-title'); let nameEl = document.getElementById('ql-lo-ten-dan');
-      document.getElementById('vung-nhap-lo-chinh').style.display = type === 'VIEW' ? 'none' : 'block'; document.getElementById('vung-goi-y-lo').style.display = type === 'VIEW' ? 'none' : 'block';
-      if (type !== 'VIEW') {
-          let record = null;
-          if (type === 'LENH') { record = STATE.lenh.find(l => l.id === id); titleEl.innerText = "Dự kiến Lô xuất"; }
-          else if (type === 'THUCHIEN') { record = STATE.thucHien.find(t => t.id === id); titleEl.innerText = "Thực tế xuất Lô"; }
-          else if (type === 'DRAFT_XE_ITEM') { let lGoc = STATE.lenh.find(l => l.id === id); record = window.currentDraftItemIndex >= 0 ? window.draftXeData.items[window.currentDraftItemIndex] : { lenhId: lGoc.id, ten: lGoc.ten, cap: lGoc.cap, dvt: lGoc.dvt, sl: 0, danhSachLo: []}; titleEl.innerText = "Soạn Lô xuất (Xe)"; }
-          if(!record) return;
-          nameEl.innerHTML = `${escapeHTML(record.ten)} <br><span style="font-size:12px; color:var(--text-sub);">Cấp: ${escapeHTML(record.cap)} &bull; ĐVT: ${escapeHTML(record.dvt)}</span>`;
-          document.getElementById('vung-nut-lo-bottom').innerHTML = `<button onclick="dongModalQuanLyLo()" style="flex:1; height:50px; border-radius:14px; border:1px solid var(--border-light); background:var(--input-bg); color:var(--text-main); font-weight:700;">ĐÓNG</button><button id="btn-submit-lo" onclick="xuLyThemQuanLyLo()" style="flex:1.5; height:50px; border-radius:14px; border:none; background:var(--primary-color); color:white; font-weight:700;">${type === 'DRAFT_XE_ITEM' ? "XÁC NHẬN VÀO XE" : "LƯU LÔ"}</button>`;
-          renderChiTietQuanLyLo(record); xuLyGoiYLoAuto();
-      } else {
-          titleEl.innerText = viewData.title || "Chi tiết Lô"; let formatTongKL = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 3 }).format((viewData.total * viewData.klr) / 1000);
-          nameEl.innerHTML = `${escapeHTML(viewData.name)} <br><span style="font-size:12px; color:var(--text-sub);">Cấp: ${escapeHTML(viewData.cap)} &bull; KLR: ${viewData.klr}</span><div style="color:var(--danger-color); font-weight:800; font-size:14px; margin-top:10px;">Tổng: ${formatTongKL} Tấn</div>`;
-          document.getElementById('danh-sach-ql-lo-container').innerHTML = viewData.listLo.map(lo => `<div class="modern-list-item" style="border-radius:14px; margin-bottom:10px; border:0.5px solid var(--border-light); padding:12px;"><div class="modern-list-title">${escapeHTML(lo.tenLo)}</div><div style="margin-left:auto;">${formatLoWithBaoGoi(lo, viewData.tenBaoGoi)}</div></div>`).join('');
-          document.getElementById('vung-nut-lo-bottom').innerHTML = `<button onclick="dongModalQuanLyLo()" style="flex:1; height:50px; border-radius:14px; background:var(--input-bg); font-weight:700;">ĐÓNG</button>`;
-      }
-      openModal('modal-quan-ly-lo');
-  }
-  function dongModalQuanLyLo() { closeModal('modal-quan-ly-lo'); if(currentLoContext.type === 'LENH') renderBangLenh(); if(currentLoContext.type === 'THUCHIEN') renderBangThucHien(); if(currentLoContext.type === 'DRAFT_XE_ITEM') renderDraftXeCart(); }
-  function huySuaLo() { idLoDangSua = null; document.getElementById('input-ql-ten-lo').value = ''; document.getElementById('input-ql-sl-lo').value = ''; document.getElementById('bg-input-chan').value = ''; document.getElementById('bg-ds-le').innerHTML = ''; tinhToanTongBaoGoi(); let bs = document.getElementById('btn-submit-lo'); if(bs) { bs.innerHTML = currentLoContext.type === 'DRAFT_XE_ITEM' ? "XÁC NHẬN VÀO XE" : "LƯU LÔ"; bs.style.background = 'var(--primary-color)'; } }
-  function chuyenTabNhapLo(mode) { cheDoNhapHienTai = mode; document.getElementById('btn-tab-nhap-sl').classList.toggle('active', mode === 'SL'); document.getElementById('btn-tab-nhap-bg').classList.toggle('active', mode === 'BG'); document.getElementById('view-nhap-sl').style.display = mode === 'SL' ? 'block' : 'none'; document.getElementById('view-nhap-bg').style.display = mode === 'BG' ? 'block' : 'none'; if(mode === 'BG' && document.getElementById('bg-ds-le').children.length === 0) themOLeBaoGoi(); }
-  function themOLeBaoGoi(value = '') { let div = document.createElement('div'); div.className = 'bg-input-le-item'; div.innerHTML = `<input type="number" inputmode="decimal" class="bg-in-le" value="${value}" placeholder="0" oninput="tinhToanTongBaoGoi()"><i class="ph-bold ph-x-circle del-le-btn" onclick="this.parentElement.remove(); tinhToanTongBaoGoi();"></i>`; document.getElementById('bg-ds-le').appendChild(div); }
-  function tinhToanTongBaoGoi() { let heSo = parseFloat(document.getElementById('bg-input-he-so').value) || 0; let chan = parseFloat(document.getElementById('bg-input-chan').value) || 0; let total = chan * heSo; document.querySelectorAll('.bg-in-le').forEach(inp => total += (parseFloat(inp.value) || 0)); document.getElementById('bg-tong-hien-thi').innerText = fmtNum(total); return total; }
-  function formatLoWithBaoGoi(lo, tenBaoGoiFallback) { let loaiBG = lo.tenBaoGoi || tenBaoGoiFallback || 'Cốp'; let parts = []; if (lo.isBaoGoi && lo.slChan > 0) parts.push(`${lo.slChan} ${loaiBG}`); if (lo.mangLe && lo.mangLe.length > 0) if (lo.isBaoGoi || lo.mangLe.length > 1) parts.push(lo.mangLe.map(n => fmtNum(n)).join(' + ')); let formula = parts.join(' + '); if (!formula || formula === String(lo.sl)) return `<div style="font-size:18px; color: var(--primary-color); font-weight:800;">${fmtNum(lo.sl)}</div>`; return `<div style="display:flex; flex-direction:column; align-items:flex-end;"><div style="font-size:18px; color: var(--primary-color); font-weight:800; line-height: 1;">${fmtNum(lo.sl)}</div><div style="font-size:11px; color: var(--text-sub); background: var(--input-bg); padding: 2px 6px; border-radius: 6px; font-weight:700; margin-top:4px;">${formula}</div></div>`; }
-  function updateHienThiTongHopBaoGoi(record) { let divTongHop = document.getElementById('ql-lo-tong-hop-bg'); if (!record.danhSachLo || record.danhSachLo.length === 0) { divTongHop.style.display = 'none'; return; } let totalChan = 0; let allLe = []; let rawNonBaoGoi = 0; let usedLoaiBG = record.tenBaoGoi || 'Cốp'; record.danhSachLo.forEach(lo => { if (lo.tenBaoGoi) usedLoaiBG = lo.tenBaoGoi; if (lo.isBaoGoi || lo.slChan > 0) { totalChan += (lo.slChan || 0); if (lo.mangLe) allLe.push(...lo.mangLe); } else { rawNonBaoGoi += lo.sl; } }); if (rawNonBaoGoi > 0) allLe.push(rawNonBaoGoi); let parts = []; if (totalChan > 0) parts.push(`${totalChan} ${usedLoaiBG}`); if (allLe.length > 0) parts.push(allLe.map(n => fmtNum(n)).join(' + ')); if(parts.length > 0) { document.getElementById('lbl-tong-hop-bg').innerText = parts.join(' + '); divTongHop.style.display = 'block'; } else divTongHop.style.display = 'none'; }
-  function xuLyThemQuanLyLo() {
-      haptic(); let record = null;
-      if (currentLoContext.type === 'LENH') record = STATE.lenh.find(l => l.id === currentLoContext.id);
-      else if (currentLoContext.type === 'THUCHIEN') record = STATE.thucHien.find(t => t.id === currentLoContext.id);
-      else if (currentLoContext.type === 'DRAFT_XE_ITEM') { let lenhGoc = STATE.lenh.find(l => l.id === currentLoContext.id); if (window.currentDraftItemIndex >= 0) record = window.draftXeData.items[window.currentDraftItemIndex]; else record = { lenhId: lenhGoc.id, soLenh: lenhGoc.soLenh, ten: lenhGoc.ten, dvt: lenhGoc.dvt, cap: lenhGoc.cap, danhSachLo: [], sl: 0, tenBaoGoi: lenhGoc.tenBaoGoi, slPerBaoGoi: lenhGoc.slPerBaoGoi }; }
-      if(!record) return;
-
-      let tenLo = document.getElementById('input-ql-ten-lo').value.trim(); let slLo = 0; let isBaoGoi = cheDoNhapHienTai === 'BG'; let slChan = 0; let mangLe = []; let formLoaiBg = document.getElementById('bg-input-loai').value.trim();
-      if (isBaoGoi) { slLo = tinhToanTongBaoGoi(); slChan = parseFloat(document.getElementById('bg-input-chan').value) || 0; document.querySelectorAll('.bg-in-le').forEach(inp => { let v = parseFloat(inp.value); if(v>0) mangLe.push(v); }); record.tenBaoGoi = formLoaiBg || record.tenBaoGoi || 'Cốp'; record.slPerBaoGoi = parseFloat(document.getElementById('bg-input-he-so').value) || 0; } 
-      else { slLo = parseFloat(document.getElementById('input-ql-sl-lo').value.trim()); }
-
-      if(!tenLo || isNaN(slLo) || slLo <= 0) { showDialog("Lỗi", "Nhập Tên Lô và Số lượng hợp lệ.", "alert"); return; } if(!record.danhSachLo) record.danhSachLo = [];
-      let currentDaNhap = record.danhSachLo.reduce((sum, lo) => sum + lo.sl, 0); if (idLoDangSua) currentDaNhap -= record.danhSachLo.find(l => l.id === idLoDangSua)?.sl || 0;
-      if (currentLoContext.type !== 'DRAFT_XE_ITEM' && slLo > (record.sl - currentDaNhap)) { showDialog("Lỗi", "Vượt quá SL cho phép.", "alert"); return; }
-
-      if (idLoDangSua) { let idx = record.danhSachLo.findIndex(l => l.id === idLoDangSua); if (idx !== -1) record.danhSachLo[idx] = { ...record.danhSachLo[idx], tenLo, sl: slLo, isBaoGoi, slChan, mangLe, tenBaoGoi: formLoaiBg }; } 
-      else record.danhSachLo.push({ id: generateID(), tenLo, sl: slLo, isBaoGoi, slChan, mangLe, tenBaoGoi: formLoaiBg });
-      if (currentLoContext.type === 'DRAFT_XE_ITEM') record.sl = record.danhSachLo.reduce((sum, l) => sum + l.sl, 0);
-
-      if (currentLoContext.type === 'LENH') safeStorage.setItem('duLieuLenh', JSON.stringify(STATE.lenh));
-      else if (currentLoContext.type === 'THUCHIEN') safeStorage.setItem('duLieuThucHien', JSON.stringify(STATE.thucHien));
-      else if (currentLoContext.type === 'DRAFT_XE_ITEM' && window.currentDraftItemIndex === -1) { window.draftXeData.items.push(record); window.currentDraftItemIndex = window.draftXeData.items.length - 1; }
-      huySuaLo(); renderChiTietQuanLyLo(record); xuLyGoiYLoAuto(); 
-  }
-  function batDauSuaLo(idLo) {
-      haptic(); idLoDangSua = idLo; let record = null;
-      if (currentLoContext.type === 'LENH') record = STATE.lenh.find(l => l.id === currentLoContext.id); else if (currentLoContext.type === 'THUCHIEN') record = STATE.thucHien.find(t => t.id === currentLoContext.id); else if (currentLoContext.type === 'DRAFT_XE_ITEM' && window.currentDraftItemIndex >= 0) record = window.draftXeData.items[window.currentDraftItemIndex];
-      if(!record || !record.danhSachLo) return; let loInfo = record.danhSachLo.find(l => l.id === idLo); if(!loInfo) return;
-      document.getElementById('input-ql-ten-lo').value = loInfo.tenLo;
-      if (loInfo.isBaoGoi) { chuyenTabNhapLo('BG'); document.getElementById('bg-input-chan').value = loInfo.slChan || ''; document.getElementById('bg-ds-le').innerHTML = ''; if (loInfo.mangLe && loInfo.mangLe.length > 0) loInfo.mangLe.forEach(le => themOLeBaoGoi(le)); else themOLeBaoGoi(); tinhToanTongBaoGoi(); } 
-      else { chuyenTabNhapLo('SL'); document.getElementById('input-ql-sl-lo').value = loInfo.sl; }
-      let b = document.getElementById('btn-submit-lo'); b.innerHTML = '<i class="ph-bold ph-floppy-disk"></i> LƯU SỬA'; b.style.background = 'var(--warning-color)';
-  }
-  function xoaQuanLyLo(idLo) { let record = null; if (currentLoContext.type === 'LENH') record = STATE.lenh.find(l => l.id === currentLoContext.id); else if (currentLoContext.type === 'THUCHIEN') record = STATE.thucHien.find(t => t.id === currentLoContext.id); else if (currentLoContext.type === 'DRAFT_XE_ITEM') record = window.draftXeData.items[window.currentDraftItemIndex]; if(!record) return; record.danhSachLo = record.danhSachLo.filter(lo => lo.id !== idLo); if (currentLoContext.type === 'DRAFT_XE_ITEM') record.sl = record.danhSachLo.reduce((sum, l) => sum + l.sl, 0); if (currentLoContext.type === 'LENH') safeStorage.setItem('duLieuLenh', JSON.stringify(STATE.lenh)); else if (currentLoContext.type === 'THUCHIEN') safeStorage.setItem('duLieuThucHien', JSON.stringify(STATE.thucHien)); if (idLoDangSua === idLo) huySuaLo(); renderChiTietQuanLyLo(record); }
-  function renderChiTietQuanLyLo(record) {
-      if(!record.danhSachLo) record.danhSachLo = []; let slDaNhap = record.danhSachLo.reduce((sum, lo) => sum + lo.sl, 0);
-      document.getElementById('ql-lo-sl-tong').innerText = currentLoContext.type === 'DRAFT_XE_ITEM' ? "---" : fmtNum(record.sl); document.getElementById('ql-lo-sl-da-nhap').innerText = fmtNum(slDaNhap); document.getElementById('ql-lo-sl-da-nhap').style.color = (slDaNhap === record.sl || currentLoContext.type === 'DRAFT_XE_ITEM') ? 'var(--success-color)' : 'var(--warning-color)'; updateHienThiTongHopBaoGoi(record);
-      let container = document.getElementById('danh-sach-ql-lo-container');
-      if(record.danhSachLo.length === 0) container.innerHTML = `<div style="padding:40px; text-align:center; color:var(--text-sub);">Chưa có Lô.</div>`;
-      else container.innerHTML = record.danhSachLo.map((lo, idx) => `<div class="modern-list-item" style="border-radius:14px; margin-bottom:10px; border:0.5px solid var(--border-light); box-shadow: var(--card-shadow); padding: 12px 14px;"><div class="modern-list-stt" style="font-size: 14px; width: 28px;">${idx + 1}</div><div class="modern-list-content"><div class="modern-list-title" style="font-size:16px;">${escapeHTML(lo.tenLo)}</div></div><div style="display:flex; align-items:center; gap: 10px;">${formatLoWithBaoGoi(lo, record.tenBaoGoi)}<button class="btn-sm btn-edit" onclick="batDauSuaLo('${lo.id}')"><i class="ph-bold ph-pencil-simple"></i></button><button class="btn-sm btn-del" onclick="xoaQuanLyLo('${lo.id}')"><i class="ph-bold ph-trash"></i></button></div></div>`).join('');
-  }
-  window.xuLyNhapsLoTuExcel = function(e) {
-      haptic(); let file = e.target.files[0]; if (!file) return; let record = null;
-      if (currentLoContext.type === 'LENH') record = STATE.lenh.find(l => l.id === currentLoContext.id); else if (currentLoContext.type === 'THUCHIEN') record = STATE.thucHien.find(t => t.id === currentLoContext.id); else if (currentLoContext.type === 'DRAFT_XE_ITEM') { if (window.currentDraftItemIndex >= 0) record = window.draftXeData.items[window.currentDraftItemIndex]; else { let lenhGoc = STATE.lenh.find(l => l.id === currentLoContext.id); record = { lenhId: lenhGoc.id, soLenh: lenhGoc.soLenh, ten: lenhGoc.ten, dvt: lenhGoc.dvt, cap: lenhGoc.cap, danhSachLo: [], sl: 0, tenBaoGoi: lenhGoc.tenBaoGoi, slPerBaoGoi: lenhGoc.slPerBaoGoi }; } }
-      if (!record) return; let reader = new FileReader();
-      reader.onload = function(evt) {
-          try {
-              let data = new Uint8Array(evt.target.result); let workbook = XLSX.read(data, {type: 'array'}); let json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
-              if(json.length === 0) { showDialog("Lỗi", "File rỗng!", "alert"); e.target.value = ''; return; }
-              let headers = Object.keys(json[0]); let colTen = headers.find(k => k.toLowerCase().includes('lô') || k.toLowerCase().includes('tên')); let colSL = headers.find(k => k.toLowerCase().includes('sl') || k.toLowerCase().includes('lượng'));
-              if (!colTen || !colSL) { showDialog("Lỗi", "File cần cột 'Lô' và 'SL'.", "alert"); e.target.value = ''; return; }
-              if (!record.danhSachLo) record.danhSachLo = []; let currentDaNhap = record.danhSachLo.reduce((sum, lo) => sum + lo.sl, 0); let slConLaiThemDuoc = record.sl - currentDaNhap; let newBatches = []; let totalNewSl = 0;
-              for (let i = 0; i < json.length; i++) { let row = json[i]; let tenLo = String(row[colTen]).trim(); let sl = parseFloat(row[colSL]); if (tenLo && !isNaN(sl) && sl > 0) { newBatches.push({ id: generateID(), tenLo: tenLo, sl: sl, isBaoGoi: false }); totalNewSl += sl; } }
-              if (currentLoContext.type !== 'DRAFT_XE_ITEM' && totalNewSl > slConLaiThemDuoc) { showDialog("Vượt Quá", `Tổng Excel (${fmtNum(totalNewSl)}) vượt SL cho phép (${fmtNum(slConLaiThemDuoc)}).`, "alert"); e.target.value = ''; return; }
-              record.danhSachLo.push(...newBatches); if (currentLoContext.type === 'DRAFT_XE_ITEM') record.sl = record.danhSachLo.reduce((sum, l) => sum + l.sl, 0);
-              if (currentLoContext.type === 'LENH') safeStorage.setItem('duLieuLenh', JSON.stringify(STATE.lenh)); else if (currentLoContext.type === 'THUCHIEN') safeStorage.setItem('duLieuThucHien', JSON.stringify(STATE.thucHien)); else if (currentLoContext.type === 'DRAFT_XE_ITEM' && window.currentDraftItemIndex === -1) { window.draftXeData.items.push(record); window.currentDraftItemIndex = window.draftXeData.items.length - 1; }
-              renderChiTietQuanLyLo(record); xuLyGoiYLoAuto(); showToast(`Nạp ${newBatches.length} Lô thành công!`);
-          } catch (err) { showDialog("Lỗi", "Không đọc được file.", "alert"); } e.target.value = ''; 
-      }; reader.readAsArrayBuffer(file);
-  };
 </script>
 </body>
 </html>
