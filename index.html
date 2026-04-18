@@ -13,6 +13,10 @@
     <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- Thư viện hỗ trợ Kéo Thả (Drag & Drop) trên Điện Thoại (Cực kỳ quan trọng) -->
+    <link rel="stylesheet" href="https://unpkg.com/mobile-drag-drop@2.3.0-rc.2/default.css">
+    <script src="https://unpkg.com/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -50,13 +54,17 @@
         .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid rgba(226, 232, 240, 0.8); }
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
+        
+        /* CSS cho kéo thả mượt mà */
+        .dnd-item { transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s; }
+        .dnd-dragging { opacity: 0.5; transform: scale(1.02); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); z-index: 50; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo, useRef, useCallback } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
 
         // --- ICONS ---
         const IconHome = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
@@ -76,7 +84,8 @@
         const IconExcel = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></svg>;
         const IconDownload = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
         const IconUpload = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
-        const IconCheck = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
+        const IconSort = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="13" y2="6"/><line x1="4" y1="12" x2="11" y2="12"/><line x1="4" y1="18" x2="11" y2="18"/><polyline points="15 15 18 18 21 15"/><line x1="18" y1="6" x2="18" y2="18"/></svg>;
+        const IconGripVertical = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>;
 
         const capitalizeWords = (str) => {
             if (!str) return '';
@@ -94,7 +103,7 @@
             });
             const [toast, setToast] = useState(null);
             
-            // Modal Thêm Khách
+            // Modal Thêm
             const [isAddModalOpen, setIsAddModalOpen] = useState(false);
             const [inputGroup, setInputGroup] = useState('');
             const [newGroupInput, setNewGroupInput] = useState('');
@@ -105,18 +114,34 @@
             // Edit Bottom Sheet
             const [editingGuest, setEditingGuest] = useState(null);
             
-            // Nâng cấp: Drill-down Navigation
+            // Điều hướng Thư mục & Tìm kiếm
             const [activeGroupFolder, setActiveGroupFolder] = useState(null); 
             const [searchTerm, setSearchTerm] = useState('');
+            
+            // SẮP XẾP VÀ KÉO THẢ
+            const [sortBy, setSortBy] = useState('manual'); // Mặc định để 'manual' cho phép kéo thả
+            const [draggedGuestId, setDraggedGuestId] = useState(null);
 
             // Mic
             const [isListening, setIsListening] = useState(false);
             const recognitionRef = useRef(null);
             const inputRef = useRef(null);
 
+            // Lưu LocalStorage
             useEffect(() => {
                 localStorage.setItem('wedding_app_final', JSON.stringify(guests));
             }, [guests]);
+
+            // Khởi tạo Mobile Drag Drop Polyfill
+            useEffect(() => {
+                if (window.MobileDragDrop) {
+                    window.MobileDragDrop.polyfill({
+                        holdToDrag: 300, // Ấn giữ 300ms để bắt đầu kéo (Đúng như bạn yêu cầu)
+                    });
+                    // Chống cuộn trang khi đang kéo thả
+                    window.addEventListener('touchmove', function() {}, {passive: false});
+                }
+            }, []);
 
             const showToast = (message, type = 'success') => {
                 setToast({ message, type, id: Date.now() });
@@ -151,14 +176,9 @@
             };
 
             // --- THÊM KHÁCH ---
-            // Mở Modal Thêm (Tự động điền nhóm nếu đang ở trong 1 nhóm)
             const openAddModal = () => {
-                if (activeGroupFolder) {
-                    setInputGroup(activeGroupFolder);
-                    setNewGroupInput('');
-                } else {
-                    setInputGroup('');
-                }
+                if (activeGroupFolder) { setInputGroup(activeGroupFolder); setNewGroupInput(''); } 
+                else { setInputGroup(''); }
                 setIsAddModalOpen(true);
             };
 
@@ -177,8 +197,8 @@
                     isInvited: false, rsvp: 'pending', createdAt: Date.now()
                 }));
                 
-                setGuests(prev => [...newG, ...prev]);
-                
+                // Thêm vào cuối danh sách để đúng "Thứ tự nhập"
+                setGuests(prev => [...prev, ...newG]);
                 setInputNames(''); 
                 if (isListening && recognitionRef.current) recognitionRef.current.stop();
                 showToast(`Đã thêm ${names.length} khách!`);
@@ -191,49 +211,85 @@
             const updateGuest = (id, field, value) => {
                 const finalValue = field === 'name' ? capitalizeWords(value) : value;
                 setGuests(prev => prev.map(g => g.id === id ? { ...g, [field]: finalValue } : g));
-                
-                // Nếu đang mở menu edit của khách này, cập nhật luôn state ảo
-                if (editingGuest && editingGuest.id === id) {
-                    setEditingGuest(prev => ({...prev, [field]: finalValue}));
-                }
+                if (editingGuest && editingGuest.id === id) { setEditingGuest(prev => ({...prev, [field]: finalValue})); }
             };
 
             const deleteGuest = (id) => {
                 if (window.confirm("Xóa khách này khỏi danh sách?")) {
                     setGuests(prev => prev.filter(g => g.id !== id));
-                    setEditingGuest(null); // Đóng menu nếu đang mở
+                    setEditingGuest(null); 
                 }
             };
 
-            // --- XỬ LÝ TAP (DOUBLE TAP / SINGLE TAP) ---
+            // --- XỬ LÝ TAP (DOUBLE TAP / SINGLE TAP) KIỂM SOÁT THỜI GIAN ---
             const tapTimerRef = useRef(null);
-
             const handleGuestTap = (guest) => {
-                if (tapTimerRef.current) {
-                    // DOUBLE TAP (Hủy timer của single tap và thực thi double tap)
-                    clearTimeout(tapTimerRef.current);
-                    tapTimerRef.current = null;
+                if (draggedGuestId) return; // Nếu đang kéo thì chặn click
+                
+                const now = Date.now();
+                const DOUBLE_TAP_DELAY = 300; 
+                
+                if (now - (window.lastTapTime || 0) < DOUBLE_TAP_DELAY) {
+                    // Double Tap
+                    clearTimeout(tapTimerRef.current); tapTimerRef.current = null; window.lastTapTime = 0;
                     
-                    // Logic Đánh dấu gửi thiệp
-                    const confirmMsg = guest.isInvited 
-                        ? `Đã mời "${guest.name}" rồi. Bạn muốn HỦY đánh dấu?` 
-                        : `Xác nhận đã gửi thiệp cho "${guest.name}"?`;
-                        
+                    const confirmMsg = guest.isInvited ? `Đã mời "${guest.name}" rồi. HỦY đánh dấu?` : `Xác nhận đã gửi thiệp cho "${guest.name}"?`;
                     if (window.confirm(confirmMsg)) {
                         updateGuest(guest.id, 'isInvited', !guest.isInvited);
                         showToast(guest.isInvited ? "Đã hủy đánh dấu" : "Đã đánh dấu Mời!");
                     }
                 } else {
-                    // SINGLE TAP (Chờ 250ms xem có tap lần 2 không)
-                    tapTimerRef.current = setTimeout(() => {
-                        tapTimerRef.current = null;
-                        // Hết thời gian chờ -> Thực thi single tap (Mở Bottom Sheet Edit)
-                        setEditingGuest(guest);
-                    }, 250);
+                    // Single Tap
+                    window.lastTapTime = now;
+                    tapTimerRef.current = setTimeout(() => { 
+                        tapTimerRef.current = null; 
+                        setEditingGuest(guest); // Mở menu
+                    }, DOUBLE_TAP_DELAY); // Chờ 300ms xem có tap lần 2 hay không
                 }
             };
 
-            // --- XUẤT/NHẬP DỮ LIỆU ---
+            // --- XỬ LÝ KÉO THẢ (DRAG & DROP) ---
+            const onDragStart = (e, id) => {
+                if (sortBy !== 'manual') return; // Chỉ cho kéo khi ở mode Tùy chỉnh
+                setDraggedGuestId(id);
+                e.dataTransfer.effectAllowed = "move";
+                // Delay xíu để tạo hiệu ứng bóng mờ lúc kéo
+                setTimeout(() => {
+                    const el = document.getElementById(`guest-${id}`);
+                    if(el) el.classList.add('dnd-dragging');
+                }, 0);
+            };
+
+            const onDragOver = (e) => {
+                if (sortBy !== 'manual') return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+            };
+
+            const onDrop = (e, targetId) => {
+                if (sortBy !== 'manual') return;
+                e.preventDefault();
+                if (!draggedGuestId || draggedGuestId === targetId) return;
+
+                setGuests(prev => {
+                    const arr = [...prev];
+                    const dragIdx = arr.findIndex(g => g.id === draggedGuestId);
+                    const dropIdx = arr.findIndex(g => g.id === targetId);
+
+                    // Đổi chỗ 2 phần tử trong mảng gốc
+                    const [draggedItem] = arr.splice(dragIdx, 1);
+                    arr.splice(dropIdx, 0, draggedItem);
+                    return arr;
+                });
+            };
+
+            const onDragEnd = (id) => {
+                setDraggedGuestId(null);
+                const el = document.getElementById(`guest-${id}`);
+                if(el) el.classList.remove('dnd-dragging');
+            };
+
+            // --- XUẤT/NHẬP ---
             const exportCSV = () => {
                 if(!guests.length) return showToast("Chưa có dữ liệu", "error");
                 const headers = ['Tên khách', 'Khu vực', 'Bữa chính', 'Bữa phụ', 'Trạng thái mời', 'Xác nhận đi'];
@@ -262,14 +318,22 @@
                         const importedData = JSON.parse(event.target.result);
                         if (Array.isArray(importedData)) {
                             if (window.confirm(`Tìm thấy ${importedData.length} khách. Ghi đè lên dữ liệu hiện tại?`)) {
-                                setGuests(importedData);
-                                showToast("Phục hồi thành công!");
+                                setGuests(importedData); showToast("Phục hồi thành công!");
                             }
                         } else showToast("Sai định dạng", "error");
                     } catch (err) { showToast("Lỗi file", "error"); }
                 };
-                reader.readAsText(file);
-                e.target.value = ''; 
+                reader.readAsText(file); e.target.value = ''; 
+            };
+
+            // --- HÀM SẮP XẾP CHUNG ---
+            const sortGuestsList = (list) => {
+                let sorted = [...list];
+                if (sortBy === 'name_asc') sorted.sort((a,b) => a.name.localeCompare(b.name, 'vi'));
+                if (sortBy === 'time_desc') sorted.sort((a,b) => b.createdAt - a.createdAt);
+                if (sortBy === 'time_asc') sorted.sort((a,b) => a.createdAt - b.createdAt);
+                // Nếu sortBy === 'manual', giữ nguyên thứ tự của mảng
+                return sorted;
             };
 
             // --- GIAO DIỆN CÁC TAB ---
@@ -284,7 +348,6 @@
                 return (
                     <div className="p-4 pt-safe content-pb animate-fade-in max-w-2xl mx-auto space-y-4">
                         <h1 className="text-2xl font-black text-slate-800 tracking-tight px-2">Tổng quan</h1>
-                        
                         <div className="bg-gradient-to-br from-brand-500 to-pink-600 rounded-[2rem] p-6 text-white shadow-float">
                             <p className="text-brand-100 font-bold text-sm mb-1 uppercase tracking-wider">Tiến độ gửi thiệp</p>
                             <div className="flex items-end gap-2 mb-4">
@@ -295,7 +358,6 @@
                                 <div className="bg-white h-full transition-all duration-1000 ease-out" style={{ width: `${stats.total ? (stats.invited/stats.total)*100 : 0}%`}}></div>
                             </div>
                         </div>
-
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-white p-5 rounded-[2rem] shadow-soft border border-slate-100 flex flex-col justify-between">
                                 <p className="text-slate-500 text-sm font-bold mb-1">Chắc chắn đi</p>
@@ -310,13 +372,58 @@
                 );
             };
 
-            const renderList = () => {
-                // 1. SMART SEARCH: Nếu đang tìm kiếm, hiển thị thẳng danh sách khách (bỏ qua Thư mục)
-                if (searchTerm.trim() !== '') {
-                    const searchedGuests = guests
-                        .filter(g => g.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                        .sort((a,b) => b.createdAt - a.createdAt);
+            // HÀM RENDER ITEM KHÁCH (CÓ KÉO THẢ)
+            const renderGuestItem = (g, index) => {
+                const isManualMode = sortBy === 'manual' && searchTerm === '';
 
+                return (
+                    <div 
+                        key={g.id} 
+                        id={`guest-${g.id}`}
+                        draggable={isManualMode}
+                        onDragStart={(e) => isManualMode && onDragStart(e, g.id)}
+                        onDragOver={(e) => isManualMode && onDragOver(e)}
+                        onDrop={(e) => isManualMode && onDrop(e, g.id)}
+                        onDragEnd={() => isManualMode && onDragEnd(g.id)}
+                        className={`bg-white rounded-[1.25rem] shadow-sm border border-slate-100 px-4 py-3.5 flex justify-between items-center cursor-pointer active:bg-slate-50 select-none dnd-item ${isManualMode ? 'hover:border-brand-200' : ''}`}
+                        onClick={() => handleGuestTap(g)}
+                    >
+                        <div className="flex items-center flex-1 pr-2">
+                            {/* SỐ THỨ TỰ */}
+                            <span className="text-slate-300 font-black text-sm w-7 shrink-0 text-left">{index + 1}.</span>
+                            
+                            <div className="flex flex-col justify-center">
+                                <div className="flex items-center gap-2">
+                                    <span className={`font-black text-[17px] ${g.isInvited ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-800'}`}>
+                                        {g.name}
+                                    </span>
+                                    {g.isInvited && (
+                                        <span className="flex items-center bg-emerald-100 text-emerald-700 text-[10px] uppercase font-black px-2 py-0.5 rounded-md">Đã mời</span>
+                                    )}
+                                </div>
+                                {searchTerm && <span className="text-xs font-bold text-slate-400 mt-0.5">{g.group}</span>}
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            {g.rsvp === 'yes' && <span className="bg-emerald-50 text-emerald-600 font-black text-[11px] px-2 py-1 rounded-lg">✅ Đi</span>}
+                            {g.rsvp === 'no' && <span className="bg-red-50 text-red-600 font-black text-[11px] px-2 py-1 rounded-lg">❌ Nghỉ</span>}
+                            
+                            {/* BIỂU TƯỢNG TAY CẦM KÉO THẢ (Chỉ hiện khi ở mode Tùy chỉnh) */}
+                            {isManualMode ? (
+                                <span className="text-slate-300 ml-1 cursor-grab active:cursor-grabbing hover:text-brand-400"><IconGripVertical/></span>
+                            ) : (
+                                <span className="text-slate-200 ml-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></span>
+                            )}
+                        </div>
+                    </div>
+                )
+            };
+
+            const renderList = () => {
+                // 1. MÀN HÌNH TÌM KIẾM
+                if (searchTerm.trim() !== '') {
+                    const searchedGuests = sortGuestsList(guests.filter(g => g.name.toLowerCase().includes(searchTerm.toLowerCase())));
                     return (
                         <div className="p-4 pt-safe content-pb animate-fade-in max-w-2xl mx-auto">
                             <div className="mb-4 sticky top-0 bg-[#f8fafc] z-20 pt-2 pb-3">
@@ -334,23 +441,23 @@
                             <div className="space-y-2">
                                 {searchedGuests.length === 0 ? (
                                     <div className="text-center py-10 text-slate-400 font-medium">Không tìm thấy "{searchTerm}"</div>
-                                ) : searchedGuests.map(g => renderGuestItem(g))}
+                                ) : searchedGuests.map((g, idx) => renderGuestItem(g, idx))}
                             </div>
                         </div>
                     );
                 }
 
-                // 2. MÀN HÌNH BÊN TRONG THƯ MỤC (Drill-down View)
+                // 2. MÀN HÌNH BÊN TRONG THƯ MỤC
                 if (activeGroupFolder) {
-                    const groupGuests = guests
-                        .filter(g => g.group === activeGroupFolder)
-                        .sort((a,b) => b.createdAt - a.createdAt);
+                    const groupGuestsUnsorted = guests.filter(g => g.group === activeGroupFolder);
+                    const groupGuests = sortGuestsList(groupGuestsUnsorted);
                     
                     const groupStats = groupGuests.reduce((acc, g) => {
                         if (g.isInvited) acc.invited++;
-                        if (g.rsvp === 'yes') acc.yes++;
+                        if (g.rsvp === 'yes') { acc.yes++; acc.mainYes += g.mainMeals; }
+                        acc.mainTotal += g.mainMeals;
                         return acc;
-                    }, { invited: 0, yes: 0 });
+                    }, { invited: 0, yes: 0, mainTotal: 0, mainYes: 0 });
 
                     return (
                         <div className="p-4 pt-safe content-pb animate-slide-in-right max-w-2xl mx-auto">
@@ -358,10 +465,35 @@
                                 <button onClick={() => setActiveGroupFolder(null)} className="flex items-center gap-2 text-slate-500 font-bold mb-4 active:text-brand-600 transition-colors px-1">
                                     <IconArrowLeft /> Trở lại
                                 </button>
-                                <div className="flex justify-between items-end px-2">
+                                
+                                <div className="flex justify-between items-start px-2">
                                     <div>
-                                        <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-tight">{activeGroupFolder}</h1>
-                                        <p className="text-slate-500 text-sm font-medium mt-1">{groupGuests.length} khách • Đã mời {groupStats.invited}</p>
+                                        <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-tight mb-1">{activeGroupFolder}</h1>
+                                        <p className="text-slate-500 text-sm font-bold">{groupGuests.length} khách • Đã mời {groupStats.invited}</p>
+                                    </div>
+                                    
+                                    <div className="relative">
+                                        <select 
+                                            className="appearance-none bg-white border border-slate-200 text-brand-600 font-bold text-sm rounded-xl pl-9 pr-4 py-2 shadow-sm outline-none focus:border-brand-300"
+                                            value={sortBy} onChange={e => setSortBy(e.target.value)}
+                                        >
+                                            <option value="manual">Tùy chỉnh (Kéo thả)</option>
+                                            <option value="time_desc">Mới nhất</option>
+                                            <option value="time_asc">Cũ nhất</option>
+                                            <option value="name_asc">Tên A-Z</option>
+                                        </select>
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-brand-500"><IconSort/></div>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 mt-4 px-2">
+                                    <div className="bg-amber-50 rounded-xl p-3 flex-1 border border-amber-100 flex justify-between items-center">
+                                        <span className="text-amber-700 font-bold text-xs uppercase">Dự kiến cỗ</span>
+                                        <span className="font-black text-amber-800 text-lg">{groupStats.mainTotal}</span>
+                                    </div>
+                                    <div className="bg-emerald-50 rounded-xl p-3 flex-1 border border-emerald-100 flex justify-between items-center">
+                                        <span className="text-emerald-700 font-bold text-xs uppercase">Chắc chắn đi</span>
+                                        <span className="font-black text-emerald-800 text-lg">{groupStats.yes}</span>
                                     </div>
                                 </div>
                             </div>
@@ -369,14 +501,20 @@
                             <div className="space-y-2 mt-2">
                                 {groupGuests.length === 0 ? (
                                     <div className="text-center py-10 text-slate-400 font-medium">Chưa có ai trong nhóm này</div>
-                                ) : groupGuests.map(g => renderGuestItem(g))}
+                                ) : groupGuests.map((g, idx) => renderGuestItem(g, idx))}
                             </div>
-                            <p className="text-center text-xs font-medium text-slate-400 mt-8 mb-4">Mẹo: Chạm 2 lần vào tên để đánh dấu Đã Mời</p>
+                            
+                            {/* Hướng dẫn tùy theo mode */}
+                            {sortBy === 'manual' ? (
+                                <p className="text-center text-xs font-medium text-brand-500 mt-8 mb-4 animate-pulse">💡 Mẹo: Ấn giữ 0.3s vào tên bất kỳ để kéo thả sắp xếp</p>
+                            ) : (
+                                <p className="text-center text-xs font-medium text-slate-400 mt-8 mb-4">Mẹo: Chạm 2 lần vào tên để đánh dấu Đã Mời</p>
+                            )}
                         </div>
                     );
                 }
 
-                // 3. MÀN HÌNH THƯ MỤC CHÍNH (Folder View)
+                // 3. MÀN HÌNH THƯ MỤC CHÍNH
                 return (
                     <div className="p-4 pt-safe content-pb animate-fade-in max-w-2xl mx-auto">
                         <div className="mb-6 sticky top-0 bg-[#f8fafc] z-20 pt-2 pb-3">
@@ -419,9 +557,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="text-slate-300 ml-2">
-                                            <IconChevronRight />
-                                        </div>
+                                        <div className="text-slate-300 ml-2"><IconChevronRight /></div>
                                     </div>
                                 );
                             })}
@@ -429,36 +565,6 @@
                     </div>
                 );
             };
-
-            // Hàm con để render 1 dòng Khách mời (Dùng chung cho cả 2 màn hình trên)
-            const renderGuestItem = (g) => (
-                <div 
-                    key={g.id} 
-                    className="bg-white rounded-[1.25rem] shadow-sm border border-slate-100 px-4 py-3.5 flex justify-between items-center cursor-pointer active:bg-slate-50 select-none transition-colors"
-                    onClick={() => handleGuestTap(g)}
-                >
-                    <div className="flex flex-col justify-center">
-                        <div className="flex items-center gap-2">
-                            <span className={`font-black text-[17px] ${g.isInvited ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-800'}`}>
-                                {g.name}
-                            </span>
-                            {g.isInvited && (
-                                <span className="flex items-center bg-emerald-100 text-emerald-700 text-[10px] uppercase font-black px-2 py-0.5 rounded-md">
-                                    Đã mời
-                                </span>
-                            )}
-                        </div>
-                        {/* Nếu đang ở màn tìm kiếm, hiện thêm tên Nhóm nhỏ ở dưới */}
-                        {searchTerm && <span className="text-xs font-bold text-slate-400 mt-0.5">{g.group}</span>}
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                        {g.rsvp === 'yes' && <span className="bg-emerald-50 text-emerald-600 font-black text-xs px-2 py-1 rounded-lg">✅ Đi</span>}
-                        {g.rsvp === 'no' && <span className="bg-red-50 text-red-600 font-black text-xs px-2 py-1 rounded-lg">❌ Nghỉ</span>}
-                        <span className="text-slate-300 ml-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></span>
-                    </div>
-                </div>
-            );
 
             const renderSettings = () => (
                 <div className="p-4 pt-safe content-pb animate-fade-in max-w-2xl mx-auto space-y-4">
@@ -522,7 +628,6 @@
                             </div>
 
                             <div className="space-y-3">
-                                {/* Chọn Nhóm */}
                                 <div className="flex gap-2">
                                     <select className="bg-slate-50 border border-slate-200 rounded-2xl p-3 outline-none w-1/2 font-black text-slate-700" value={inputGroup} onChange={e => setInputGroup(e.target.value)}>
                                         <option value="">- Chọn Nhóm -</option>
@@ -535,7 +640,6 @@
                                     />
                                 </div>
 
-                                {/* Nhập Tên */}
                                 <div className="flex flex-nowrap gap-2 items-stretch">
                                     <div className="relative flex-1">
                                         <input 
@@ -555,7 +659,7 @@
                                     </button>
                                 </div>
 
-                                <details className="group border border-slate-200 rounded-2xl p-4 cursor-pointer outline-none bg-white">
+                                <details className="group border border-slate-200 rounded-2xl p-4 cursor-pointer outline-none bg-white mt-2">
                                     <summary className="font-bold text-brand-600 text-sm flex justify-between items-center outline-none">
                                         ⚙️ Tùy chỉnh số lượng cỗ mặc định
                                         <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
@@ -575,7 +679,7 @@
                         </div>
                     </div>
 
-                    {/* NÂNG CẤP: BOTTOM SHEET CÀI ĐẶT KHÁCH (Khi chạm 1 lần) */}
+                    {/* BOTTOM SHEET CÀI ĐẶT KHÁCH (Khi chạm 1 lần) */}
                     <div className={`fixed inset-0 z-[60] flex items-end justify-center transition-opacity duration-300 ${editingGuest ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
                         <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setEditingGuest(null)}></div>
                         <div className={`relative bg-white w-full max-w-2xl rounded-t-[2.5rem] shadow-up p-5 pb-safe transition-transform duration-300 ${editingGuest ? 'translate-y-0' : 'translate-y-full'}`}>
