@@ -72,6 +72,14 @@
         const IconUpload = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
         const IconRefresh = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
 
+        // Hàm tiện ích: Viết hoa chữ cái đầu tiên của mỗi từ
+        // VD: "nguyễn văn a" -> "Nguyễn Văn A"
+        const capitalizeWords = (str) => {
+            if (!str) return '';
+            // Tách theo khoảng trắng, viết hoa chữ cái đầu, giữ nguyên phần còn lại (hỗ trợ Tiếng Việt)
+            return str.replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
+        };
+
         function App() {
             // --- STATES CHÍNH ---
             const [activeTab, setActiveTab] = useState('list');
@@ -87,7 +95,7 @@
             const [isAddModalOpen, setIsAddModalOpen] = useState(false);
             const [inputGroup, setInputGroup] = useState('');
             const [newGroupInput, setNewGroupInput] = useState('');
-            const [inputNames, setInputNames] = useState(''); // Bây giờ là input 1 dòng
+            const [inputNames, setInputNames] = useState(''); 
             const [defaultMainMeals, setDefaultMainMeals] = useState(1);
             const [defaultSubMeals, setDefaultSubMeals] = useState(0);
             
@@ -101,7 +109,6 @@
             const [filterGroup, setFilterGroup] = useState('all');
             const [sortBy, setSortBy] = useState('time_desc');
 
-            // Lưu LocalStorage mỗi khi đổi
             useEffect(() => {
                 localStorage.setItem('wedding_app_final', JSON.stringify(guests));
             }, [guests]);
@@ -123,7 +130,9 @@
                     recognition.onresult = (event) => {
                         const transcript = Array.from(event.results).map(r => r[0].transcript).join(', ');
                         const clean = transcript.split(',').map(s => s.trim()).filter(s => s).join(', ');
-                        setInputNames(prev => prev.trim() ? prev + ', ' + clean : clean);
+                        // Áp dụng format viết hoa khi nhận diện giọng nói
+                        const capitalizedClean = capitalizeWords(clean);
+                        setInputNames(prev => prev.trim() ? prev + ', ' + capitalizedClean : capitalizedClean);
                     };
                     recognition.onerror = () => { setIsListening(false); showToast('Lỗi micro!', 'error'); };
                     recognition.onend = () => setIsListening(false);
@@ -137,14 +146,17 @@
                 else { recognitionRef.current.start(); setIsListening(true); showToast('Đang nghe... 🎤'); }
             };
 
-            // --- THÊM & CẬP NHẬT (HỖ TRỢ NHẬP NHANH LIÊN TỤC) ---
+            // --- THÊM & CẬP NHẬT ---
             const handleAddGuests = () => {
-                const group = newGroupInput.trim() || inputGroup;
-                if (!group) return showToast("Vui lòng chọn hoặc nhập Nhóm!", "error");
+                // Ép viết hoa từ đầu cho Nhóm mới tạo
+                const rawGroup = newGroupInput.trim() || inputGroup;
+                if (!rawGroup) return showToast("Vui lòng chọn hoặc nhập Nhóm!", "error");
+                const group = capitalizeWords(rawGroup);
                 
-                // Cho phép nhập 1 tên hoặc cách nhau bằng dấu phẩy
-                const names = inputNames.split(/[\n,]+/).map(n => n.trim()).filter(n => n);
-                if (!names.length) return showToast("Chưa nhập tên khách nào!", "error");
+                // Tách tên và ép viết hoa từng tên
+                const rawNames = inputNames.split(/[\n,]+/).map(n => n.trim()).filter(n => n);
+                if (!rawNames.length) return showToast("Chưa nhập tên khách nào!", "error");
+                const names = rawNames.map(n => capitalizeWords(n));
 
                 const newG = names.map(name => ({
                     id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + Math.random(),
@@ -158,12 +170,10 @@
                 }));
                 setGuests(prev => [...newG, ...prev]);
                 
-                // Chỉ xóa ô tên, giữ nguyên Nhóm và KHÔNG đóng Modal để tiếp tục nhập
                 setInputNames(''); 
                 if (isListening && recognitionRef.current) recognitionRef.current.stop();
                 showToast(`Đã thêm ${names.length} khách!`);
                 
-                // Tự động focus lại vào ô nhập để gõ tiếp
                 if(inputRef.current) inputRef.current.focus();
             };
 
@@ -174,8 +184,20 @@
                 }
             };
 
+            // Hàm format trực tiếp khi người dùng gõ phím
+            const handleNameInputChange = (e) => {
+                // Tùy chọn 1: Format ngay khi gõ (có thể hơi giật nếu gõ nhanh)
+                // setInputNames(capitalizeWords(e.target.value));
+                
+                // Tùy chọn 2: Lưu thô, để CSS "capitalize" lo việc hiển thị và Javascript hàm handleAddGuests lo lúc lưu.
+                // Chúng ta dùng Tùy chọn 2 để gõ mượt mà nhất.
+                setInputNames(e.target.value);
+            };
+
             const updateGuest = (id, field, value) => {
-                setGuests(prev => prev.map(g => g.id === id ? { ...g, [field]: value } : g));
+                // Nếu đang cập nhật 'name', format lại viết hoa
+                const finalValue = field === 'name' ? capitalizeWords(value) : value;
+                setGuests(prev => prev.map(g => g.id === id ? { ...g, [field]: finalValue } : g));
             };
 
             const deleteGuest = (id) => {
@@ -218,15 +240,12 @@
                     } catch (err) { showToast("Lỗi đọc file", "error"); }
                 };
                 reader.readAsText(file);
-                e.target.value = ''; // reset
+                e.target.value = ''; 
             };
 
-            // Hàm Cập nhật App (Tải lại trang cứng)
             const handleUpdateApp = () => {
                 showToast("Đang làm mới ứng dụng...");
-                setTimeout(() => {
-                    window.location.reload(true);
-                }, 800);
+                setTimeout(() => { window.location.reload(true); }, 800);
             };
 
             // --- THỐNG KÊ ---
@@ -297,7 +316,7 @@
                 filtered.sort((a, b) => {
                     if (sortBy === 'name_asc') return a.name.localeCompare(b.name, 'vi');
                     if (sortBy === 'time_asc') return a.createdAt - b.createdAt;
-                    return b.createdAt - a.createdAt; // time_desc
+                    return b.createdAt - a.createdAt; 
                 });
                 
                 const grouped = filtered.reduce((acc, guest) => {
@@ -359,8 +378,12 @@
                                             </button>
 
                                             <input 
-                                                type="text" value={g.name} onChange={(e) => updateGuest(g.id, 'name', e.target.value)}
-                                                className="font-black text-xl text-slate-800 bg-transparent outline-none w-[85%] border-b border-transparent focus:border-slate-200 mb-4"
+                                                type="text" 
+                                                value={g.name} 
+                                                onChange={(e) => updateGuest(g.id, 'name', e.target.value)}
+                                                // Thêm capitalize cho ô input chỉnh sửa
+                                                className="font-black text-xl text-slate-800 bg-transparent outline-none w-[85%] border-b border-transparent focus:border-slate-200 mb-4 capitalize"
+                                                autoCapitalize="words"
                                             />
 
                                             <div className="flex flex-col gap-3">
@@ -400,7 +423,6 @@
                     <h1 className="text-2xl font-black text-slate-800 tracking-tight mb-6 px-2">Cài đặt & Dữ liệu</h1>
                     
                     <div className="space-y-4">
-                        {/* NÚT CẬP NHẬT APP MỚI */}
                         <div className="bg-white p-5 rounded-[2rem] shadow-soft border border-slate-100 flex items-center justify-between cursor-pointer active:scale-95 transition-transform" onClick={handleUpdateApp}>
                             <div>
                                 <h3 className="font-black text-slate-800 text-lg">Cập nhật App</h3>
@@ -471,19 +493,28 @@
                                         <option value="">- Chọn Nhóm -</option>
                                         {uniqueGroups.map(g => <option key={g} value={g}>{g}</option>)}
                                     </select>
-                                    <input type="text" placeholder="Hoặc tạo mới..." className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 outline-none w-full font-black text-slate-700" value={newGroupInput} onChange={e => {setNewGroupInput(e.target.value); setInputGroup('');}} />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Hoặc tạo mới..." 
+                                        // Thêm capitalize
+                                        className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 outline-none w-full font-black text-slate-700 capitalize" 
+                                        autoCapitalize="words"
+                                        value={newGroupInput} 
+                                        onChange={e => {setNewGroupInput(e.target.value); setInputGroup('');}} 
+                                    />
                                 </div>
 
-                                {/* Ô NHẬP 1 HÀNG & NÚT THÊM BÊN PHẢI */}
                                 <div className="flex gap-2 relative">
                                     <div className="relative flex-1">
                                         <input 
                                             ref={inputRef}
                                             type="text" 
-                                            className={`w-full bg-slate-50 rounded-2xl p-4 pr-12 outline-none font-bold text-slate-800 text-lg border-2 transition-colors ${isListening ? 'border-brand-400 bg-brand-50' : 'border-transparent focus:border-slate-300'}`}
+                                            // Thêm thuộc tính HTML chuẩn và class Tailwind
+                                            autoCapitalize="words"
+                                            className={`w-full bg-slate-50 rounded-2xl p-4 pr-12 outline-none font-bold text-slate-800 text-lg border-2 transition-colors capitalize ${isListening ? 'border-brand-400 bg-brand-50' : 'border-transparent focus:border-slate-300'}`}
                                             placeholder="Tên khách (VD: Anh A)"
                                             value={inputNames} 
-                                            onChange={e => setInputNames(e.target.value)}
+                                            onChange={handleNameInputChange}
                                             onKeyDown={handleKeyDown}
                                         />
                                         <button 
