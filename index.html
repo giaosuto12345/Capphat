@@ -46,7 +46,6 @@
         
         .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid rgba(226, 232, 240, 0.8); }
         
-        /* Ẩn mũi tên của thẻ details mặc định */
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
     </style>
@@ -71,6 +70,7 @@
         const IconExcel = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></svg>;
         const IconDownload = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
         const IconUpload = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
+        const IconRefresh = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
 
         function App() {
             // --- STATES CHÍNH ---
@@ -87,19 +87,19 @@
             const [isAddModalOpen, setIsAddModalOpen] = useState(false);
             const [inputGroup, setInputGroup] = useState('');
             const [newGroupInput, setNewGroupInput] = useState('');
-            const [inputNames, setInputNames] = useState('');
-            // KHÔI PHỤC: Cài đặt bữa ăn mặc định
+            const [inputNames, setInputNames] = useState(''); // Bây giờ là input 1 dòng
             const [defaultMainMeals, setDefaultMainMeals] = useState(1);
             const [defaultSubMeals, setDefaultSubMeals] = useState(0);
             
             // --- STATES: GIỌNG NÓI ---
             const [isListening, setIsListening] = useState(false);
             const recognitionRef = useRef(null);
+            const inputRef = useRef(null);
 
             // --- STATES: TÌM KIẾM & SẮP XẾP ---
             const [searchTerm, setSearchTerm] = useState('');
             const [filterGroup, setFilterGroup] = useState('all');
-            const [sortBy, setSortBy] = useState('time_desc'); // Đã khôi phục sắp xếp
+            const [sortBy, setSortBy] = useState('time_desc');
 
             // Lưu LocalStorage mỗi khi đổi
             useEffect(() => {
@@ -121,9 +121,9 @@
                     recognition.continuous = true;
                     recognition.lang = 'vi-VN';
                     recognition.onresult = (event) => {
-                        const transcript = Array.from(event.results).map(r => r[0].transcript).join('\n');
-                        const clean = transcript.split('\n').map(s => s.trim()).filter(s => s).join('\n');
-                        setInputNames(prev => prev.trim() ? prev + '\n' + clean : clean);
+                        const transcript = Array.from(event.results).map(r => r[0].transcript).join(', ');
+                        const clean = transcript.split(',').map(s => s.trim()).filter(s => s).join(', ');
+                        setInputNames(prev => prev.trim() ? prev + ', ' + clean : clean);
                     };
                     recognition.onerror = () => { setIsListening(false); showToast('Lỗi micro!', 'error'); };
                     recognition.onend = () => setIsListening(false);
@@ -137,30 +137,41 @@
                 else { recognitionRef.current.start(); setIsListening(true); showToast('Đang nghe... 🎤'); }
             };
 
-            // --- THÊM & CẬP NHẬT ---
+            // --- THÊM & CẬP NHẬT (HỖ TRỢ NHẬP NHANH LIÊN TỤC) ---
             const handleAddGuests = () => {
                 const group = newGroupInput.trim() || inputGroup;
                 if (!group) return showToast("Vui lòng chọn hoặc nhập Nhóm!", "error");
-                const names = inputNames.split('\n').map(n => n.trim()).filter(n => n);
+                
+                // Cho phép nhập 1 tên hoặc cách nhau bằng dấu phẩy
+                const names = inputNames.split(/[\n,]+/).map(n => n.trim()).filter(n => n);
                 if (!names.length) return showToast("Chưa nhập tên khách nào!", "error");
 
                 const newG = names.map(name => ({
                     id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + Math.random(),
                     name, 
                     group, 
-                    mainMeals: Number(defaultMainMeals), // Sử dụng tùy chọn
-                    subMeals: Number(defaultSubMeals), // Sử dụng tùy chọn
+                    mainMeals: Number(defaultMainMeals),
+                    subMeals: Number(defaultSubMeals),
                     isInvited: false, 
                     rsvp: 'pending', 
                     createdAt: Date.now()
                 }));
                 setGuests(prev => [...newG, ...prev]);
                 
-                // Reset form
-                setInputNames(''); setNewGroupInput(''); setIsAddModalOpen(false);
+                // Chỉ xóa ô tên, giữ nguyên Nhóm và KHÔNG đóng Modal để tiếp tục nhập
+                setInputNames(''); 
                 if (isListening && recognitionRef.current) recognitionRef.current.stop();
                 showToast(`Đã thêm ${names.length} khách!`);
-                setActiveTab('list');
+                
+                // Tự động focus lại vào ô nhập để gõ tiếp
+                if(inputRef.current) inputRef.current.focus();
+            };
+
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddGuests();
+                }
             };
 
             const updateGuest = (id, field, value) => {
@@ -171,7 +182,7 @@
                 if (window.confirm("Xóa khách mời này khỏi danh sách?")) setGuests(prev => prev.filter(g => g.id !== id));
             };
 
-            // --- KHÔI PHỤC: XUẤT / NHẬP DỮ LIỆU ---
+            // --- XUẤT / NHẬP DỮ LIỆU ---
             const exportCSV = () => {
                 if(!guests.length) return showToast("Chưa có dữ liệu", "error");
                 const headers = ['Tên khách', 'Khu vực', 'Bữa chính', 'Bữa phụ', 'Trạng thái mời', 'Xác nhận đi'];
@@ -208,6 +219,14 @@
                 };
                 reader.readAsText(file);
                 e.target.value = ''; // reset
+            };
+
+            // Hàm Cập nhật App (Tải lại trang cứng)
+            const handleUpdateApp = () => {
+                showToast("Đang làm mới ứng dụng...");
+                setTimeout(() => {
+                    window.location.reload(true);
+                }, 800);
             };
 
             // --- THỐNG KÊ ---
@@ -269,7 +288,6 @@
             );
 
             const renderList = () => {
-                // LỌC VÀ SẮP XẾP TRƯỚC KHI GOM NHÓM
                 let filtered = guests.filter(g => {
                     const matchName = g.name.toLowerCase().includes(searchTerm.toLowerCase());
                     const matchGroup = filterGroup === 'all' || g.group === filterGroup;
@@ -282,7 +300,6 @@
                     return b.createdAt - a.createdAt; // time_desc
                 });
                 
-                // GOM NHÓM
                 const grouped = filtered.reduce((acc, guest) => {
                     if (!acc[guest.group]) acc[guest.group] = [];
                     acc[guest.group].push(guest);
@@ -294,7 +311,6 @@
                         <div className="mb-4 sticky top-0 bg-[#f1f5f9] z-20 pt-2 pb-3">
                             <h1 className="text-2xl font-black text-slate-800 tracking-tight mb-4 px-2">Danh sách mời</h1>
                             
-                            {/* KHÔI PHỤC: Thanh công cụ Lọc & Sắp xếp */}
                             <div className="flex gap-2 mb-3 px-1">
                                 <select 
                                     className="bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none font-bold text-slate-700 shadow-sm flex-1"
@@ -331,16 +347,13 @@
                             ) : Object.entries(grouped).sort().map(([groupName, groupGuests]) => (
                                 <div key={groupName} className="space-y-3">
                                     
-                                    {/* STICKY HEADER NHÓM & SỐ LƯỢNG GÓC PHẢI */}
                                     <div className="sticky top-[140px] z-10 flex justify-between items-center bg-white/85 backdrop-blur-md px-4 py-3 rounded-2xl shadow-sm border border-slate-100">
                                         <span className="font-black text-slate-800 text-lg">{groupName}</span>
                                         <span className="font-black text-brand-600 bg-brand-50 px-3 py-1 rounded-xl">{groupGuests.length}</span>
                                     </div>
 
-                                    {/* DANH SÁCH */}
                                     {groupGuests.map(g => (
                                         <div key={g.id} className="bg-white p-4 rounded-3xl shadow-soft border border-slate-100 relative group">
-                                            {/* Xóa */}
                                             <button onClick={() => deleteGuest(g.id)} className="absolute top-4 right-4 text-slate-200 hover:text-red-500 transition-colors p-2 -m-2 z-10">
                                                 <IconTrash/>
                                             </button>
@@ -367,20 +380,10 @@
                                                     </div>
                                                 </div>
 
-                                                {/* PILL BUTTONS CHO RSVP */}
                                                 <div className="flex bg-slate-100 rounded-2xl p-1 gap-1 w-full relative">
-                                                    <button 
-                                                        onClick={() => updateGuest(g.id, 'rsvp', 'pending')} 
-                                                        className={`flex-1 py-2 rounded-xl text-sm font-black transition-all duration-200 ${g.rsvp === 'pending' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                                                    >⏳ Chờ</button>
-                                                    <button 
-                                                        onClick={() => updateGuest(g.id, 'rsvp', 'yes')} 
-                                                        className={`flex-1 py-2 rounded-xl text-sm font-black transition-all duration-200 ${g.rsvp === 'yes' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-emerald-500'}`}
-                                                    >✅ Đi</button>
-                                                    <button 
-                                                        onClick={() => updateGuest(g.id, 'rsvp', 'no')} 
-                                                        className={`flex-1 py-2 rounded-xl text-sm font-black transition-all duration-200 ${g.rsvp === 'no' ? 'bg-red-500 text-white shadow-md' : 'text-slate-400 hover:text-red-500'}`}
-                                                    >❌ Nghỉ</button>
+                                                    <button onClick={() => updateGuest(g.id, 'rsvp', 'pending')} className={`flex-1 py-2 rounded-xl text-sm font-black transition-all duration-200 ${g.rsvp === 'pending' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>⏳ Chờ</button>
+                                                    <button onClick={() => updateGuest(g.id, 'rsvp', 'yes')} className={`flex-1 py-2 rounded-xl text-sm font-black transition-all duration-200 ${g.rsvp === 'yes' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-emerald-500'}`}>✅ Đi</button>
+                                                    <button onClick={() => updateGuest(g.id, 'rsvp', 'no')} className={`flex-1 py-2 rounded-xl text-sm font-black transition-all duration-200 ${g.rsvp === 'no' ? 'bg-red-500 text-white shadow-md' : 'text-slate-400 hover:text-red-500'}`}>❌ Nghỉ</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -397,6 +400,15 @@
                     <h1 className="text-2xl font-black text-slate-800 tracking-tight mb-6 px-2">Cài đặt & Dữ liệu</h1>
                     
                     <div className="space-y-4">
+                        {/* NÚT CẬP NHẬT APP MỚI */}
+                        <div className="bg-white p-5 rounded-[2rem] shadow-soft border border-slate-100 flex items-center justify-between cursor-pointer active:scale-95 transition-transform" onClick={handleUpdateApp}>
+                            <div>
+                                <h3 className="font-black text-slate-800 text-lg">Cập nhật App</h3>
+                                <p className="text-sm text-slate-500 font-medium mt-1">Làm mới để nhận bản cập nhật mới nhất</p>
+                            </div>
+                            <div className="bg-orange-50 text-orange-600 p-4 rounded-2xl"><IconRefresh/></div>
+                        </div>
+
                         <div className="bg-white p-5 rounded-[2rem] shadow-soft border border-slate-100 flex items-center justify-between cursor-pointer active:scale-95 transition-transform" onClick={exportCSV}>
                             <div>
                                 <h3 className="font-black text-slate-800 text-lg">Xuất file Excel</h3>
@@ -405,7 +417,6 @@
                             <div className="bg-emerald-50 text-emerald-600 p-4 rounded-2xl"><IconExcel/></div>
                         </div>
 
-                        {/* KHÔI PHỤC: Backup / Restore */}
                         <div className="bg-white p-5 rounded-[2rem] shadow-soft border border-slate-100 flex items-center justify-between cursor-pointer active:scale-95 transition-transform" onClick={exportJSON}>
                             <div>
                                 <h3 className="font-black text-slate-800 text-lg">Sao lưu (Backup)</h3>
@@ -425,13 +436,12 @@
                             </div>
                         </label>
                         
-                        {/* KHÔI PHỤC: Danger Zone */}
                         <div className="mt-8 p-6 rounded-[2rem] border border-red-100 bg-red-50 text-center">
                             <h3 className="font-black text-red-800 mb-2">Vùng Nguy Hiểm</h3>
-                            <p className="text-sm text-red-600/80 mb-4 font-medium">Thao tác này sẽ xóa toàn bộ danh sách, hãy sao lưu trước khi thực hiện.</p>
+                            <p className="text-sm text-red-600/80 mb-4 font-medium">Thao tác này sẽ xóa toàn bộ danh sách, hãy sao lưu trước.</p>
                             <button onClick={() => {
                                 if(window.confirm("BẠN CÓ CHẮC CHẮN XÓA TOÀN BỘ? Không thể hoàn tác!")) {
-                                    setGuests([]); localStorage.removeItem('wedding_app_final'); showToast("Đã xóa trắng dữ liệu", "success");
+                                    setGuests([]); localStorage.removeItem('wedding_app_final'); showToast("Đã xóa trắng", "success");
                                 }
                             }} className="text-white bg-red-600 px-6 py-3 rounded-xl font-bold w-full active:scale-95 transition-transform">Xóa trắng dữ liệu</button>
                         </div>
@@ -441,12 +451,11 @@
 
             return (
                 <div className="relative min-h-screen bg-[#f1f5f9] font-sans">
-                    {/* View */}
                     {activeTab === 'home' && renderHome()}
                     {activeTab === 'list' && renderList()}
                     {activeTab === 'settings' && renderSettings()}
 
-                    {/* Modal Thêm */}
+                    {/* MODAL THÊM KHÁCH MỚI */}
                     <div className={`fixed inset-0 z-50 flex items-end justify-center transition-opacity duration-300 ${isAddModalOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
                         <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)}></div>
                         <div className={`relative bg-white w-full max-w-2xl rounded-t-[2.5rem] shadow-2xl p-6 pb-safe transition-transform duration-300 max-h-[90vh] overflow-y-auto ${isAddModalOpen ? 'translate-y-0' : 'translate-y-full'}`}>
@@ -458,32 +467,43 @@
 
                             <div className="space-y-5">
                                 <div className="grid grid-cols-2 gap-3">
-                                    <select className="bg-slate-50 border border-slate-200 rounded-2xl p-4 outline-none w-full font-black text-slate-700" value={inputGroup} onChange={e => setInputGroup(e.target.value)}>
-                                        <option value="">-- Chọn Đội/Nhóm --</option>
+                                    <select className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 outline-none w-full font-black text-slate-700" value={inputGroup} onChange={e => setInputGroup(e.target.value)}>
+                                        <option value="">- Chọn Nhóm -</option>
                                         {uniqueGroups.map(g => <option key={g} value={g}>{g}</option>)}
                                     </select>
-                                    <input type="text" placeholder="Tạo Nhóm mới..." className="bg-slate-50 border border-slate-200 rounded-2xl p-4 outline-none w-full font-black text-slate-700" value={newGroupInput} onChange={e => {setNewGroupInput(e.target.value); setInputGroup('');}} />
+                                    <input type="text" placeholder="Hoặc tạo mới..." className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 outline-none w-full font-black text-slate-700" value={newGroupInput} onChange={e => {setNewGroupInput(e.target.value); setInputGroup('');}} />
                                 </div>
 
-                                <div className="relative">
-                                    <textarea 
-                                        rows="6" 
-                                        className={`w-full bg-slate-50 rounded-2xl p-4 pr-16 outline-none resize-none font-bold text-slate-800 text-lg leading-relaxed border-2 transition-colors ${isListening ? 'border-brand-400 bg-brand-50' : 'border-transparent focus:border-slate-200'}`}
-                                        placeholder="Nhập tên khách..."
-                                        value={inputNames} onChange={e => setInputNames(e.target.value)}
-                                    ></textarea>
+                                {/* Ô NHẬP 1 HÀNG & NÚT THÊM BÊN PHẢI */}
+                                <div className="flex gap-2 relative">
+                                    <div className="relative flex-1">
+                                        <input 
+                                            ref={inputRef}
+                                            type="text" 
+                                            className={`w-full bg-slate-50 rounded-2xl p-4 pr-12 outline-none font-bold text-slate-800 text-lg border-2 transition-colors ${isListening ? 'border-brand-400 bg-brand-50' : 'border-transparent focus:border-slate-300'}`}
+                                            placeholder="Tên khách (VD: Anh A)"
+                                            value={inputNames} 
+                                            onChange={e => setInputNames(e.target.value)}
+                                            onKeyDown={handleKeyDown}
+                                        />
+                                        <button 
+                                            type="button" onClick={toggleVoice} 
+                                            className={`absolute right-2 top-2 p-2.5 rounded-full transition-all flex items-center justify-center ${isListening ? 'bg-brand-500 text-white animate-pulse' : 'text-slate-400 hover:text-brand-500'}`}
+                                        >
+                                            {isListening ? <IconMic /> : <IconMicOff />}
+                                        </button>
+                                    </div>
                                     <button 
-                                        type="button" onClick={toggleVoice} 
-                                        className={`absolute right-3 top-3 p-3.5 rounded-full shadow-sm transition-all flex items-center justify-center ${isListening ? 'bg-brand-500 text-white animate-pulse' : 'bg-white text-slate-400 hover:text-brand-500'}`}
+                                        onClick={handleAddGuests} 
+                                        className="bg-slate-800 text-white font-black px-5 rounded-2xl shadow-md hover:bg-slate-900 transition-colors flex items-center justify-center shrink-0"
                                     >
-                                        {isListening ? <IconMic /> : <IconMicOff />}
+                                        Thêm
                                     </button>
                                 </div>
 
-                                {/* KHÔI PHỤC: Chọn bữa ăn thích thì nhập */}
                                 <details className="group border border-slate-200 rounded-2xl p-4 cursor-pointer outline-none bg-white">
                                     <summary className="font-bold text-brand-600 text-sm flex justify-between items-center outline-none">
-                                        ⚙️ Tùy chỉnh số lượng cỗ/trà mặc định
+                                        ⚙️ Tùy chỉnh số lượng cỗ mặc định
                                         <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
                                     </summary>
                                     <div className="flex gap-4 mt-4 pt-4 border-t border-slate-100 cursor-default">
@@ -492,15 +512,12 @@
                                             <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-center font-black" value={defaultMainMeals} onChange={e => setDefaultMainMeals(e.target.value)} />
                                         </div>
                                         <div className="flex-1">
-                                            <label className="text-xs text-slate-500 font-bold block mb-1">Tiệc trà/phụ</label>
+                                            <label className="text-xs text-slate-500 font-bold block mb-1">Tiệc trà</label>
                                             <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-center font-black" value={defaultSubMeals} onChange={e => setDefaultSubMeals(e.target.value)} />
                                         </div>
                                     </div>
                                 </details>
 
-                                <button onClick={handleAddGuests} className="w-full bg-slate-800 text-white font-black py-4.5 rounded-2xl shadow-xl hover:bg-slate-900 transition-colors mt-2 text-lg h-14">
-                                    Lưu ngay
-                                </button>
                                 <div className="h-4"></div>
                             </div>
                         </div>
