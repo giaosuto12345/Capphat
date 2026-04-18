@@ -13,7 +13,7 @@
     <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Thư viện hỗ trợ Kéo Thả (Drag & Drop) trên Điện Thoại (Cực kỳ quan trọng) -->
+    <!-- Thư viện Kéo Thả (Drag & Drop) trên Mobile -->
     <link rel="stylesheet" href="https://unpkg.com/mobile-drag-drop@2.3.0-rc.2/default.css">
     <script src="https://unpkg.com/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
     
@@ -55,9 +55,9 @@
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
         
-        /* CSS cho kéo thả mượt mà */
+        /* Hiệu ứng kéo thả */
         .dnd-item { transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s; }
-        .dnd-dragging { opacity: 0.5; transform: scale(1.02); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); z-index: 50; }
+        .dnd-dragging { opacity: 0.6; transform: scale(1.02); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); z-index: 50; }
     </style>
 </head>
 <body>
@@ -103,7 +103,7 @@
             });
             const [toast, setToast] = useState(null);
             
-            // Modal Thêm
+            // Modal Thêm Khách
             const [isAddModalOpen, setIsAddModalOpen] = useState(false);
             const [inputGroup, setInputGroup] = useState('');
             const [newGroupInput, setNewGroupInput] = useState('');
@@ -114,12 +114,12 @@
             // Edit Bottom Sheet
             const [editingGuest, setEditingGuest] = useState(null);
             
-            // Điều hướng Thư mục & Tìm kiếm
+            // Điều hướng & Tìm kiếm
             const [activeGroupFolder, setActiveGroupFolder] = useState(null); 
             const [searchTerm, setSearchTerm] = useState('');
             
-            // SẮP XẾP VÀ KÉO THẢ
-            const [sortBy, setSortBy] = useState('manual'); // Mặc định để 'manual' cho phép kéo thả
+            // Mặc định là Thứ tự nhập (time_asc)
+            const [sortBy, setSortBy] = useState('time_asc'); 
             const [draggedGuestId, setDraggedGuestId] = useState(null);
 
             // Mic
@@ -127,18 +127,14 @@
             const recognitionRef = useRef(null);
             const inputRef = useRef(null);
 
-            // Lưu LocalStorage
             useEffect(() => {
                 localStorage.setItem('wedding_app_final', JSON.stringify(guests));
             }, [guests]);
 
-            // Khởi tạo Mobile Drag Drop Polyfill
+            // Kích hoạt Polyfill Kéo Thả Mobile (Chỉ cần giữ 0.3s là kéo được)
             useEffect(() => {
                 if (window.MobileDragDrop) {
-                    window.MobileDragDrop.polyfill({
-                        holdToDrag: 300, // Ấn giữ 300ms để bắt đầu kéo (Đúng như bạn yêu cầu)
-                    });
-                    // Chống cuộn trang khi đang kéo thả
+                    window.MobileDragDrop.polyfill({ holdToDrag: 300 });
                     window.addEventListener('touchmove', function() {}, {passive: false});
                 }
             }, []);
@@ -191,13 +187,14 @@
                 if (!rawNames.length) return showToast("Chưa nhập tên!", "error");
                 const names = rawNames.map(n => capitalizeWords(n));
 
-                const newG = names.map(name => ({
-                    id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + Math.random(),
+                const baseTime = Date.now();
+                const newG = names.map((name, index) => ({
+                    id: crypto.randomUUID ? crypto.randomUUID() : baseTime + Math.random(),
                     name, group, mainMeals: Number(defaultMainMeals), subMeals: Number(defaultSubMeals),
-                    isInvited: false, rsvp: 'pending', createdAt: Date.now()
+                    isInvited: false, rsvp: 'pending', 
+                    createdAt: baseTime + index // Thêm index để đảm bảo thứ tự chính xác khi nhập nhiều người
                 }));
                 
-                // Thêm vào cuối danh sách để đúng "Thứ tự nhập"
                 setGuests(prev => [...prev, ...newG]);
                 setInputNames(''); 
                 if (isListening && recognitionRef.current) recognitionRef.current.stop();
@@ -221,39 +218,37 @@
                 }
             };
 
-            // --- XỬ LÝ TAP (DOUBLE TAP / SINGLE TAP) KIỂM SOÁT THỜI GIAN ---
+            // --- XỬ LÝ TAP (DOUBLE TAP / SINGLE TAP) ---
             const tapTimerRef = useRef(null);
             const handleGuestTap = (guest) => {
-                if (draggedGuestId) return; // Nếu đang kéo thì chặn click
+                if (draggedGuestId) return; 
                 
                 const now = Date.now();
                 const DOUBLE_TAP_DELAY = 300; 
                 
                 if (now - (window.lastTapTime || 0) < DOUBLE_TAP_DELAY) {
-                    // Double Tap
                     clearTimeout(tapTimerRef.current); tapTimerRef.current = null; window.lastTapTime = 0;
-                    
                     const confirmMsg = guest.isInvited ? `Đã mời "${guest.name}" rồi. HỦY đánh dấu?` : `Xác nhận đã gửi thiệp cho "${guest.name}"?`;
                     if (window.confirm(confirmMsg)) {
                         updateGuest(guest.id, 'isInvited', !guest.isInvited);
                         showToast(guest.isInvited ? "Đã hủy đánh dấu" : "Đã đánh dấu Mời!");
                     }
                 } else {
-                    // Single Tap
                     window.lastTapTime = now;
                     tapTimerRef.current = setTimeout(() => { 
                         tapTimerRef.current = null; 
-                        setEditingGuest(guest); // Mở menu
-                    }, DOUBLE_TAP_DELAY); // Chờ 300ms xem có tap lần 2 hay không
+                        setEditingGuest(guest); 
+                    }, DOUBLE_TAP_DELAY);
                 }
             };
 
-            // --- XỬ LÝ KÉO THẢ (DRAG & DROP) ---
+            // --- XỬ LÝ KÉO THẢ -> GHI ĐÈ THỨ TỰ NHẬP ---
             const onDragStart = (e, id) => {
-                if (sortBy !== 'manual') return; // Chỉ cho kéo khi ở mode Tùy chỉnh
+                const isManualMode = (sortBy === 'time_asc' || sortBy === 'time_desc') && searchTerm === '';
+                if (!isManualMode) return;
+                
                 setDraggedGuestId(id);
                 e.dataTransfer.effectAllowed = "move";
-                // Delay xíu để tạo hiệu ứng bóng mờ lúc kéo
                 setTimeout(() => {
                     const el = document.getElementById(`guest-${id}`);
                     if(el) el.classList.add('dnd-dragging');
@@ -261,25 +256,47 @@
             };
 
             const onDragOver = (e) => {
-                if (sortBy !== 'manual') return;
-                e.preventDefault();
-                e.dataTransfer.dropEffect = "move";
+                if ((sortBy === 'time_asc' || sortBy === 'time_desc') && searchTerm === '') {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                }
             };
 
             const onDrop = (e, targetId) => {
-                if (sortBy !== 'manual') return;
+                const isManualMode = (sortBy === 'time_asc' || sortBy === 'time_desc') && searchTerm === '';
+                if (!isManualMode) return;
                 e.preventDefault();
                 if (!draggedGuestId || draggedGuestId === targetId) return;
 
                 setGuests(prev => {
-                    const arr = [...prev];
-                    const dragIdx = arr.findIndex(g => g.id === draggedGuestId);
-                    const dropIdx = arr.findIndex(g => g.id === targetId);
+                    // 1. Lọc ra danh sách hiện tại của nhóm
+                    const groupGuestsUnsorted = prev.filter(g => g.group === activeGroupFolder);
+                    // 2. Sắp xếp để khớp với những gì đang hiển thị trên màn hình
+                    const currentGroupGuests = sortGuestsList(groupGuestsUnsorted);
+                    
+                    // 3. Lấy mảng thời gian gốc (đã được xếp theo đúng chuẩn)
+                    const originalTimes = currentGroupGuests.map(g => g.createdAt);
+                    
+                    // 4. Tìm vị trí kéo và thả
+                    const dragIdx = currentGroupGuests.findIndex(g => g.id === draggedGuestId);
+                    const dropIdx = currentGroupGuests.findIndex(g => g.id === targetId);
+                    if(dragIdx === -1 || dropIdx === -1) return prev;
 
-                    // Đổi chỗ 2 phần tử trong mảng gốc
-                    const [draggedItem] = arr.splice(dragIdx, 1);
-                    arr.splice(dropIdx, 0, draggedItem);
-                    return arr;
+                    // 5. Cắt người bị kéo, nhét vào vị trí mới
+                    const [draggedItem] = currentGroupGuests.splice(dragIdx, 1);
+                    currentGroupGuests.splice(dropIdx, 0, draggedItem);
+                    
+                    // 6. TRỌNG TÂM: Ghi đè lại thời gian `createdAt` cho toàn bộ nhóm 
+                    // => Vĩnh viễn lưu lại thứ tự kéo thả này làm "Thứ tự nhập"
+                    currentGroupGuests.forEach((g, idx) => {
+                        g.createdAt = originalTimes[idx];
+                    });
+                    
+                    // 7. Cập nhật vào mảng tổng
+                    return prev.map(g => {
+                        const updated = currentGroupGuests.find(cg => cg.id === g.id);
+                        return updated ? { ...g, createdAt: updated.createdAt } : g;
+                    });
                 });
             };
 
@@ -332,7 +349,6 @@
                 if (sortBy === 'name_asc') sorted.sort((a,b) => a.name.localeCompare(b.name, 'vi'));
                 if (sortBy === 'time_desc') sorted.sort((a,b) => b.createdAt - a.createdAt);
                 if (sortBy === 'time_asc') sorted.sort((a,b) => a.createdAt - b.createdAt);
-                // Nếu sortBy === 'manual', giữ nguyên thứ tự của mảng
                 return sorted;
             };
 
@@ -372,9 +388,9 @@
                 );
             };
 
-            // HÀM RENDER ITEM KHÁCH (CÓ KÉO THẢ)
+            // HÀM RENDER ITEM KHÁCH (Kéo Thả)
             const renderGuestItem = (g, index) => {
-                const isManualMode = sortBy === 'manual' && searchTerm === '';
+                const isManualMode = (sortBy === 'time_asc' || sortBy === 'time_desc') && searchTerm === '';
 
                 return (
                     <div 
@@ -389,9 +405,7 @@
                         onClick={() => handleGuestTap(g)}
                     >
                         <div className="flex items-center flex-1 pr-2">
-                            {/* SỐ THỨ TỰ */}
                             <span className="text-slate-300 font-black text-sm w-7 shrink-0 text-left">{index + 1}.</span>
-                            
                             <div className="flex flex-col justify-center">
                                 <div className="flex items-center gap-2">
                                     <span className={`font-black text-[17px] ${g.isInvited ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-800'}`}>
@@ -409,9 +423,9 @@
                             {g.rsvp === 'yes' && <span className="bg-emerald-50 text-emerald-600 font-black text-[11px] px-2 py-1 rounded-lg">✅ Đi</span>}
                             {g.rsvp === 'no' && <span className="bg-red-50 text-red-600 font-black text-[11px] px-2 py-1 rounded-lg">❌ Nghỉ</span>}
                             
-                            {/* BIỂU TƯỢNG TAY CẦM KÉO THẢ (Chỉ hiện khi ở mode Tùy chỉnh) */}
+                            {/* NẾU LÀ THỨ TỰ NHẬP HOẶC MỚI NHẤT -> HIỆN NÚT KÉO THẢ */}
                             {isManualMode ? (
-                                <span className="text-slate-300 ml-1 cursor-grab active:cursor-grabbing hover:text-brand-400"><IconGripVertical/></span>
+                                <span className="text-slate-300 ml-1 cursor-grab active:cursor-grabbing hover:text-brand-400 p-1"><IconGripVertical/></span>
                             ) : (
                                 <span className="text-slate-200 ml-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></span>
                             )}
@@ -421,7 +435,7 @@
             };
 
             const renderList = () => {
-                // 1. MÀN HÌNH TÌM KIẾM
+                // 1. TÌM KIẾM
                 if (searchTerm.trim() !== '') {
                     const searchedGuests = sortGuestsList(guests.filter(g => g.name.toLowerCase().includes(searchTerm.toLowerCase())));
                     return (
@@ -447,7 +461,7 @@
                     );
                 }
 
-                // 2. MÀN HÌNH BÊN TRONG THƯ MỤC
+                // 2. VÀO BÊN TRONG NHÓM
                 if (activeGroupFolder) {
                     const groupGuestsUnsorted = guests.filter(g => g.group === activeGroupFolder);
                     const groupGuests = sortGuestsList(groupGuestsUnsorted);
@@ -458,6 +472,8 @@
                         acc.mainTotal += g.mainMeals;
                         return acc;
                     }, { invited: 0, yes: 0, mainTotal: 0, mainYes: 0 });
+
+                    const isManualMode = sortBy === 'time_asc' || sortBy === 'time_desc';
 
                     return (
                         <div className="p-4 pt-safe content-pb animate-slide-in-right max-w-2xl mx-auto">
@@ -477,9 +493,8 @@
                                             className="appearance-none bg-white border border-slate-200 text-brand-600 font-bold text-sm rounded-xl pl-9 pr-4 py-2 shadow-sm outline-none focus:border-brand-300"
                                             value={sortBy} onChange={e => setSortBy(e.target.value)}
                                         >
-                                            <option value="manual">Tùy chỉnh (Kéo thả)</option>
-                                            <option value="time_desc">Mới nhất</option>
-                                            <option value="time_asc">Cũ nhất</option>
+                                            <option value="time_asc">Thứ tự nhập (Kéo thả)</option>
+                                            <option value="time_desc">Mới nhất (Kéo thả)</option>
                                             <option value="name_asc">Tên A-Z</option>
                                         </select>
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-brand-500"><IconSort/></div>
@@ -504,17 +519,16 @@
                                 ) : groupGuests.map((g, idx) => renderGuestItem(g, idx))}
                             </div>
                             
-                            {/* Hướng dẫn tùy theo mode */}
-                            {sortBy === 'manual' ? (
-                                <p className="text-center text-xs font-medium text-brand-500 mt-8 mb-4 animate-pulse">💡 Mẹo: Ấn giữ 0.3s vào tên bất kỳ để kéo thả sắp xếp</p>
+                            {isManualMode ? (
+                                <p className="text-center text-xs font-medium text-brand-500 mt-8 mb-4 animate-pulse">💡 Mẹo: Ấn giữ 0.3s vào tên bất kỳ để kéo thả thay đổi Thứ Tự Nhập</p>
                             ) : (
-                                <p className="text-center text-xs font-medium text-slate-400 mt-8 mb-4">Mẹo: Chạm 2 lần vào tên để đánh dấu Đã Mời</p>
+                                <p className="text-center text-xs font-medium text-slate-400 mt-8 mb-4">Mẹo: Chạm nhanh 2 lần vào tên để đánh dấu Đã Mời</p>
                             )}
                         </div>
                     );
                 }
 
-                // 3. MÀN HÌNH THƯ MỤC CHÍNH
+                // 3. THƯ MỤC CHÍNH
                 return (
                     <div className="p-4 pt-safe content-pb animate-fade-in max-w-2xl mx-auto">
                         <div className="mb-6 sticky top-0 bg-[#f8fafc] z-20 pt-2 pb-3">
@@ -679,7 +693,7 @@
                         </div>
                     </div>
 
-                    {/* BOTTOM SHEET CÀI ĐẶT KHÁCH (Khi chạm 1 lần) */}
+                    {/* BOTTOM SHEET CÀI ĐẶT KHÁCH */}
                     <div className={`fixed inset-0 z-[60] flex items-end justify-center transition-opacity duration-300 ${editingGuest ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
                         <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setEditingGuest(null)}></div>
                         <div className={`relative bg-white w-full max-w-2xl rounded-t-[2.5rem] shadow-up p-5 pb-safe transition-transform duration-300 ${editingGuest ? 'translate-y-0' : 'translate-y-full'}`}>
