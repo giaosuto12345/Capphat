@@ -1,4 +1,4 @@
-Thi
+Thi trắc nghiệm
 <!DOCTYPE html>
 <html lang="vi" class="light">
 <head>
@@ -236,28 +236,56 @@ Thi
 
             const formatTime = (sec) => `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
 
-            // === QUIZ LOGIC ===
+            // === THUẬT TOÁN BỐC ĐỀ THÔNG MINH (ADAPTIVE ALGORITHM) ===
             const startQuiz = () => {
-                let weightedQ = [];
-                questions.forEach(q => {
-                    const qStat = stats[q.id];
-                    let weight = 1;
-                    if (qStat && (qStat.right + qStat.wrong) > 0) {
-                        const wRatio = qStat.wrong / (qStat.right + qStat.wrong);
-                        if (wRatio > 0.6) weight = 4; else if (wRatio > 0.3) weight = 2;
+                // Bước 1: Tìm số lần xuất hiện ít nhất để cân bằng (Exposure Balancing)
+                let minAttempts = Infinity;
+                const qStatsList = questions.map(q => {
+                    const right = stats[q.id]?.right || 0;
+                    const wrong = stats[q.id]?.wrong || 0;
+                    const attempts = right + wrong;
+                    if (attempts < minAttempts) minAttempts = attempts;
+                    return { q, attempts, wrongRatio: attempts > 0 ? wrong / attempts : 0 };
+                });
+                
+                if (minAttempts === Infinity) minAttempts = 0;
+
+                // Bước 2: Tạo bể bốc thăm với trọng số (Weighted Lottery Pool)
+                let lotteryPool = [];
+                qStatsList.forEach(({ q, attempts, wrongRatio }) => {
+                    let weight = 1; // Mặc định mỗi câu có 1 "vé"
+
+                    // Quy tắc 1: Cân bằng hiển thị (Ưu tiên câu ít gặp nhất)
+                    if (attempts === minAttempts) weight += 5; // Cực kỳ ưu tiên câu chưa/ít làm
+                    else if (attempts === minAttempts + 1) weight += 2;
+
+                    // Quy tắc 2: Khoét sâu điểm yếu (Ưu tiên câu sai nhiều)
+                    if (attempts > 0) {
+                        if (wrongRatio >= 0.5) weight += 6; // Sai trên 50% => Ép vào đề liên tục
+                        else if (wrongRatio >= 0.3) weight += 3;
                     }
-                    for(let i=0; i<weight; i++) weightedQ.push(q);
+
+                    // Bỏ "vé" vào lồng bốc thăm
+                    for(let i=0; i<weight; i++) {
+                        lotteryPool.push(q);
+                    }
                 });
 
-                weightedQ = shuffleArray(weightedQ);
-                const selected = [], ids = new Set();
-                for (let q of weightedQ) {
+                // Bước 3: Rút ngẫu nhiên từ bể bốc thăm (không trùng lặp)
+                lotteryPool = shuffleArray(lotteryPool);
+                const selected = [];
+                const ids = new Set();
+                for (let q of lotteryPool) {
                     if (selected.length >= quizConfig.count && quizConfig.count !== 'all') break;
-                    if (!ids.has(q.id)) { selected.push(q); ids.add(q.id); }
+                    if (!ids.has(q.id)) { 
+                        selected.push(q); 
+                        ids.add(q.id); 
+                    }
                 }
                 
                 let finalSel = quizConfig.count === 'all' ? questions : selected;
 
+                // Bước 4: Đảo thứ tự đáp án A, B, C cho đề thi
                 const randomizedQuiz = finalSel.map(q => {
                     let optsWithFlag = q.options.map((txt, i) => ({ txt, isC: i === q.answer }));
                     optsWithFlag = shuffleArray(optsWithFlag);
@@ -346,61 +374,81 @@ Thi
             };
 
             // === RENDERERS ===
-            const renderHome = () => (
-                <div className="animate-slide-up">
-                    <div className="bg-ios-card dark:bg-ios-darkcard rounded-b-3xl shadow-sm border-b border-slate-200 dark:border-slate-800">
-                        <div className="pt-12 pb-8 px-6 text-center">
-                            <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/40 text-white text-3xl">
-                                <i className="fas fa-layer-group"></i>
+            const renderHome = () => {
+                // Tính toán phần trăm tiến độ bao phủ ngân hàng đề
+                const seenCount = questions.filter(q => {
+                    const s = stats[q.id];
+                    return s && (s.right + s.wrong) > 0;
+                }).length;
+                const seenPercent = Math.round((seenCount / questions.length) * 100) || 0;
+
+                return (
+                    <div className="animate-slide-up">
+                        <div className="bg-gradient-to-br from-blue-600 to-indigo-800 rounded-b-3xl shadow-lg border-b border-blue-900/50">
+                            <div className="pt-12 pb-8 px-6 text-center relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+                                <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner text-white text-3xl rotate-3">
+                                    <i className="fas fa-layer-group"></i>
+                                </div>
+                                <h2 className="text-2xl font-extrabold mb-1 text-white relative z-10">Đoàn Giỏi 2026</h2>
+                                
+                                {/* Nâng cấp: Progress Bar Độ Bao Phủ Đề */}
+                                <div className="mt-4 bg-white/10 p-3.5 rounded-2xl backdrop-blur-md border border-white/20 text-left relative z-10 max-w-[280px] mx-auto">
+                                    <div className="flex justify-between text-white/90 text-xs font-bold mb-2">
+                                        <span>Tiến độ quét đề:</span>
+                                        <span>{seenCount}/{questions.length} câu</span>
+                                    </div>
+                                    <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden">
+                                        <div className="h-full bg-green-400 transition-all duration-1000 shadow-[0_0_8px_rgba(74,222,128,0.6)]" style={{width: `${seenPercent}%`}}></div>
+                                    </div>
+                                </div>
                             </div>
-                            <h2 className="text-2xl font-extrabold mb-1">Đoàn Giỏi 2026</h2>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Kho dữ liệu: {questions.length} câu</p>
+                        </div>
+
+                        <div className="p-5 space-y-5">
+                            <div className="bg-ios-card dark:bg-ios-darkcard p-4 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
+                                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">Số câu hỏi</label>
+                                <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
+                                    {[10, 20, 30, 'all'].map(num => (
+                                        <button key={num} onClick={() => setQuizConfig({...quizConfig, count: num})} className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${quizConfig.count === num ? 'bg-white dark:bg-slate-600 shadow-md text-blue-600 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}>
+                                            {num === 'all' ? 'Tất cả' : num}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-ios-card dark:bg-ios-darkcard p-4 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
+                                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">Thời gian (Phút)</label>
+                                <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
+                                    {[0, 10, 15, 20].map(time => (
+                                        <button key={time} onClick={() => setQuizConfig({...quizConfig, time})} className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${quizConfig.time === time ? 'bg-white dark:bg-slate-600 shadow-md text-indigo-600 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}>
+                                            {time === 0 ? 'Không' : time}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <button onClick={startQuiz} className="w-full py-4 bg-blue-600 text-white text-lg font-bold rounded-2xl hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-600/30">
+                                Bắt đầu thi ngay
+                            </button>
                         </div>
                     </div>
-
-                    <div className="p-5 space-y-5">
-                        <div className="bg-ios-card dark:bg-ios-darkcard p-4 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
-                            <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">Số câu hỏi</label>
-                            <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
-                                {[10, 20, 30, 'all'].map(num => (
-                                    <button key={num} onClick={() => setQuizConfig({...quizConfig, count: num})} className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${quizConfig.count === num ? 'bg-white dark:bg-slate-600 shadow-md text-blue-600 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}>
-                                        {num === 'all' ? 'Tất cả' : num}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="bg-ios-card dark:bg-ios-darkcard p-4 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
-                            <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">Thời gian (Phút)</label>
-                            <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
-                                {[0, 10, 15, 20].map(time => (
-                                    <button key={time} onClick={() => setQuizConfig({...quizConfig, time})} className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${quizConfig.time === time ? 'bg-white dark:bg-slate-600 shadow-md text-indigo-600 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}>
-                                        {time === 0 ? 'Không' : time}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <button onClick={startQuiz} className="w-full py-4 bg-blue-600 text-white text-lg font-bold rounded-2xl hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-600/30">
-                            Bắt đầu thi
-                        </button>
-                    </div>
-                </div>
-            );
+                );
+            }
 
             const renderQuiz = () => {
                 const timePct = timeLeft !== null && quizConfig.time > 0 ? (timeLeft / (quizConfig.time * 60)) * 100 : 100;
                 return (
                     <div className="animate-fade-in min-h-screen bg-ios-card dark:bg-ios-darkcard flex flex-col">
                         <div className="sticky top-0 z-30 bg-ios-card/95 dark:bg-ios-darkcard/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
-                            {timeLeft !== null && <div className="w-full h-1 bg-slate-200 dark:bg-slate-700"><div className={`h-full transition-all duration-1000 ${timePct<20?'bg-red-500':'bg-blue-500'}`} style={{width: `${timePct}%`}}></div></div>}
+                            {timeLeft !== null && <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700"><div className={`h-full transition-all duration-1000 ${timePct<20?'bg-red-500':'bg-blue-500'}`} style={{width: `${timePct}%`}}></div></div>}
                             
                             <div className="px-5 py-3 flex justify-between items-center">
                                 <span className="font-bold text-slate-500 dark:text-slate-400 text-sm">Câu {currentQuestion + 1}/{activeQuestions.length}</span>
-                                {timeLeft !== null && <span className={`font-mono font-bold text-sm ${timePct<20?'text-red-500 animate-pulse':'text-blue-500'}`}><i className="far fa-clock"></i> {formatTime(timeLeft)}</span>}
+                                {timeLeft !== null && <span className={`font-mono font-bold text-sm bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg ${timePct<20?'text-red-500 animate-pulse':'text-blue-500'}`}><i className="far fa-clock"></i> {formatTime(timeLeft)}</span>}
                             </div>
                             
-                            {/* Navigation Dots dạng Pill to hơn */}
+                            {/* Navigation Dots (Pill) To Mượt */}
                             <div className="px-5 pb-4 flex gap-2.5 overflow-x-auto hide-scrollbar items-center scroll-smooth" id="dot-container">
                                 {activeQuestions.map((_, idx) => {
                                     const isActive = idx === currentQuestion;
@@ -705,3 +753,6 @@ Thi
     </script>
 </body>
 </html>
+
+
+```
