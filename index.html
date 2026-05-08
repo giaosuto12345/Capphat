@@ -1,791 +1,813 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Wedding Guest App Pro Max</title>
+import React, { useState } from 'react';
+import { 
+  CheckCircle2, XCircle, RotateCcw, Award, ChevronRight, ChevronLeft, ChevronDown,
+  PlayCircle, BookOpen, Home, Settings, Plus, Save, X, Info, FileText, Send, Eye, Pencil, Trash2, List
+} from 'lucide-react';
+
+const initialQuestionsData = [
+  {
+    question: "Đồng chí cho biết từ khi thành lập đến nay, Đoàn TNCS Hồ Chí Minh đã bao nhiêu lần đổi tên?",
+    options: ["A. 7 lần.", "B. 9 lần.", "C. 6 lần."],
+    answer: 0
+  },
+  {
+    question: "Đồng chí cho biết tổ chức đoàn chính thức lấy tên Đoàn TNCS Hồ Chí Minh vào năm nào?",
+    options: ["A. Năm 1931", "B. Năm 1945", "C. Năm 1976"],
+    answer: 2
+  },
+  {
+    question: "Đồng chí hãy cho biết trong Đại hội đại biểu Đoàn TNCS Hồ Chí Minh Quân đội lần thứ XI, nhiệm kỳ 2025 - 2030 đã phát động phong trào thi đua nào?",
+    options: ["A. Thanh niên Quân đội rèn đức luyện tài, xung kích sáng tạo xứng danh Bộ đội Cụ Hồ thời kỳ mới", "B. Phong trào “3 tiên phong Quyết thắng”", "C. Phong trào “Thanh niên tình nguyện”"],
+    answer: 1
+  },
+  {
+    question: "Tên hai “Công trình Thanh niên Cộng sản” nổi bật nhất trong những năm giữa thập kỷ 80 của thế kỷ XX là gì?",
+    options: ["A. Xây dựng nhà máy Thủy điện Hòa Bình và xây dựng nhà máy Nhiệt điện Phả Lại", "B. Xây dựng đường dây điện Bắc Nam và Xây dựng nhà máy Nhiệt điện Cẩm Phả", "C. Xây dựng nhà máy Thủy điện Thác Bà và Xây dựng nhà máy Thủy điện Phú Bình."],
+    answer: 0
+  },
+  {
+    question: "Ngày 26/3/1931 được chọn là ngày thành lập Đoàn tại Đại hội Đoàn nào?",
+    options: ["A. Đại hội Đoàn toàn quốc lần thứ I (2/1950).", "B. Đại hội Đoàn toàn quốc lần thứ II (11/1956).", "C. Đại hội Đoàn toàn quốc lần thứ III (3/1961)."],
+    answer: 2
+  },
+  {
+    question: "Bốn câu thơ sau được Bác Hồ tặng đơn vị nào? ở đâu?\n“Không có việc gì khó; Chỉ sợ lòng không bền; Đào núi và lấp biển; Quyết chí ắt làm nên”",
+    options: ["A. Liên đội 312 ở Nà Cù (Bắc Cạn)", "B. Đại đoàn 308, tại Đền Hùng (Phú Thọ)", "C. Đại đoàn 312, tại Chiến khu Việt Bắc (Tuyên Quang)"],
+    answer: 0
+  },
+  {
+    question: "Hệ thống tổ chức của đoàn trong quân đội gồm mấy cấp?",
+    options: ["A. Hai cấp.", "B. Ba cấp.", "C. Bốn cấp"],
+    answer: 1
+  },
+  {
+    question: "Đồng chí cho biết phát biểu chỉ đạo Đại hội đại biểu Đoàn TNCS Hồ Chí Minh Quân đội lần thứ 11, nhiệm kỳ 2025-2030, thay mặt Quân ủy Trung ương, Bộ Quốc phòng, Đại tướng Phan Văn Giang yêu cầu tuổi trẻ toàn quân thực hiện tốt 2 nội dung nào?",
+    options: ["A. “2 xung kích, 2 sẵn sàng”", "B. “2 đột phá, 2 xung kích”", "C. “2 dân chủ, 2 quyết thắng”"],
+    answer: 0
+  },
+  {
+    question: "Hãy cho biết chủ đề phong trào thi đua quyết thắng năm 2026?",
+    options: ["A. Đoàn kết, mẫu mực, sáng tạo, quyết thắng.", "B. Dân chủ, đoàn kết, kỷ cương, sáng tạo, quyết thắng", "C. Đoàn kết, kỷ cương, đột phá, sáng tạo, quyết thắng"],
+    answer: 2
+  },
+  {
+    question: "Đồng chí cho biết câu nói “con đường của thanh niên chỉ có thể là con đường cách mạng...” là của ai?",
+    options: ["A. Phạm Văn Đồng", "B. Lê Duẩn", "C. Lý Tự Trọng"],
+    answer: 2
+  },
+  {
+    question: "Ủy viên ban chấp hành không tham gia họp BCH mà không có lý do chính đáng trong mấy kỳ liên tục thì bị xóa tên trong ban chấp hành?",
+    options: ["A. 2 kỳ.", "B. 3 kỳ.", "C. 4 kỳ."],
+    answer: 1
+  },
+  {
+    question: "Đồng chí hãy cho biết thời gian tổ chức đoàn đầu tiên được thành lập ở các đơn vị trực thuộc Cục Quân khí?",
+    options: ["A. Năm 1951", "B. Năm 1952", "C. Năm 1955"],
+    answer: 0
+  },
+  {
+    question: "Đồng chí cho biết câu nói “Quân đội ta trung với Đảng, hiếu với dân...” được Chủ tịch Hồ Chí Minh khái quát vào thời gian nào?",
+    options: ["A. 22/12/1964.", "B. 22/12/1944.", "C. 22/12/1989."],
+    answer: 0
+  },
+  {
+    question: "Đồng chí cho biết Đại hội Đoàn toàn quốc lần thứ mấy đã quyết định lấy ngày 26/3/1931 làm ngày thành lập Đoàn?",
+    options: ["A. Đại hội lần thứ I; từ ngày 7 đến ngày 14/2/1950", "B. Đại hội lần thứ II; từ ngày 25/10 đến ngày 04/11/1956", "C. Đại hội lần thứ III; từ ngày 23 đến ngày 25/3/1961"],
+    answer: 2
+  },
+  {
+    question: "Đại hội Đoàn TNCS Hồ Chí Minh Quân đội lần thứ XI diễn ra vào thời gian nào?",
+    options: ["A. Từ ngày 9 đến ngày 10/12/2025", "B. Từ ngày 8 đến ngày 9/12/2025", "C. Từ ngày 7 đến ngày 8/12/2025"],
+    answer: 2
+  },
+  {
+    question: "Điều lệ hiện hành của Đoàn TNCS Hồ Chí Minh bao gồm?",
+    options: ["A. 11 chương, 38 điều", "B. 12 chương, 45 điều", "C. 12 chương, 54 điều"],
+    answer: 0
+  },
+  {
+    question: "Đồng chí hãy cho biết khẩu hiệu hành động Đại hội đại biểu Đoàn TNCS Hồ Chí Minh Quân đội lần thứ XI, nhiệm kỳ 2025 - 2030:",
+    options: ["A. “Thanh niên Quân đội - Bản lĩnh, tiên phong, đột phá, phát triển”", "B. “Thanh niên Quân đội - Trí tuệ, bản lĩnh, đột phá, phát triển”", "C. “Thanh niên Quân đội - Tự lực, tự cường, đột phá, phát triển”"],
+    answer: 0
+  },
+  {
+    question: "Đoàn viên có mấy nhiệm vụ?",
+    options: ["A. 3 nhiệm vụ.", "B. 4 nhiệm vụ.", "C. 5 nhiệm vụ."],
+    answer: 0
+  },
+  {
+    question: "Đồng chí hãy cho biết độ tuổi để được xét kết nạp đoàn viên?",
+    options: ["A. Thanh niên Việt Nam Từ 15 tuổi đến 30 tuổi", "B. Thanh niên Việt Nam Từ 16 tuổi đến 30 tuổi", "C. Cả 2 phương án trên đều đúng"],
+    answer: 1
+  },
+  {
+    question: "Chi đoàn có bao nhiêu đoàn viên thì chỉ được bầu bí thư, phó bí thư?",
+    options: ["A. Dưới 9 đoàn viên.", "B. Dưới 12 đoàn viên.", "C. Dưới 15 đoàn viên."],
+    answer: 0
+  },
+  {
+    question: "Tại sao khi quá 30 tuổi, vẫn được tham gia sinh hoạt đoàn?",
+    options: ["A. Có nguyện vọng tiếp tục sinh hoạt đoàn", "B. Làm công tác chuyên trách về đoàn", "C. Cả 2 phương án trên"],
+    answer: 2
+  },
+  {
+    question: "Đại tướng Phan Văn Giang trao tặng bức tranh cho thanh niên Quân đội tại Đại hội XI mang dòng chữ nào?",
+    options: ["A. “Trung thành, bản lĩnh, đột phá, sáng tạo, xung kích, kiên cường - Xứng danh “Bộ đội Cụ Hồ” thời kỳ mới”.", "B. “Trí tuệ, bản lĩnh, đột phá, sáng tạo, xung kích, kiên cường - Xứng danh “Bộ đội Cụ Hồ” trong kỷ nguyên mới”.", "C. “Trung thành, bản lĩnh, đổi mới, sáng tạo, xung kích, dũng cảm - Xứng danh “Bộ đội Cụ Hồ” thời kỳ mới”."],
+    answer: 2
+  },
+  {
+    question: "Khẩu hiệu “Sống chiến đấu, lao động và học tập theo gương Bác Hồ vĩ đại” được chọn vào thời gian nào?",
+    options: ["A. Tháng 12/1974", "B. Tháng 12/1975", "C. Tháng 12/1976"],
+    answer: 2
+  },
+  {
+    question: "Đồng chí hãy cho biết phương châm Đại hội đại biểu Đảng bộ Quân đội lần thứ XII, nhiệm kỳ 2025-2030:",
+    options: ["A. “Đoàn kết - Dân chủ - Kỷ cương - Kiên định - Đột phá - Phát triển”", "B. “Đoàn kết - Đột phá - Kỷ cương - Kiên định - Dân chủ - Phát triển”", "C. “Đoàn kết - Đột phá - Kỷ cương - Kiên định - Dân chủ - Quyết thắng”"],
+    answer: 0
+  },
+  {
+    question: "Đồng chí hãy cho biết chủ đề Đại hội đại biểu Đoàn TNCS Hồ Chí Minh Quân đội lần thứ XI, nhiệm kỳ 2025 - 2030:",
+    options: ["A. “Thanh niên Quân đội bản lĩnh, tiên phong, đột phá, phát triển, xứng danh Bộ đội Cụ Hồ, tự tin vững bước vào kỷ nguyên mới”", "B. “Thanh niên Quân đội bản lĩnh, trí tuệ, đột phá, phát triển, xứng danh Bộ đội Cụ Hồ, tự tin vững bước vào kỷ nguyên mới”", "C. “Thanh niên Quân đội bản lĩnh, tiên phong, tự tin, phát triển, xứng danh Bộ đội Cụ Hồ, tự tin vững bước vào kỷ nguyên mới”"],
+    answer: 0
+  },
+  {
+    question: "Trong Đại hội đại biểu toàn quốc lần thứ XIV của Đảng đã bầu ra bao nhiêu đồng chí là Ủy viên Bộ Chính trị?",
+    options: ["A. 17", "B. 18", "C. 19"],
+    answer: 2
+  },
+  {
+    question: "Trong quân đội, trợ lý thanh niên và Ban công tác thanh niên được tổ chức từ cấp nào trở lên?",
+    options: ["A. Cấp sư đoàn và tương đương trở lên", "B. Cấp trung đoàn, lữ đoàn và tương đương trở lên", "C. Cấp tiểu đoàn và tương đương trở lên"],
+    answer: 1
+  },
+  {
+    question: "Người được kết nạp vào đoàn tối thiểu có trình độ học vấn:",
+    options: ["A. Tiểu học.", "B. Vận dụng linh hoạt đối với thanh niên dân tộc thiểu số, vùng đặc biệt khó khăn.", "C. Cả 2 phương án trên"],
+    answer: 2
+  },
+  {
+    question: "Giải thưởng Tuổi trẻ sáng tạo trong Quân đội được triển khai từ bao giờ?",
+    options: ["A. Từ năm 1999", "B. Từ năm 2000", "C. Từ năm 2001"],
+    answer: 1
+  },
+  {
+    question: "Đồng chí cho biết Ngày truyền thống Kho KV1?",
+    options: ["A. 15/3/1951", "B. 15/3/1952", "C. 15/3/1953"],
+    answer: 2
+  },
+  {
+    question: "Hãy cho biết nội dung “5 vững” theo phương châm của Tổng Bí thư Tô Lâm:",
+    options: ["A. “Chính trị vững - Kỷ luật vững - Công nghệ vững - Nghệ thuật quân sự vững - Đời sống bộ đội vững”", "B. “Quân sự vững - Chính trị vững - Hậu cần vững - Kỹ thuật vững - Đời sống bộ đội vững”", "C. “Tâm lý vững - Kỷ luật vững - Chính trị vững - Nghệ thuật quân sự vững - Đời sống bộ đội vững”"],
+    answer: 0
+  },
+  {
+    question: "Chi đoàn có bao nhiêu đoàn viên thì được bầu ban chấp hành?",
+    options: ["A. Dưới 9 đoàn viên.", "B. Từ 9 đoàn viên trở lên", "C. Từ 5 đoàn viên"],
+    answer: 1
+  },
+  {
+    question: "Hãy cho biết tác giả, thời gian ra đời mẫu Huy hiệu Đoàn TNCS Hồ Chí Minh?",
+    options: ["A. Họa sĩ Tô Ngọc Vân; năm 1952", "B. Họa sĩ Huỳnh Văn Thuận; năm 1951", "C. Họa sĩ Nguyễn Tường Lân; năm 1954"],
+    answer: 1
+  },
+  {
+    question: "Bí thư Trung ương Đoàn đầu tiên của Việt Nam là ai?",
+    options: ["A. Đồng chí Nguyễn Lam.", "B. Đồng chí Lê Duẩn.", "C. Đồng chí Lý Tự Trọng."],
+    answer: 0
+  },
+  {
+    question: "Ban Chấp hành chi đoàn, chi đoàn cơ sở và Đoàn cơ sở định kỳ bao lâu phải họp một lần?",
+    options: ["A. Một tuần", "B. Một tháng", "C. Một quý"],
+    answer: 1
+  },
+  {
+    question: "Đồng chí cho biết Cục Quân khí được thành lập vào thời gian nào?",
+    options: ["A. 22/12/1944.", "B. 22/4/2003.", "C. 16/9/1951."],
+    answer: 2
+  },
+  {
+    question: "Đơn vị có bao nhiêu đoàn viên trở lên được thành lập chi đoàn?",
+    options: ["A. 3 đoàn viên", "B. 5 đoàn viên", "C. 9 đoàn viên"],
+    answer: 0
+  },
+  {
+    question: "Bác Hồ nói câu “Nhiệm vụ của thanh niên không phải là đòi hỏi Nước nhà đã cho mình những gì...” vào ngày nào?",
+    options: ["A. Ngày 26/03/1931.", "B. Ngày 02/09/1945.", "C. Ngày 19/01/1955."],
+    answer: 2
+  },
+  {
+    question: "Câu nói “Đâu Đảng cần thanh niên có, việc gì khó thanh niên làm” được Bác Hồ căn dặn tại Đại hội Đoàn toàn quốc lần thứ mấy?",
+    options: ["A. Lần thứ nhất", "B. Lần thứ hai", "C. Lần thứ ba"],
+    answer: 2
+  },
+  {
+    question: "Chủ tịch Hồ Chí Minh đã đến dự Đại hội Đoàn toàn quốc lần thứ mấy?",
+    options: ["A. Đại hội lần thứ I và lần III.", "B. Đại hội lần thứ II và lần thứ III", "C. Đại hội lần thứ II và lần thứ IV."],
+    answer: 1
+  }
+];
+
+export default function App() {
+  const [questions, setQuestions] = useState(initialQuestionsData);
+  // Các view: 'HOME', 'QUIZ', 'RESULT', 'REVIEW', 'MANAGE'
+  const [view, setView] = useState('HOME'); 
+
+  // Trạng thái cho chế độ thi (Quiz)
+  const [activeQuestions, setActiveQuestions] = useState([]);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [score, setScore] = useState(0);
+  
+  // Lưu đáp án của người dùng: { index_cau_hoi: index_dap_an_da_chon }
+  const [userAnswers, setUserAnswers] = useState({});
+
+  // Trạng thái cho Form Thêm/Sửa Câu Hỏi
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingIndex, setEditingIndex] = useState(null); // Track câu đang sửa, null nếu là thêm mới
+  const [newQuestionText, setNewQuestionText] = useState('');
+  const [newOptions, setNewOptions] = useState(['', '', '']);
+  const [newCorrectAnswer, setNewCorrectAnswer] = useState(0);
+
+  // Trạng thái mở rộng câu hỏi trong phần Cài đặt
+  const [expandedQuestion, setExpandedQuestion] = useState(null);
+  
+  // Trạng thái HIỂN THỊ KHO CÂU HỎI
+  const [showQuestionBank, setShowQuestionBank] = useState(false);
+
+  // Thuật toán Fisher-Yates xáo trộn mảng
+  const shuffleArray = (array) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  const startQuiz = () => {
+    setActiveQuestions(shuffleArray(questions));
+    setCurrentQuestion(0);
+    setScore(0);
+    setUserAnswers({}); 
+    setView('QUIZ');
+  };
+
+  const handleAnswerSelect = (index) => {
+    setUserAnswers({
+      ...userAnswers,
+      [currentQuestion]: index
+    });
+  };
+
+  const handleNextQuestion = () => {
+    if (currentQuestion < activeQuestions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+    }
+  };
+
+  const handlePrevQuestion = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
+    }
+  };
+
+  const submitQuiz = () => {
+    const answeredCount = Object.keys(userAnswers).length;
+    if (answeredCount < activeQuestions.length) {
+      const confirmSubmit = window.confirm(`Đồng chí mới làm ${answeredCount}/${activeQuestions.length} câu. Có chắc chắn muốn nộp bài không?`);
+      if (!confirmSubmit) return;
+    }
+
+    let finalScore = 0;
+    activeQuestions.forEach((q, idx) => {
+      if (userAnswers[idx] === q.answer) {
+        finalScore++;
+      }
+    });
+    setScore(finalScore);
+    setView('RESULT');
+  };
+
+  const handleAddOptionField = () => {
+    if (newOptions.length < 5) setNewOptions([...newOptions, '']);
+  };
+
+  const handleOptionChange = (index, value) => {
+    const updatedOptions = [...newOptions];
+    updatedOptions[index] = value;
+    setNewOptions(updatedOptions);
+  };
+
+  const openAddModal = () => {
+    setEditingIndex(null);
+    setNewQuestionText('');
+    setNewOptions(['', '', '']);
+    setNewCorrectAnswer(0);
+    setShowAddModal(true);
+  };
+
+  const openEditModal = (idx) => {
+    const q = questions[idx];
+    setEditingIndex(idx);
+    setNewQuestionText(q.question);
+    setNewOptions([...q.options]);
+    setNewCorrectAnswer(q.answer);
+    setShowAddModal(true);
+  };
+
+  const deleteQuestion = (idx) => {
+    const confirmDelete = window.confirm("Đồng chí có chắc chắn muốn xóa câu hỏi này khỏi hệ thống?");
+    if (confirmDelete) {
+      setQuestions(questions.filter((_, i) => i !== idx));
+    }
+  };
+
+  const saveNewQuestion = () => {
+    if (!newQuestionText.trim() || newOptions.some(opt => !opt.trim())) {
+      alert("Vui lòng điền đầy đủ câu hỏi và các đáp án!");
+      return;
+    }
     
-    <!-- React & ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    const newQuestion = {
+      question: newQuestionText,
+      options: newOptions,
+      answer: newCorrectAnswer
+    };
+
+    if (editingIndex !== null) {
+      // Chế độ: Sửa câu hỏi
+      const updatedQuestions = [...questions];
+      updatedQuestions[editingIndex] = newQuestion;
+      setQuestions(updatedQuestions);
+    } else {
+      // Chế độ: Thêm câu mới (đưa xuống cuối mảng)
+      setQuestions([...questions, newQuestion]);
+    }
     
-    <!-- TailwindCSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Thư viện Kéo Thả (Drag & Drop) trên Mobile -->
-    <link rel="stylesheet" href="https://unpkg.com/mobile-drag-drop@2.3.0-rc.2/default.css">
-    <script src="https://unpkg.com/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: { 50: '#fff1f2', 100: '#ffe4e6', 200: '#fecdd3', 400: '#fb7185', 500: '#f43f5e', 600: '#e11d48', 800: '#9f1239', 900: '#881337' }
-                    },
-                    boxShadow: {
-                        'soft': '0 4px 20px -2px rgba(0,0,0,0.05)',
-                        'float': '0 20px 40px -10px rgba(225,29,72,0.3)',
-                        'up': '0 -10px 40px -10px rgba(0,0,0,0.1)',
-                    }
-                }
-            }
-        }
-    </script>
-    
-    <style>
-        body { -webkit-tap-highlight-color: transparent; background-color: #f8fafc; overscroll-behavior-y: none; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    setShowAddModal(false);
+  };
+
+  const answeredCount = Object.keys(userAnswers).length;
+  const progressPercent = activeQuestions.length > 0 ? (answeredCount / activeQuestions.length) * 100 : 0;
+
+  return (
+    <div className="min-h-screen bg-[#F2F2F7] flex flex-col font-sans text-slate-800 pb-24 sm:pb-0 selection:bg-blue-200">
+      
+      {/* Header Desktop (Sẽ ẩn trên thiết bị di động nhỏ để nhường chỗ cho Tab Bar) */}
+      <header className="hidden sm:flex bg-white/80 backdrop-blur-xl border-b border-slate-200/60 sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto px-6 h-16 w-full flex items-center justify-between">
+          <div className="flex items-center gap-3 font-bold text-xl cursor-pointer text-slate-800" onClick={() => setView('HOME')}>
+            <Award className="w-7 h-7 text-blue-600" />
+            <span>Cán Bộ Đoàn 2026</span>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <button onClick={() => setView('HOME')} className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${['HOME', 'QUIZ', 'RESULT', 'REVIEW'].includes(view) ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}`}>
+              Trang Chủ
+            </button>
+            <button onClick={() => setView('MANAGE')} className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${view === 'MANAGE' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}`}>
+              Cài Đặt
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Content chính */}
+      <main className="flex-1 flex flex-col items-center p-4 sm:p-6 w-full max-w-3xl mx-auto sm:mt-6">
         
-        .pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
-        .pt-safe { padding-top: max(1rem, env(safe-area-inset-top)); }
-        .content-pb { padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
-        
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        
-        .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
-        .animate-slide-in-right { animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        
-        .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid rgba(226, 232, 240, 0.8); }
-        details > summary { list-style: none; }
-        details > summary::-webkit-details-marker { display: none; }
-        
-        /* Hiệu ứng kéo thả */
-        .dnd-item { transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s; }
-        .dnd-dragging { opacity: 0.6; transform: scale(1.02); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); z-index: 50; }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
+        {/* VIEW: TRANG CHỦ */}
+        {view === 'HOME' && (
+          <div className="w-full bg-white rounded-[32px] p-8 sm:p-12 text-center flex flex-col items-center shadow-[0_8px_30px_rgb(0,0,0,0.04)] animate-fade-in mt-4">
+            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl flex items-center justify-center mb-8 shadow-lg shadow-blue-500/30 rotate-3">
+              <Award className="w-12 h-12 text-white -rotate-3" />
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-800 mb-4 tracking-tight">
+              Đại hội Đoàn XI
+            </h2>
+            <p className="text-slate-500 mb-10 text-lg px-4">
+              Hệ thống có <strong className="text-blue-600">{questions.length}</strong> câu hỏi. Sẵn sàng thử thách kiến thức của đồng chí ngay bây giờ.
+            </p>
+            <button 
+              onClick={startQuiz}
+              className="w-full sm:max-w-xs flex items-center justify-center px-6 py-4 bg-blue-600 text-white text-lg font-bold rounded-[20px] active:scale-95 transition-all shadow-md shadow-blue-600/20"
+            >
+              <PlayCircle className="w-6 h-6 mr-2" />
+              Bắt Đầu Thi
+            </button>
+          </div>
+        )}
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo, useRef } = React;
+        {/* VIEW: THI TRẮC NGHIỆM */}
+        {view === 'QUIZ' && (
+          <div className="w-full flex flex-col gap-4 animate-fade-in mt-2">
+            {/* Thanh tiến độ */}
+            <div className="bg-white rounded-[24px] p-4 flex items-center justify-between shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
+               <div className="flex flex-col gap-1.5 w-full mr-4">
+                  <div className="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
+                     <span>Tiến độ</span>
+                     <span>{answeredCount}/{activeQuestions.length}</span>
+                  </div>
+                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                     <div className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out" style={{ width: `${progressPercent}%` }} />
+                  </div>
+               </div>
+               <div className="bg-blue-50 text-blue-600 font-bold px-4 py-2 rounded-xl text-sm shrink-0">
+                  Câu {currentQuestion + 1}
+               </div>
+            </div>
 
-        // --- ICONS ---
-        const IconHome = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
-        const IconUsers = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
-        const IconSettings = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>;
-        const IconPlus = () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
-        const IconMic = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>;
-        const IconMicOff = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="2" y1="2" x2="22" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" y1="19" x2="12" y2="22"/></svg>;
-        const IconX = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
-        const IconTrash = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
-        const IconSearch = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
-        const IconChevronRight = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>;
-        const IconArrowLeft = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>;
-        const IconFolder = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>;
-        const IconEnvelope = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>;
-        const IconRefresh = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
-        const IconExcel = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></svg>;
-        const IconDownload = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
-        const IconUpload = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
-        const IconSort = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="13" y2="6"/><line x1="4" y1="12" x2="11" y2="12"/><line x1="4" y1="18" x2="11" y2="18"/><polyline points="15 15 18 18 21 15"/><line x1="18" y1="6" x2="18" y2="18"/></svg>;
-        const IconGripVertical = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>;
+            {/* Nội dung câu hỏi và đáp án */}
+            <div className="bg-white rounded-[32px] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-800 leading-relaxed mb-8">
+                {activeQuestions[currentQuestion].question}
+              </h2>
 
-        const capitalizeWords = (str) => {
-            if (!str) return '';
-            return str.replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
-        };
-
-        function App() {
-            // --- STATES ---
-            const [activeTab, setActiveTab] = useState('list');
-            const [guests, setGuests] = useState(() => {
-                try {
-                    const saved = localStorage.getItem('wedding_app_final');
-                    return saved ? JSON.parse(saved) : [];
-                } catch { return []; }
-            });
-            const [toast, setToast] = useState(null);
-            
-            // Modal Thêm Khách
-            const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-            const [inputGroup, setInputGroup] = useState('');
-            const [newGroupInput, setNewGroupInput] = useState('');
-            const [inputNames, setInputNames] = useState(''); 
-            const [defaultMainMeals, setDefaultMainMeals] = useState(1);
-            const [defaultSubMeals, setDefaultSubMeals] = useState(0);
-            
-            // Edit Bottom Sheet
-            const [editingGuest, setEditingGuest] = useState(null);
-            
-            // Điều hướng & Tìm kiếm
-            const [activeGroupFolder, setActiveGroupFolder] = useState(null); 
-            const [searchTerm, setSearchTerm] = useState('');
-            
-            // Mặc định là Thứ tự nhập (time_asc)
-            const [sortBy, setSortBy] = useState('time_asc'); 
-            const [draggedGuestId, setDraggedGuestId] = useState(null);
-
-            // Mic
-            const [isListening, setIsListening] = useState(false);
-            const recognitionRef = useRef(null);
-            const inputRef = useRef(null);
-
-            useEffect(() => {
-                localStorage.setItem('wedding_app_final', JSON.stringify(guests));
-            }, [guests]);
-
-            // Kích hoạt Polyfill Kéo Thả Mobile (Chỉ cần giữ 0.3s là kéo được)
-            useEffect(() => {
-                if (window.MobileDragDrop) {
-                    window.MobileDragDrop.polyfill({ holdToDrag: 300 });
-                    window.addEventListener('touchmove', function() {}, {passive: false});
-                }
-            }, []);
-
-            const showToast = (message, type = 'success') => {
-                setToast({ message, type, id: Date.now() });
-                setTimeout(() => setToast(null), 2000); 
-            };
-
-            const uniqueGroups = useMemo(() => Array.from(new Set(guests.map(g => g.group))).sort(), [guests]);
-
-            // --- GIỌNG NÓI ---
-            useEffect(() => {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                if (SpeechRecognition) {
-                    const recognition = new SpeechRecognition();
-                    recognition.continuous = true;
-                    recognition.lang = 'vi-VN';
-                    recognition.onresult = (event) => {
-                        const transcript = Array.from(event.results).map(r => r[0].transcript).join(', ');
-                        const clean = transcript.split(',').map(s => s.trim()).filter(s => s).join(', ');
-                        const capitalizedClean = capitalizeWords(clean);
-                        setInputNames(prev => prev.trim() ? prev + ', ' + capitalizedClean : capitalizedClean);
-                    };
-                    recognition.onerror = () => { setIsListening(false); showToast('Lỗi micro!', 'error'); };
-                    recognition.onend = () => setIsListening(false);
-                    recognitionRef.current = recognition;
-                }
-            }, []);
-
-            const toggleVoice = () => {
-                if (!recognitionRef.current) return showToast('Trình duyệt không hỗ trợ', 'error');
-                if (isListening) { recognitionRef.current.stop(); } 
-                else { recognitionRef.current.start(); setIsListening(true); showToast('Đang nghe... 🎤'); }
-            };
-
-            // --- THÊM KHÁCH ---
-            const openAddModal = () => {
-                if (activeGroupFolder) { setInputGroup(activeGroupFolder); setNewGroupInput(''); } 
-                else { setInputGroup(''); }
-                setIsAddModalOpen(true);
-            };
-
-            const handleAddGuests = () => {
-                const rawGroup = newGroupInput.trim() || inputGroup;
-                if (!rawGroup) return showToast("Chọn Nhóm đã nhé!", "error");
-                const group = capitalizeWords(rawGroup);
-                
-                const rawNames = inputNames.split(/[\n,]+/).map(n => n.trim()).filter(n => n);
-                if (!rawNames.length) return showToast("Chưa nhập tên!", "error");
-                const names = rawNames.map(n => capitalizeWords(n));
-
-                const baseTime = Date.now();
-                const newG = names.map((name, index) => ({
-                    id: crypto.randomUUID ? crypto.randomUUID() : baseTime + Math.random(),
-                    name, group, mainMeals: Number(defaultMainMeals), subMeals: Number(defaultSubMeals),
-                    isInvited: false, rsvp: 'pending', 
-                    createdAt: baseTime + index // Thêm index để đảm bảo thứ tự chính xác khi nhập nhiều người
-                }));
-                
-                setGuests(prev => [...prev, ...newG]);
-                setInputNames(''); 
-                if (isListening && recognitionRef.current) recognitionRef.current.stop();
-                showToast(`Đã thêm ${names.length} khách!`);
-                if(inputRef.current) inputRef.current.focus();
-            };
-
-            const handleNameInputChange = (e) => setInputNames(e.target.value);
-            const handleKeyDown = (e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddGuests(); } };
-
-            const updateGuest = (id, field, value) => {
-                const finalValue = field === 'name' ? capitalizeWords(value) : value;
-                setGuests(prev => prev.map(g => g.id === id ? { ...g, [field]: finalValue } : g));
-                if (editingGuest && editingGuest.id === id) { setEditingGuest(prev => ({...prev, [field]: finalValue})); }
-            };
-
-            const deleteGuest = (id) => {
-                if (window.confirm("Xóa khách này khỏi danh sách?")) {
-                    setGuests(prev => prev.filter(g => g.id !== id));
-                    setEditingGuest(null); 
-                }
-            };
-
-            // --- XỬ LÝ TAP (DOUBLE TAP / SINGLE TAP) ---
-            const tapTimerRef = useRef(null);
-            const handleGuestTap = (guest) => {
-                if (draggedGuestId) return; 
-                
-                const now = Date.now();
-                const DOUBLE_TAP_DELAY = 300; 
-                
-                if (now - (window.lastTapTime || 0) < DOUBLE_TAP_DELAY) {
-                    clearTimeout(tapTimerRef.current); tapTimerRef.current = null; window.lastTapTime = 0;
-                    const confirmMsg = guest.isInvited ? `Đã mời "${guest.name}" rồi. HỦY đánh dấu?` : `Xác nhận đã gửi thiệp cho "${guest.name}"?`;
-                    if (window.confirm(confirmMsg)) {
-                        updateGuest(guest.id, 'isInvited', !guest.isInvited);
-                        showToast(guest.isInvited ? "Đã hủy đánh dấu" : "Đã đánh dấu Mời!");
-                    }
-                } else {
-                    window.lastTapTime = now;
-                    tapTimerRef.current = setTimeout(() => { 
-                        tapTimerRef.current = null; 
-                        setEditingGuest(guest); 
-                    }, DOUBLE_TAP_DELAY);
-                }
-            };
-
-            // --- XỬ LÝ KÉO THẢ -> GHI ĐÈ THỨ TỰ NHẬP ---
-            const onDragStart = (e, id) => {
-                const isManualMode = (sortBy === 'time_asc' || sortBy === 'time_desc') && searchTerm === '';
-                if (!isManualMode) return;
-                
-                setDraggedGuestId(id);
-                e.dataTransfer.effectAllowed = "move";
-                setTimeout(() => {
-                    const el = document.getElementById(`guest-${id}`);
-                    if(el) el.classList.add('dnd-dragging');
-                }, 0);
-            };
-
-            const onDragOver = (e) => {
-                if ((sortBy === 'time_asc' || sortBy === 'time_desc') && searchTerm === '') {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                }
-            };
-
-            const onDrop = (e, targetId) => {
-                const isManualMode = (sortBy === 'time_asc' || sortBy === 'time_desc') && searchTerm === '';
-                if (!isManualMode) return;
-                e.preventDefault();
-                if (!draggedGuestId || draggedGuestId === targetId) return;
-
-                setGuests(prev => {
-                    // 1. Lọc ra danh sách hiện tại của nhóm
-                    const groupGuestsUnsorted = prev.filter(g => g.group === activeGroupFolder);
-                    // 2. Sắp xếp để khớp với những gì đang hiển thị trên màn hình
-                    const currentGroupGuests = sortGuestsList(groupGuestsUnsorted);
-                    
-                    // 3. Lấy mảng thời gian gốc (đã được xếp theo đúng chuẩn)
-                    const originalTimes = currentGroupGuests.map(g => g.createdAt);
-                    
-                    // 4. Tìm vị trí kéo và thả
-                    const dragIdx = currentGroupGuests.findIndex(g => g.id === draggedGuestId);
-                    const dropIdx = currentGroupGuests.findIndex(g => g.id === targetId);
-                    if(dragIdx === -1 || dropIdx === -1) return prev;
-
-                    // 5. Cắt người bị kéo, nhét vào vị trí mới
-                    const [draggedItem] = currentGroupGuests.splice(dragIdx, 1);
-                    currentGroupGuests.splice(dropIdx, 0, draggedItem);
-                    
-                    // 6. TRỌNG TÂM: Ghi đè lại thời gian `createdAt` cho toàn bộ nhóm 
-                    // => Vĩnh viễn lưu lại thứ tự kéo thả này làm "Thứ tự nhập"
-                    currentGroupGuests.forEach((g, idx) => {
-                        g.createdAt = originalTimes[idx];
-                    });
-                    
-                    // 7. Cập nhật vào mảng tổng
-                    return prev.map(g => {
-                        const updated = currentGroupGuests.find(cg => cg.id === g.id);
-                        return updated ? { ...g, createdAt: updated.createdAt } : g;
-                    });
-                });
-            };
-
-            const onDragEnd = (id) => {
-                setDraggedGuestId(null);
-                const el = document.getElementById(`guest-${id}`);
-                if(el) el.classList.remove('dnd-dragging');
-            };
-
-            // --- XUẤT/NHẬP ---
-            const exportCSV = () => {
-                if(!guests.length) return showToast("Chưa có dữ liệu", "error");
-                const headers = ['Tên khách', 'Khu vực', 'Bữa chính', 'Bữa phụ', 'Trạng thái mời', 'Xác nhận đi'];
-                const rows = guests.map(g => [ `"${g.name}"`, `"${g.group}"`, g.mainMeals, g.subMeals, g.isInvited ? 'Đã mời' : 'Chưa', g.rsvp === 'yes' ? 'Đi' : g.rsvp === 'no' ? 'Nghỉ' : 'Chờ' ]);
-                const csv = "data:text/csv;charset=utf-8,\uFEFF" + [headers, ...rows].map(e => e.join(",")).join("\n");
-                const link = document.createElement("a");
-                link.href = encodeURI(csv); link.download = `DanhSachKhachMoi_${Date.now()}.csv`;
-                link.click();
-            };
-
-            const exportJSON = () => {
-                if(guests.length === 0) return showToast("Không có dữ liệu", "error");
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(guests));
-                const link = document.createElement("a");
-                link.href = dataStr; link.download = `Backup_KhachMoi_${Date.now()}.json`;
-                link.click();
-                showToast("Đã tải file sao lưu!");
-            };
-
-            const importJSON = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    try {
-                        const importedData = JSON.parse(event.target.result);
-                        if (Array.isArray(importedData)) {
-                            if (window.confirm(`Tìm thấy ${importedData.length} khách. Ghi đè lên dữ liệu hiện tại?`)) {
-                                setGuests(importedData); showToast("Phục hồi thành công!");
-                            }
-                        } else showToast("Sai định dạng", "error");
-                    } catch (err) { showToast("Lỗi file", "error"); }
-                };
-                reader.readAsText(file); e.target.value = ''; 
-            };
-
-            // --- HÀM SẮP XẾP CHUNG ---
-            const sortGuestsList = (list) => {
-                let sorted = [...list];
-                if (sortBy === 'name_asc') sorted.sort((a,b) => a.name.localeCompare(b.name, 'vi'));
-                if (sortBy === 'time_desc') sorted.sort((a,b) => b.createdAt - a.createdAt);
-                if (sortBy === 'time_asc') sorted.sort((a,b) => a.createdAt - b.createdAt);
-                return sorted;
-            };
-
-            // --- GIAO DIỆN CÁC TAB ---
-            const renderHome = () => {
-                const stats = guests.reduce((acc, g) => {
-                    acc.total++; acc.main += g.mainMeals; acc.sub += g.subMeals;
-                    if (g.isInvited) acc.invited++;
-                    if (g.rsvp === 'yes') { acc.yes++; acc.mainYes += g.mainMeals; acc.subYes += g.subMeals; }
-                    return acc;
-                }, { total:0, main:0, sub:0, invited:0, yes:0, mainYes:0, subYes:0 });
-
-                return (
-                    <div className="p-4 pt-safe content-pb animate-fade-in max-w-2xl mx-auto space-y-4">
-                        <h1 className="text-2xl font-black text-slate-800 tracking-tight px-2">Tổng quan</h1>
-                        <div className="bg-gradient-to-br from-brand-500 to-pink-600 rounded-[2rem] p-6 text-white shadow-float">
-                            <p className="text-brand-100 font-bold text-sm mb-1 uppercase tracking-wider">Tiến độ gửi thiệp</p>
-                            <div className="flex items-end gap-2 mb-4">
-                                <span className="text-6xl font-black">{stats.invited}</span>
-                                <span className="text-2xl text-brand-200 font-black mb-1.5">/ {stats.total}</span>
-                            </div>
-                            <div className="w-full bg-black/20 h-2 rounded-full overflow-hidden">
-                                <div className="bg-white h-full transition-all duration-1000 ease-out" style={{ width: `${stats.total ? (stats.invited/stats.total)*100 : 0}%`}}></div>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-white p-5 rounded-[2rem] shadow-soft border border-slate-100 flex flex-col justify-between">
-                                <p className="text-slate-500 text-sm font-bold mb-1">Chắc chắn đi</p>
-                                <p className="text-4xl font-black text-slate-800">{stats.yes}</p>
-                            </div>
-                            <div className="bg-white p-5 rounded-[2rem] shadow-soft border border-slate-100 flex flex-col justify-between">
-                                <p className="text-slate-500 text-sm font-bold mb-1">Dự kiến Mâm</p>
-                                <p className="text-4xl font-black text-slate-800">{stats.main}</p>
-                            </div>
-                        </div>
-                    </div>
-                );
-            };
-
-            // HÀM RENDER ITEM KHÁCH (Kéo Thả)
-            const renderGuestItem = (g, index) => {
-                const isManualMode = (sortBy === 'time_asc' || sortBy === 'time_desc') && searchTerm === '';
-
-                return (
-                    <div 
-                        key={g.id} 
-                        id={`guest-${g.id}`}
-                        draggable={isManualMode}
-                        onDragStart={(e) => isManualMode && onDragStart(e, g.id)}
-                        onDragOver={(e) => isManualMode && onDragOver(e)}
-                        onDrop={(e) => isManualMode && onDrop(e, g.id)}
-                        onDragEnd={() => isManualMode && onDragEnd(g.id)}
-                        className={`bg-white rounded-[1.25rem] shadow-sm border border-slate-100 px-4 py-3.5 flex justify-between items-center cursor-pointer active:bg-slate-50 select-none dnd-item ${isManualMode ? 'hover:border-brand-200' : ''}`}
-                        onClick={() => handleGuestTap(g)}
+              <div className="space-y-3">
+                {activeQuestions[currentQuestion].options.map((option, index) => {
+                  const isSelected = userAnswers[currentQuestion] === index;
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleAnswerSelect(index)}
+                      className={`w-full text-left p-4 sm:p-5 rounded-2xl border-2 transition-all duration-200 flex items-center active:scale-[0.98] ${
+                        isSelected 
+                          ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-600/20" 
+                          : "bg-white border-slate-100 text-slate-700 hover:border-blue-300"
+                      }`}
                     >
-                        <div className="flex items-center flex-1 pr-2">
-                            <span className="text-slate-300 font-black text-sm w-7 shrink-0 text-left">{index + 1}.</span>
-                            <div className="flex flex-col justify-center">
-                                <div className="flex items-center gap-2">
-                                    <span className={`font-black text-[17px] ${g.isInvited ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-800'}`}>
-                                        {g.name}
-                                    </span>
-                                    {g.isInvited && (
-                                        <span className="flex items-center bg-emerald-100 text-emerald-700 text-[10px] uppercase font-black px-2 py-0.5 rounded-md">Đã mời</span>
-                                    )}
-                                </div>
-                                {searchTerm && <span className="text-xs font-bold text-slate-400 mt-0.5">{g.group}</span>}
-                            </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-1.5 shrink-0">
-                            {g.rsvp === 'yes' && <span className="bg-emerald-50 text-emerald-600 font-black text-[11px] px-2 py-1 rounded-lg">✅ Đi</span>}
-                            {g.rsvp === 'no' && <span className="bg-red-50 text-red-600 font-black text-[11px] px-2 py-1 rounded-lg">❌ Nghỉ</span>}
-                            
-                            {/* NẾU LÀ THỨ TỰ NHẬP HOẶC MỚI NHẤT -> HIỆN NÚT KÉO THẢ */}
-                            {isManualMode ? (
-                                <span className="text-slate-300 ml-1 cursor-grab active:cursor-grabbing hover:text-brand-400 p-1"><IconGripVertical/></span>
-                            ) : (
-                                <span className="text-slate-200 ml-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></span>
-                            )}
-                        </div>
-                    </div>
-                )
-            };
-
-            const renderList = () => {
-                // 1. TÌM KIẾM
-                if (searchTerm.trim() !== '') {
-                    const searchedGuests = sortGuestsList(guests.filter(g => g.name.toLowerCase().includes(searchTerm.toLowerCase())));
-                    return (
-                        <div className="p-4 pt-safe content-pb animate-fade-in max-w-2xl mx-auto">
-                            <div className="mb-4 sticky top-0 bg-[#f8fafc] z-20 pt-2 pb-3">
-                                <h1 className="text-2xl font-black text-slate-800 tracking-tight mb-4 px-2">Tìm kiếm</h1>
-                                <div className="relative shadow-sm rounded-2xl bg-white border border-slate-200">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400"><IconSearch /></div>
-                                    <input 
-                                        type="text" placeholder="Tìm tên khách..." autoFocus
-                                        className="w-full pl-12 pr-10 py-3.5 bg-transparent outline-none font-bold text-slate-700 placeholder-slate-400 rounded-2xl"
-                                        value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                                    />
-                                    <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600"><IconX/></button>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                {searchedGuests.length === 0 ? (
-                                    <div className="text-center py-10 text-slate-400 font-medium">Không tìm thấy "{searchTerm}"</div>
-                                ) : searchedGuests.map((g, idx) => renderGuestItem(g, idx))}
-                            </div>
-                        </div>
-                    );
-                }
-
-                // 2. VÀO BÊN TRONG NHÓM
-                if (activeGroupFolder) {
-                    const groupGuestsUnsorted = guests.filter(g => g.group === activeGroupFolder);
-                    const groupGuests = sortGuestsList(groupGuestsUnsorted);
-                    
-                    const groupStats = groupGuests.reduce((acc, g) => {
-                        if (g.isInvited) acc.invited++;
-                        if (g.rsvp === 'yes') { acc.yes++; acc.mainYes += g.mainMeals; }
-                        acc.mainTotal += g.mainMeals;
-                        return acc;
-                    }, { invited: 0, yes: 0, mainTotal: 0, mainYes: 0 });
-
-                    const isManualMode = sortBy === 'time_asc' || sortBy === 'time_desc';
-
-                    return (
-                        <div className="p-4 pt-safe content-pb animate-slide-in-right max-w-2xl mx-auto">
-                            <div className="sticky top-0 bg-[#f8fafc] z-20 pt-2 pb-4">
-                                <button onClick={() => setActiveGroupFolder(null)} className="flex items-center gap-2 text-slate-500 font-bold mb-4 active:text-brand-600 transition-colors px-1">
-                                    <IconArrowLeft /> Trở lại
-                                </button>
-                                
-                                <div className="flex justify-between items-start px-2">
-                                    <div>
-                                        <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-tight mb-1">{activeGroupFolder}</h1>
-                                        <p className="text-slate-500 text-sm font-bold">{groupGuests.length} khách • Đã mời {groupStats.invited}</p>
-                                    </div>
-                                    
-                                    <div className="relative">
-                                        <select 
-                                            className="appearance-none bg-white border border-slate-200 text-brand-600 font-bold text-sm rounded-xl pl-9 pr-4 py-2 shadow-sm outline-none focus:border-brand-300"
-                                            value={sortBy} onChange={e => setSortBy(e.target.value)}
-                                        >
-                                            <option value="time_asc">Thứ tự nhập (Kéo thả)</option>
-                                            <option value="time_desc">Mới nhất (Kéo thả)</option>
-                                            <option value="name_asc">Tên A-Z</option>
-                                        </select>
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-brand-500"><IconSort/></div>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-3 mt-4 px-2">
-                                    <div className="bg-amber-50 rounded-xl p-3 flex-1 border border-amber-100 flex justify-between items-center">
-                                        <span className="text-amber-700 font-bold text-xs uppercase">Dự kiến cỗ</span>
-                                        <span className="font-black text-amber-800 text-lg">{groupStats.mainTotal}</span>
-                                    </div>
-                                    <div className="bg-emerald-50 rounded-xl p-3 flex-1 border border-emerald-100 flex justify-between items-center">
-                                        <span className="text-emerald-700 font-bold text-xs uppercase">Chắc chắn đi</span>
-                                        <span className="font-black text-emerald-800 text-lg">{groupStats.yes}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2 mt-2">
-                                {groupGuests.length === 0 ? (
-                                    <div className="text-center py-10 text-slate-400 font-medium">Chưa có ai trong nhóm này</div>
-                                ) : groupGuests.map((g, idx) => renderGuestItem(g, idx))}
-                            </div>
-                            
-                            {isManualMode ? (
-                                <p className="text-center text-xs font-medium text-brand-500 mt-8 mb-4 animate-pulse">💡 Mẹo: Ấn giữ 0.3s vào tên bất kỳ để kéo thả thay đổi Thứ Tự Nhập</p>
-                            ) : (
-                                <p className="text-center text-xs font-medium text-slate-400 mt-8 mb-4">Mẹo: Chạm nhanh 2 lần vào tên để đánh dấu Đã Mời</p>
-                            )}
-                        </div>
-                    );
-                }
-
-                // 3. THƯ MỤC CHÍNH
-                return (
-                    <div className="p-4 pt-safe content-pb animate-fade-in max-w-2xl mx-auto">
-                        <div className="mb-6 sticky top-0 bg-[#f8fafc] z-20 pt-2 pb-3">
-                            <h1 className="text-2xl font-black text-slate-800 tracking-tight mb-4 px-2">Danh sách</h1>
-                            <div className="relative shadow-sm rounded-2xl bg-white border border-slate-200">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400"><IconSearch /></div>
-                                <input 
-                                    type="text" placeholder="Tìm tên khách..." 
-                                    className="w-full pl-12 pr-4 py-3.5 bg-transparent outline-none font-bold text-slate-700 placeholder-slate-400 rounded-2xl"
-                                    value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-3">
-                            {uniqueGroups.length === 0 ? (
-                                <div className="text-center py-10 text-slate-400 font-medium">Chưa có danh sách nào</div>
-                            ) : uniqueGroups.map(groupName => {
-                                const gs = guests.filter(g => g.group === groupName);
-                                const invitedCount = gs.filter(g => g.isInvited).length;
-                                const progress = gs.length === 0 ? 0 : (invitedCount / gs.length) * 100;
-
-                                return (
-                                    <div 
-                                        key={groupName} 
-                                        onClick={() => setActiveGroupFolder(groupName)}
-                                        className="bg-white rounded-[1.5rem] shadow-soft border border-slate-100 p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform"
-                                    >
-                                        <div className="flex items-center gap-4 flex-1">
-                                            <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center shrink-0">
-                                                <IconFolder />
-                                            </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-black text-slate-800 text-lg">{groupName}</h3>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <span className="text-xs font-bold text-slate-500">{gs.length} người</span>
-                                                    <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                        <div className="bg-brand-400 h-full rounded-full" style={{ width: `${progress}%` }}></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="text-slate-300 ml-2"><IconChevronRight /></div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                );
-            };
-
-            const renderSettings = () => (
-                <div className="p-4 pt-safe content-pb animate-fade-in max-w-2xl mx-auto space-y-4">
-                    <h1 className="text-2xl font-black text-slate-800 tracking-tight mb-6 px-2">Cài đặt</h1>
-                    
-                    <div className="bg-white p-5 rounded-[2rem] shadow-soft border border-slate-100 flex items-center justify-between cursor-pointer active:bg-slate-50" onClick={() => window.location.reload(true)}>
-                        <h3 className="font-black text-slate-800">Cập nhật / Làm mới App</h3>
-                        <div className="bg-orange-50 text-orange-500 p-3 rounded-2xl"><IconRefresh/></div>
-                    </div>
-
-                    <div className="bg-white p-5 rounded-[2rem] shadow-soft border border-slate-100 flex items-center justify-between cursor-pointer active:bg-slate-50" onClick={exportCSV}>
-                        <div>
-                            <h3 className="font-black text-slate-800">Xuất Excel (CSV)</h3>
-                            <p className="text-xs font-medium text-slate-500">Tải danh sách để in ấn</p>
-                        </div>
-                        <div className="bg-emerald-50 text-emerald-600 p-3 rounded-2xl"><IconExcel/></div>
-                    </div>
-
-                    <div className="bg-white p-5 rounded-[2rem] shadow-soft border border-slate-100 flex items-center justify-between cursor-pointer active:bg-slate-50" onClick={exportJSON}>
-                        <div>
-                            <h3 className="font-black text-slate-800">Sao lưu (Backup)</h3>
-                            <p className="text-xs font-medium text-slate-500">Lưu file an toàn</p>
-                        </div>
-                        <div className="bg-blue-50 text-blue-600 p-3 rounded-2xl"><IconDownload/></div>
-                    </div>
-
-                    <label className="bg-white p-5 rounded-[2rem] shadow-soft border border-slate-100 flex items-center justify-between cursor-pointer active:bg-slate-50 block">
-                        <div>
-                            <h3 className="font-black text-slate-800">Nhập dữ liệu (Restore)</h3>
-                            <p className="text-xs font-medium text-slate-500">Mở file đã sao lưu</p>
-                        </div>
-                        <div className="bg-purple-50 text-purple-600 p-3 rounded-2xl">
-                            <IconUpload/>
-                            <input type="file" accept=".json" className="hidden" onChange={importJSON} />
-                        </div>
-                    </label>
-
-                    <div className="bg-red-50 p-5 rounded-[2rem] border border-red-100 flex items-center justify-between cursor-pointer mt-8" onClick={() => {
-                        if(window.confirm("BẠN CÓ CHẮC CHẮN XÓA TOÀN BỘ DỮ LIỆU?")) { setGuests([]); localStorage.removeItem('wedding_app_final'); setActiveGroupFolder(null); showToast("Đã xóa sạch"); }
-                    }}>
-                        <h3 className="font-black text-red-600">Xóa trắng dữ liệu</h3>
-                        <div className="text-red-400 p-2"><IconTrash/></div>
-                    </div>
-                </div>
-            );
-
-            return (
-                <div className="relative min-h-screen bg-[#f8fafc] font-sans">
-                    {activeTab === 'home' && renderHome()}
-                    {activeTab === 'list' && renderList()}
-                    {activeTab === 'settings' && renderSettings()}
-
-                    {/* MODAL THÊM KHÁCH */}
-                    <div className={`fixed inset-0 z-[50] flex items-end justify-center transition-opacity duration-300 ${isAddModalOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
-                        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)}></div>
-                        <div className={`relative bg-white w-full max-w-2xl rounded-t-[2.5rem] shadow-up p-5 pb-safe transition-transform duration-300 ${isAddModalOpen ? 'translate-y-0' : 'translate-y-full'}`}>
-                            
-                            <div className="flex justify-between items-center mb-4 px-1">
-                                <h2 className="text-xl font-black text-slate-800">Thêm người</h2>
-                                <button onClick={() => setIsAddModalOpen(false)} className="bg-slate-100 p-1.5 rounded-full text-slate-500"><IconX/></button>
-                            </div>
-
-                            <div className="space-y-3">
-                                <div className="flex gap-2">
-                                    <select className="bg-slate-50 border border-slate-200 rounded-2xl p-3 outline-none w-1/2 font-black text-slate-700" value={inputGroup} onChange={e => setInputGroup(e.target.value)}>
-                                        <option value="">- Chọn Nhóm -</option>
-                                        {uniqueGroups.map(g => <option key={g} value={g}>{g}</option>)}
-                                    </select>
-                                    <input 
-                                        type="text" placeholder="Tạo Nhóm..." 
-                                        className="bg-slate-50 border border-slate-200 rounded-2xl p-3 outline-none w-1/2 font-black text-slate-700 capitalize" 
-                                        autoCapitalize="words" value={newGroupInput} onChange={e => {setNewGroupInput(e.target.value); setInputGroup('');}} 
-                                    />
-                                </div>
-
-                                <div className="flex flex-nowrap gap-2 items-stretch">
-                                    <div className="relative flex-1">
-                                        <input 
-                                            ref={inputRef} type="text" autoCapitalize="words"
-                                            className={`w-full h-full bg-slate-50 rounded-2xl pl-4 pr-12 outline-none font-bold text-slate-800 text-lg border-2 transition-colors capitalize ${isListening ? 'border-brand-400 bg-brand-50' : 'border-slate-200 focus:border-brand-400'}`}
-                                            placeholder="Tên..." value={inputNames} onChange={handleNameInputChange} onKeyDown={handleKeyDown}
-                                        />
-                                        <button 
-                                            type="button" onClick={toggleVoice} 
-                                            className={`absolute right-1 top-1/2 -translate-y-1/2 p-2 rounded-full ${isListening ? 'text-brand-500 animate-pulse' : 'text-slate-400'}`}
-                                        >
-                                            {isListening ? <IconMic /> : <IconMicOff />}
-                                        </button>
-                                    </div>
-                                    <button onClick={handleAddGuests} className="shrink-0 bg-slate-800 text-white font-black px-5 py-3.5 rounded-2xl active:scale-95 transition-transform">
-                                        Thêm
-                                    </button>
-                                </div>
-
-                                <details className="group border border-slate-200 rounded-2xl p-4 cursor-pointer outline-none bg-white mt-2">
-                                    <summary className="font-bold text-brand-600 text-sm flex justify-between items-center outline-none">
-                                        ⚙️ Tùy chỉnh số lượng cỗ mặc định
-                                        <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
-                                    </summary>
-                                    <div className="flex gap-4 mt-4 pt-4 border-t border-slate-100 cursor-default">
-                                        <div className="flex-1">
-                                            <label className="text-xs text-slate-500 font-bold block mb-1">Cỗ chính</label>
-                                            <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-center font-black" value={defaultMainMeals} onChange={e => setDefaultMainMeals(e.target.value)} />
-                                        </div>
-                                        <div className="flex-1">
-                                            <label className="text-xs text-slate-500 font-bold block mb-1">Tiệc trà</label>
-                                            <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-center font-black" value={defaultSubMeals} onChange={e => setDefaultSubMeals(e.target.value)} />
-                                        </div>
-                                    </div>
-                                </details>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* BOTTOM SHEET CÀI ĐẶT KHÁCH */}
-                    <div className={`fixed inset-0 z-[60] flex items-end justify-center transition-opacity duration-300 ${editingGuest ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
-                        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setEditingGuest(null)}></div>
-                        <div className={`relative bg-white w-full max-w-2xl rounded-t-[2.5rem] shadow-up p-5 pb-safe transition-transform duration-300 ${editingGuest ? 'translate-y-0' : 'translate-y-full'}`}>
-                            {editingGuest && (
-                                <>
-                                    <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
-                                    <div className="flex justify-between items-start mb-6 px-1">
-                                        <div className="flex-1 mr-4">
-                                            <label className="text-xs font-bold text-slate-400 block mb-1 uppercase tracking-wide">Sửa Tên Khách</label>
-                                            <input 
-                                                type="text" 
-                                                value={editingGuest.name} 
-                                                onChange={(e) => updateGuest(editingGuest.id, 'name', e.target.value)}
-                                                className="w-full bg-transparent font-black text-2xl text-slate-800 border-b-2 border-slate-200 focus:border-brand-500 outline-none pb-1 capitalize transition-colors"
-                                                autoCapitalize="words"
-                                            />
-                                        </div>
-                                        <button onClick={() => setEditingGuest(null)} className="bg-slate-100 p-2 rounded-full text-slate-500 mt-2"><IconX/></button>
-                                    </div>
-
-                                    <div className="space-y-6">
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-400 block mb-2 uppercase tracking-wide px-1">Xác nhận tham dự</label>
-                                            <div className="flex bg-slate-100 rounded-2xl p-1 gap-1">
-                                                <button onClick={() => updateGuest(editingGuest.id, 'rsvp', 'pending')} className={`flex-1 py-3 rounded-xl text-sm font-black transition-all ${editingGuest.rsvp === 'pending' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>⏳ Chờ</button>
-                                                <button onClick={() => updateGuest(editingGuest.id, 'rsvp', 'yes')} className={`flex-1 py-3 rounded-xl text-sm font-black transition-all ${editingGuest.rsvp === 'yes' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-emerald-500'}`}>✅ Đi</button>
-                                                <button onClick={() => updateGuest(editingGuest.id, 'rsvp', 'no')} className={`flex-1 py-3 rounded-xl text-sm font-black transition-all ${editingGuest.rsvp === 'no' ? 'bg-red-500 text-white shadow-md' : 'text-slate-400 hover:text-red-500'}`}>❌ Nghỉ</button>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex gap-4">
-                                            <div className="flex-1 bg-slate-50 rounded-2xl p-3 border border-slate-100">
-                                                <label className="text-xs font-bold text-slate-400 block mb-1 uppercase tracking-wide">Số Mâm Cỗ</label>
-                                                <input 
-                                                    type="number" min="0" 
-                                                    className="w-full text-left font-black text-2xl bg-transparent outline-none text-slate-800" 
-                                                    value={editingGuest.mainMeals} 
-                                                    onChange={e => updateGuest(editingGuest.id, 'mainMeals', Number(e.target.value))} 
-                                                />
-                                            </div>
-                                            <button 
-                                                onClick={() => deleteGuest(editingGuest.id)} 
-                                                className="w-16 flex flex-col items-center justify-center bg-red-50 text-red-500 rounded-2xl border border-red-100 active:bg-red-100 transition-colors"
-                                            >
-                                                <IconTrash/>
-                                                <span className="text-[10px] font-bold mt-1">Xóa</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Toast */}
-                    {toast && (
-                        <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[70] animate-slide-up">
-                            <div className="px-5 py-3 rounded-full shadow-float font-black text-sm text-white bg-slate-800 text-center whitespace-nowrap">
-                                {toast.message}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* FAB */}
-                    <button 
-                        onClick={openAddModal}
-                        className="fixed z-40 bg-brand-500 text-white w-16 h-16 rounded-[1.5rem] shadow-float flex items-center justify-center active:scale-95 transition-transform"
-                        style={{ bottom: 'calc(80px + env(safe-area-inset-bottom))', right: '1.5rem' }}
-                    >
-                        <IconPlus />
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 transition-colors ${isSelected ? 'border-white bg-blue-500' : 'border-slate-300'}`}>
+                        {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+                      </div>
+                      <span className="text-base sm:text-lg font-medium leading-tight">{option}</span>
                     </button>
+                  );
+                })}
+              </div>
+            </div>
 
-                    {/* Bottom Nav */}
-                    <nav className="fixed bottom-0 left-0 right-0 z-30 glass-nav pb-safe">
-                        <div className="flex justify-around items-center h-[70px] max-w-md mx-auto px-4">
-                            <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'home' ? 'text-brand-600' : 'text-slate-400'}`}>
-                                <IconHome />
-                            </button>
-                            <button onClick={() => setActiveTab('list')} className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'list' ? 'text-brand-600' : 'text-slate-400'}`}>
-                                <IconUsers />
-                            </button>
-                            <button onClick={() => setActiveTab('settings')} className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'settings' ? 'text-brand-600' : 'text-slate-400'}`}>
-                                <IconSettings />
-                            </button>
-                        </div>
-                    </nav>
+            {/* Điều hướng */}
+            <div className="flex items-center justify-between gap-4 mt-2">
+              <button
+                onClick={handlePrevQuestion}
+                disabled={currentQuestion === 0}
+                className={`flex-1 flex justify-center items-center py-4 rounded-2xl font-bold transition-all ${currentQuestion === 0 ? 'bg-slate-200 text-slate-400 opacity-50' : 'bg-white text-slate-700 shadow-sm active:scale-95 border border-slate-100'}`}
+              >
+                Trở lại
+              </button>
+
+              {currentQuestion === activeQuestions.length - 1 ? (
+                <button
+                  onClick={submitQuiz}
+                  className="flex-1 flex justify-center items-center py-4 bg-green-500 text-white font-bold rounded-2xl shadow-md shadow-green-500/20 active:scale-95 transition-all"
+                >
+                  Nộp bài
+                </button>
+              ) : (
+                <button
+                  onClick={handleNextQuestion}
+                  className="flex-1 flex justify-center items-center py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-md shadow-blue-600/20 active:scale-95 transition-all"
+                >
+                  Tiếp theo
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* VIEW: KẾT QUẢ THI */}
+        {view === 'RESULT' && (
+          <div className="w-full bg-white rounded-[32px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] animate-fade-in relative mt-4">
+            <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-br from-blue-500 to-indigo-600"></div>
+            
+            <div className="relative pt-20 px-6 pb-10 text-center flex flex-col items-center">
+              <div className="w-28 h-28 bg-white rounded-full p-2 shadow-xl mb-6">
+                 <div className="w-full h-full bg-yellow-50 rounded-full flex items-center justify-center">
+                    <Award className="w-14 h-14 text-yellow-500" />
+                 </div>
+              </div>
+              
+              <h2 className="text-3xl font-bold text-slate-800 mb-2">Đã hoàn thành!</h2>
+              <p className="text-slate-500 font-medium mb-8">Kết quả bài trắc nghiệm của đồng chí</p>
+              
+              <div className="text-7xl font-black text-slate-800 tracking-tighter mb-10">
+                {score}<span className="text-3xl text-slate-300">/{activeQuestions.length}</span>
+              </div>
+
+              <div className="w-full flex flex-col gap-3 max-w-sm">
+                <button 
+                  onClick={() => setView('REVIEW')}
+                  className="w-full py-4 bg-[#F2F2F7] text-blue-600 font-bold rounded-[20px] active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <Eye className="w-5 h-5" />
+                  Xem chi tiết bài làm
+                </button>
+                <button 
+                  onClick={startQuiz}
+                  className="w-full py-4 bg-blue-600 text-white font-bold rounded-[20px] active:scale-95 transition-all shadow-md shadow-blue-600/20 flex items-center justify-center gap-2"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  Thi lại ngẫu nhiên
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* VIEW: XEM LẠI BÀI */}
+        {view === 'REVIEW' && (
+          <div className="w-full animate-fade-in flex flex-col gap-4 mt-2">
+            <div className="flex items-center justify-between mb-2 px-2">
+              <h2 className="text-2xl font-bold text-slate-800">Chi tiết bài làm</h2>
+              <button onClick={() => setView('RESULT')} className="px-4 py-2 bg-slate-200 text-slate-700 font-bold rounded-full text-sm active:scale-95">
+                Đóng
+              </button>
+            </div>
+
+            {activeQuestions.map((q, idx) => {
+              const uAnswer = userAnswers[idx];
+              const isCorrect = uAnswer === q.answer;
+              
+              return (
+                <div key={idx} className="bg-white p-5 rounded-[24px] shadow-sm">
+                  <h3 className="font-bold text-slate-800 mb-4 leading-relaxed">
+                    <span className="text-slate-400 mr-2">Q{idx + 1}.</span>
+                    {q.question}
+                  </h3>
+                  
+                  <div className="space-y-2">
+                    {q.options.map((opt, optIdx) => {
+                       let optStyle = "bg-[#F9F9FB] text-slate-500 border border-transparent";
+                       let icon = null;
+                       
+                       if (optIdx === q.answer) {
+                          optStyle = "bg-green-50 text-green-800 font-bold border-green-200 ring-1 ring-green-200";
+                          icon = <CheckCircle2 className="w-5 h-5 text-green-500" />;
+                       } else if (optIdx === uAnswer && !isCorrect) {
+                          optStyle = "bg-red-50 text-red-800 border-red-200";
+                          icon = <XCircle className="w-5 h-5 text-red-500" />;
+                       }
+                       
+                       return (
+                         <div key={optIdx} className={`p-4 rounded-2xl flex items-center justify-between gap-3 ${optStyle}`}>
+                           <span className="text-sm sm:text-base leading-tight">{opt}</span>
+                           {icon}
+                         </div>
+                       );
+                    })}
+                  </div>
                 </div>
-            );
-        }
+              )
+            })}
+          </div>
+        )}
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+        {/* VIEW: QUẢN LÝ (MANAGE) - GIAO DIỆN iOS SETTINGS */}
+        {view === 'MANAGE' && (
+          <div className="w-full animate-fade-in space-y-6 mt-2 pb-10">
+            <h2 className="text-3xl font-extrabold text-slate-800 px-2">Cài đặt</h2>
+            
+            {!showQuestionBank ? (
+              /* MENU CÀI ĐẶT CHÍNH */
+              <div className="space-y-6">
+                {/* Thông tin chung */}
+                <div className="bg-white rounded-[24px] shadow-[0_2px_10px_rgb(0,0,0,0.02)] overflow-hidden">
+                  <div className="p-4 flex items-center gap-4 border-b border-slate-100">
+                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shrink-0">
+                      <FileText className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-800 text-lg">Thông tin bộ đề</h3>
+                      <p className="text-slate-500 text-sm">Hệ thống đang có {questions.length} câu hỏi</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Các hành động */}
+                <div className="bg-white rounded-[24px] shadow-[0_2px_10px_rgb(0,0,0,0.02)] overflow-hidden">
+                  <button 
+                    onClick={openAddModal}
+                    className="w-full p-4 flex items-center justify-between border-b border-slate-100 active:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center shrink-0">
+                        <Plus className="w-5 h-5" />
+                      </div>
+                      <span className="font-semibold text-slate-800 text-lg">Thêm câu hỏi mới</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-slate-400" />
+                  </button>
+
+                  <button 
+                    onClick={() => setShowQuestionBank(true)}
+                    className="w-full p-4 flex items-center justify-between border-b border-slate-100 active:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center shrink-0">
+                        <List className="w-5 h-5" />
+                      </div>
+                      <span className="font-semibold text-slate-800 text-lg">Quản lý kho câu hỏi</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-slate-400" />
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      if(window.confirm("Đồng chí có chắc chắn muốn khôi phục lại toàn bộ 40 câu hỏi gốc? Các câu hỏi mới thêm sẽ bị xóa mất.")) {
+                        setQuestions(initialQuestionsData);
+                      }
+                    }}
+                    className="w-full p-4 flex items-center justify-between active:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center shrink-0">
+                        <RotateCcw className="w-5 h-5" />
+                      </div>
+                      <span className="font-semibold text-slate-800 text-lg">Khôi phục đề gốc</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-slate-400" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* KHO CÂU HỎI CHI TIẾT */
+              <div className="space-y-4">
+                <button 
+                  onClick={() => setShowQuestionBank(false)}
+                  className="flex items-center gap-2 text-blue-600 font-bold px-2 py-1 mb-2 active:opacity-70"
+                >
+                  <ChevronLeft className="w-6 h-6 -ml-2" />
+                  Quay lại Cài đặt
+                </button>
+
+                <div className="flex justify-between items-center px-2 mb-4">
+                  <h3 className="text-xl font-bold text-slate-800">Kho câu hỏi ({questions.length})</h3>
+                  <button onClick={openAddModal} className="text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full font-bold text-sm">
+                    + Thêm
+                  </button>
+                </div>
+
+                <div className="space-y-3 pb-8">
+                  {questions.map((q, idx) => {
+                    const isExpanded = expandedQuestion === idx;
+                    
+                    return (
+                      <div key={idx} className="bg-white rounded-[24px] shadow-sm overflow-hidden transition-all duration-300 border border-slate-100">
+                        {/* Header (Clickable) */}
+                        <div 
+                          onClick={() => setExpandedQuestion(isExpanded ? null : idx)}
+                          className="p-5 flex items-start gap-3 cursor-pointer active:bg-slate-50 transition-colors"
+                        >
+                          <div className="bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-xl text-sm mt-0.5 shrink-0">
+                            {idx + 1}
+                          </div>
+                          <h3 className={`font-semibold text-slate-800 leading-relaxed flex-1 text-base sm:text-lg ${!isExpanded && 'line-clamp-2'}`}>
+                            {q.question}
+                          </h3>
+                          <div className="text-slate-400 mt-1 shrink-0 transition-transform duration-300">
+                            {isExpanded ? <ChevronDown className="w-5 h-5 text-blue-500" /> : <ChevronRight className="w-5 h-5" />}
+                          </div>
+                        </div>
+
+                        {/* Expanded Content */}
+                        <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                          <div className="p-5 pt-0 border-t border-slate-50">
+                            <div className="space-y-2 mt-4">
+                              {q.options.map((opt, optIdx) => (
+                                <div 
+                                  key={optIdx} 
+                                  className={`flex items-center gap-3 text-sm p-3.5 rounded-2xl ${optIdx === q.answer ? 'bg-blue-50 text-blue-700 font-semibold border border-blue-100' : 'bg-[#F9F9FB] text-slate-600'}`}
+                                >
+                                  {optIdx === q.answer ? <CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" /> : <div className="w-5 h-5 rounded-full border-2 border-slate-300 shrink-0" />}
+                                  <span className="leading-relaxed text-base">{opt}</span>
+                                </div>
+                              ))}
+                            </div>
+                            
+                            {/* Action Buttons (Sửa & Xóa) */}
+                            <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6 pt-5 border-t border-slate-100">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); openEditModal(idx); }} 
+                                className="flex-1 sm:flex-none justify-center flex items-center gap-2 px-6 py-3 bg-blue-50 text-blue-600 rounded-xl font-bold active:bg-blue-100 transition-colors shadow-sm"
+                              >
+                                <Pencil className="w-5 h-5" /> Cập nhật (Sửa)
+                              </button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); deleteQuestion(idx); }} 
+                                className="flex-1 sm:flex-none justify-center flex items-center gap-2 px-6 py-3 bg-red-50 text-red-600 rounded-xl font-bold active:bg-red-100 transition-colors shadow-sm"
+                              >
+                                <Trash2 className="w-5 h-5" /> Xóa câu hỏi
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* NAV BOTTOM DÀNH CHO MOBILE */}
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-200/50 pb-safe z-40 shadow-[0_-10px_20px_rgb(0,0,0,0.02)]">
+        <div className="flex justify-around items-center h-20 px-6">
+          <button 
+            onClick={() => setView('HOME')} 
+            className={`flex flex-col items-center gap-1.5 p-2 transition-colors ${['HOME', 'QUIZ', 'RESULT', 'REVIEW'].includes(view) ? 'text-blue-600' : 'text-slate-400'}`}
+          >
+            <div className={`p-1.5 rounded-full ${['HOME', 'QUIZ', 'RESULT', 'REVIEW'].includes(view) ? 'bg-blue-50' : 'bg-transparent'}`}>
+              <Home className={`w-6 h-6 ${['HOME', 'QUIZ', 'RESULT', 'REVIEW'].includes(view) ? 'fill-blue-100' : ''}`} />
+            </div>
+            <span className="text-[11px] font-bold tracking-wide">Trang chủ</span>
+          </button>
+          
+          <button 
+            onClick={() => setView('MANAGE')} 
+            className={`flex flex-col items-center gap-1.5 p-2 transition-colors ${view === 'MANAGE' ? 'text-blue-600' : 'text-slate-400'}`}
+          >
+            <div className={`p-1.5 rounded-full ${view === 'MANAGE' ? 'bg-blue-50' : 'bg-transparent'}`}>
+              <Settings className={`w-6 h-6 ${view === 'MANAGE' ? 'fill-blue-100' : ''}`} />
+            </div>
+            <span className="text-[11px] font-bold tracking-wide">Cài đặt</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* MODAL THÊM / SỬA CÂU HỎI (Toàn màn hình trên Mobile, Cửa sổ trên Desktop) */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-sm sm:p-4 animate-fade-in">
+          <div className="bg-[#F2F2F7] sm:bg-white w-full sm:max-w-2xl h-[90vh] sm:h-auto sm:max-h-[90vh] rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col overflow-hidden">
+            
+            {/* Header Modal */}
+            <div className="flex justify-between items-center p-4 sm:p-6 bg-white sm:bg-transparent border-b border-slate-200/60 sticky top-0 z-10">
+              <button 
+                onClick={() => setShowAddModal(false)}
+                className="text-blue-600 font-semibold px-2 py-1 active:opacity-50 text-base"
+              >
+                Hủy
+              </button>
+              <h2 className="text-lg font-bold text-slate-800">
+                {editingIndex !== null ? 'Cập nhật Câu Hỏi' : 'Thêm Câu Mới'}
+              </h2>
+              <button 
+                onClick={saveNewQuestion}
+                className="text-blue-600 font-bold px-2 py-1 active:opacity-50 text-base"
+              >
+                {editingIndex !== null ? 'Cập nhật' : 'Lưu'}
+              </button>
+            </div>
+
+            {/* Nội dung Modal */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
+              
+              <div className="bg-white rounded-[24px] p-4 shadow-sm border border-slate-100">
+                <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider mb-2 px-1">Câu hỏi</label>
+                <textarea 
+                  value={newQuestionText}
+                  onChange={(e) => setNewQuestionText(e.target.value)}
+                  placeholder="Nhập nội dung câu hỏi..."
+                  className="w-full bg-transparent min-h-[100px] text-slate-800 text-lg outline-none resize-y"
+                />
+              </div>
+
+              <div className="bg-white rounded-[24px] overflow-hidden shadow-sm border border-slate-100">
+                <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                  <label className="text-sm font-bold text-slate-500 uppercase tracking-wider">Đáp án (Chọn cái đúng)</label>
+                </div>
+                
+                {newOptions.map((opt, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-4 border-b border-slate-100 last:border-0 bg-white">
+                    <div 
+                      onClick={() => setNewCorrectAnswer(idx)}
+                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 cursor-pointer transition-all ${newCorrectAnswer === idx ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-[#F2F2F7]'}`}
+                    >
+                      {newCorrectAnswer === idx && <CheckCircle2 className="w-5 h-5 text-white" />}
+                    </div>
+                    
+                    <input 
+                      type="text" 
+                      value={opt}
+                      onChange={(e) => handleOptionChange(idx, e.target.value)}
+                      placeholder={`Lựa chọn ${idx + 1}`}
+                      className="flex-1 bg-transparent py-2 text-slate-800 outline-none text-base"
+                    />
+                  </div>
+                ))}
+              </div>
+              
+              {newOptions.length < 5 && (
+                <button 
+                  onClick={handleAddOptionField}
+                  className="w-full py-4 text-blue-600 font-semibold flex items-center justify-center gap-2 bg-white rounded-[24px] shadow-sm active:bg-slate-50 text-base"
+                >
+                  <Plus className="w-5 h-5" /> Thêm đáp án
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
