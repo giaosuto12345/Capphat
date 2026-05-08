@@ -179,8 +179,9 @@ Thi trắc nghiệm
             
             const [darkMode, setDarkMode] = useState(false);
             const [soundEnabled, setSoundEnabled] = useState(true);
-            const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+            const [shuffleOptionsEnabled, setShuffleOptionsEnabled] = useState(true); // Trạng thái đảo đáp án
             
+            const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
             const [editModal, setEditModal] = useState({ visible: false, isNew: false, data: null });
             const [confirmDialog, setConfirmDialog] = useState({ visible: false, title: '', message: '', confirmText: 'Đồng ý', isDanger: false, onConfirm: null });
 
@@ -191,10 +192,12 @@ Thi trắc nghiệm
                 const savedQuestions = localStorage.getItem('quizQuestions');
                 const savedDark = localStorage.getItem('quizDarkMode') === 'true';
                 const savedSound = localStorage.getItem('quizSound') !== 'false';
+                const savedShuffleOpts = localStorage.getItem('quizShuffleOpts');
 
                 if (savedHistory) setHistory(JSON.parse(savedHistory));
                 if (savedStats) setStats(JSON.parse(savedStats));
                 if (savedQuestions) setQuestions(JSON.parse(savedQuestions));
+                if (savedShuffleOpts !== null) setShuffleOptionsEnabled(savedShuffleOpts === 'true');
                 
                 setDarkMode(savedDark);
                 setSoundEnabled(savedSound);
@@ -208,10 +211,11 @@ Thi trắc nghiệm
                 localStorage.setItem('quizQuestions', JSON.stringify(questions));
                 localStorage.setItem('quizDarkMode', darkMode);
                 localStorage.setItem('quizSound', soundEnabled);
+                localStorage.setItem('quizShuffleOpts', shuffleOptionsEnabled);
                 
                 if(darkMode) document.documentElement.classList.add('dark');
                 else document.documentElement.classList.remove('dark');
-            }, [history, stats, questions, darkMode, soundEnabled]);
+            }, [history, stats, questions, darkMode, soundEnabled, shuffleOptionsEnabled]);
 
             // Đồng hồ đếm ngược
             useEffect(() => {
@@ -295,7 +299,10 @@ Thi trắc nghiệm
 
                 const randomizedQuiz = finalSel.map(q => {
                     let optsWithFlag = q.options.map((txt, i) => ({ txt, isC: i === q.answer }));
-                    optsWithFlag = shuffleArray(optsWithFlag);
+                    // Chỉ xáo trộn đáp án nếu người dùng BẬT tính năng này trong Cài đặt
+                    if (shuffleOptionsEnabled) {
+                        optsWithFlag = shuffleArray(optsWithFlag);
+                    }
                     return { ...q, options: optsWithFlag.map(o => o.txt), answer: optsWithFlag.findIndex(o => o.isC) };
                 });
 
@@ -409,7 +416,7 @@ Thi trắc nghiệm
 
                         <div className="p-5 space-y-6 mt-2">
                             <div className="bg-ios-card dark:bg-ios-darkcard p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
-                                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">Số câu hỏi</label>
+                                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">Số lượng câu</label>
                                 <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl gap-1">
                                     {[10, 20, 30, 'all'].map(num => (
                                         <button key={num} onClick={() => setQuizConfig({...quizConfig, count: num})} className={`flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 ${quizConfig.count === num ? 'bg-white dark:bg-slate-600 shadow-md text-ios-primary dark:text-white transform scale-105' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}>
@@ -450,7 +457,7 @@ Thi trắc nghiệm
                                 {timeLeft !== null && <span className={`font-mono font-bold text-sm bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl ${timePct<20?'text-red-500 animate-pulse':'text-ios-primary'}`}><i className="far fa-clock"></i> {formatTime(timeLeft)}</span>}
                             </div>
                             
-                            {/* Navigation Dots (Pill) To Mượt */}
+                            {/* Navigation Dots */}
                             <div className="px-6 pb-5 flex gap-2 overflow-x-auto hide-scrollbar items-center scroll-smooth snap-x" id="dot-container">
                                 {activeQuestions.map((_, idx) => {
                                     const isActive = idx === currentQuestion;
@@ -561,6 +568,7 @@ Thi trắc nghiệm
                                 <div className="toggle-label"></div>
                             </label>
                         </div>
+                        
                         <div className="p-5 flex justify-between items-center">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-green-500 text-white flex items-center justify-center shadow-md shadow-green-500/30"><i className="fas fa-volume-up text-lg"></i></div>
@@ -568,6 +576,21 @@ Thi trắc nghiệm
                             </div>
                             <label className="flex items-center">
                                 <input type="checkbox" className="hidden toggle-checkbox" checked={soundEnabled} onChange={()=>setSoundEnabled(!soundEnabled)} />
+                                <div className="toggle-label"></div>
+                            </label>
+                        </div>
+
+                        {/* TÍNH NĂNG MỚI: ĐẢO VỊ TRÍ ĐÁP ÁN */}
+                        <div className="p-5 flex justify-between items-center">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shadow-md shadow-orange-500/30"><i className="fas fa-random text-lg"></i></div>
+                                <div>
+                                    <span className="font-semibold text-lg block">Đảo vị trí đáp án</span>
+                                    <span className="text-xs text-slate-400 dark:text-slate-500">Trộn thứ tự A, B, C khi tạo đề</span>
+                                </div>
+                            </div>
+                            <label className="flex items-center">
+                                <input type="checkbox" className="hidden toggle-checkbox" checked={shuffleOptionsEnabled} onChange={()=>setShuffleOptionsEnabled(!shuffleOptionsEnabled)} />
                                 <div className="toggle-label"></div>
                             </label>
                         </div>
@@ -669,7 +692,7 @@ Thi trắc nghiệm
             return (
                 <div className="max-w-md mx-auto min-h-screen relative overflow-x-hidden">
                     
-                    {/* TOAST (Nâng cấp) */}
+                    {/* TOAST */}
                     <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[100] transition-all duration-400 cubic-bezier(0.16, 1, 0.3, 1) ${toast.visible ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-12 opacity-0 scale-90 pointer-events-none'}`}>
                         <div className="glass-panel px-6 py-3.5 rounded-full shadow-xl flex items-center gap-3 border border-white/30 dark:border-slate-700">
                             <i className={`fas ${toast.type==='success'?'fa-check-circle text-green-500':'fa-info-circle text-ios-primary'} text-xl`}></i>
@@ -700,7 +723,7 @@ Thi trắc nghiệm
                     {view === 'SETTINGS' && renderSettings()}
                     {view === 'MANAGE' && renderManage()}
 
-                    {/* BOTTOM NAV BAR CAO HƠN ĐỂ TRÁNH HOME INDICATOR */}
+                    {/* BOTTOM NAV BAR */}
                     {['HOME', 'HISTORY', 'SETTINGS', 'MANAGE'].includes(view) && (
                         <div className="fixed bottom-0 left-0 w-full z-40 glass-panel border-t border-slate-200/50 dark:border-slate-800/50 safe-pb shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
                             <div className="max-w-md mx-auto flex justify-around pt-3">
