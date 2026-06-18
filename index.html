@@ -18,7 +18,8 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-        
+        .light-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; }
+
         .blueprint-bg {
             background-color: #f8fafc;
             background-image: linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
@@ -33,14 +34,9 @@
         
         .svg-container svg text { user-select: none; pointer-events: none; }
         
-        /* Highlight Lô */
-        .highlight-lot { transition: all 0.2s ease; }
-        .is-highlighted rect.cell-bg { fill: #dbeafe !important; }
-        .is-highlighted .ziczac-col { fill: #dbeafe !important; }
-        
-        /* Modal Popup */
-        .modal-overlay { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); }
+        /* Khối CSS động cho Highlight sẽ được JS inject vào đây */
     </style>
+    <style id="dynamicHighlight"></style>
 </head>
 <body class="flex flex-col h-screen text-sm">
 
@@ -66,10 +62,8 @@
         </div>
     </header>
 
-    <!-- QUẢN LÝ NHÀ KHO (TABS) -->
-    <div class="bg-[#0f172a] border-b border-[#334155] flex overflow-x-auto light-scroll shrink-0" id="warehouseTabs">
-        <!-- Javascript render -->
-    </div>
+    <!-- QUẢN LÝ NHÀ KHO -->
+    <div class="bg-[#0f172a] border-b border-[#334155] flex overflow-x-auto light-scroll shrink-0" id="warehouseTabs"></div>
 
     <!-- MAIN APP -->
     <div class="flex flex-1 overflow-hidden relative">
@@ -87,7 +81,6 @@
                 <div class="p-2 border-b border-[#334155] flex justify-between items-center bg-[#0f172a] shrink-0">
                     <div class="text-[10px] font-bold text-slate-400 flex gap-2">
                         <span>Lô: <b id="kpiLots" class="text-white">0</b></span>
-                        <span>Viên: <b id="kpiItems" class="text-emerald-400">0</b></span>
                         <span>Hòm: <b id="kpiBoxes" class="text-blue-400">0</b></span>
                     </div>
                     <div class="flex gap-1">
@@ -100,10 +93,7 @@
                     </div>
                 </div>
                 
-                <!-- Khu vực Scroll Danh Sách -->
-                <div class="flex-1 overflow-y-auto p-2 space-y-1.5 pb-20 md:pb-2" id="dataContainer" onclick="clearHighlight(event)" style="min-height:0;">
-                    <!-- Render by JS -->
-                </div>
+                <div class="flex-1 overflow-y-auto p-2 space-y-1.5 pb-20 md:pb-2" id="dataContainer" onclick="clearHighlight(event)" style="min-height:0;"></div>
             </div>
 
             <!-- PANEL 2: SETTINGS -->
@@ -211,7 +201,7 @@
     </div>
 
     <script>
-        // --- DATA STATE NÂNG CẤP ---
+        // --- DATA STATE ---
         const state = {
             warehouses: [
                 {
@@ -225,9 +215,7 @@
             activeLotId: null
         };
 
-        function getActiveWH() {
-            return state.warehouses.find(w => w.id === state.activeWhId);
-        }
+        function getActiveWH() { return state.warehouses.find(w => w.id === state.activeWhId); }
 
         // --- QUẢN LÝ NHÀ KHO ---
         function renderWarehouseTabs() {
@@ -248,23 +236,18 @@
         }
 
         function switchWarehouse(id) {
-            state.activeWhId = id;
-            state.activeLotId = null;
-            syncConfigToUI();
-            triggerRender();
+            state.activeWhId = id; state.activeLotId = null;
+            syncConfigToUI(); triggerRender();
         }
 
         function addWarehouse() {
             const newId = Date.now();
-            const newCount = state.warehouses.length + 1;
             state.warehouses.push({
-                id: newId,
-                name: `Nhà Kho ${newCount}`,
+                id: newId, name: `Nhà Kho ${state.warehouses.length + 1}`,
                 config: { maxHeight: 24, maxCols: 8, maxRows: 5, defaultPack: 1000, allowMix: true },
                 items: []
             });
             switchWarehouse(newId);
-            showToast(`Đã thêm ${state.warehouses[state.warehouses.length-1].name}`);
         }
 
         function deleteWarehouse(e, id) {
@@ -272,14 +255,12 @@
             if(confirm("Xóa nhà kho này và toàn bộ lô đạn bên trong?")) {
                 state.warehouses = state.warehouses.filter(w => w.id !== id);
                 if (state.activeWhId === id) state.activeWhId = state.warehouses[0].id;
-                syncConfigToUI();
-                triggerRender();
+                syncConfigToUI(); triggerRender();
             }
         }
 
         function syncConfigToUI() {
-            const wh = getActiveWH();
-            if(!wh) return;
+            const wh = getActiveWH(); if(!wh) return;
             document.getElementById('cfgMaxHeight').value = wh.config.maxHeight;
             document.getElementById('cfgMaxCols').value = wh.config.maxCols;
             document.getElementById('cfgMaxRows').value = wh.config.maxRows;
@@ -298,19 +279,16 @@
         }
 
         function updateConfig() {
-            const wh = getActiveWH();
-            if(!wh) return;
+            const wh = getActiveWH(); if(!wh) return;
             wh.config.maxHeight = Math.max(1, Number(document.getElementById('cfgMaxHeight').value));
             wh.config.maxCols = Math.max(1, Number(document.getElementById('cfgMaxCols').value));
             wh.config.maxRows = Math.max(1, Number(document.getElementById('cfgMaxRows').value));
             wh.config.defaultPack = Math.max(1, Number(document.getElementById('cfgDefaultPack').value));
             wh.config.allowMix = document.getElementById('cfgAllowMix').checked;
-            
-            syncConfigToUI();
-            triggerRender();
+            syncConfigToUI(); triggerRender();
         }
 
-        // --- ALGORITHM: LÕI TÍNH TOÁN XẾP HÒM (FIX LỖI LÔ NHỎ) ---
+        // --- ALGORITHM TÍNH TOÁN XẾP HÒM (ĐÃ SỬA LỖI LÔ NHỎ) ---
         function calculateStacks(wh) {
             const stacks = [];
             let curStack = { i1: null, q1: 0, l1: 0, i2: null, q2: 0, l2: 0 };
@@ -321,16 +299,24 @@
                 let pack = Number(item.pack) || 1;
                 if (qty <= 0) return;
 
-                // Tính chính xác số hòm vật lý cần xếp
                 let fullBoxes = Math.floor(qty / pack);
                 let leftover = qty % pack;
                 let boxesToPlace = fullBoxes + (leftover > 0 ? 1 : 0);
 
                 while (boxesToPlace > 0) {
                     let spaceLeft = maxH - (curStack.q1 + curStack.q2);
+                    let needNewStack = false;
 
-                    // Đẩy sang cột mới nếu: Hết chỗ, Hoặc Không cho ghép lô
-                    if (spaceLeft === 0 || (!wh.config.allowMix && curStack.q1 > 0 && curStack.i1.id !== item.id)) {
+                    // Nếu hết chỗ, hoặc không cho ghép lô, hoặc đã có 2 lô khác nhau trong cùng 1 hòm
+                    if (spaceLeft === 0) {
+                        needNewStack = true;
+                    } else if (!wh.config.allowMix && curStack.q1 > 0 && curStack.i1.id !== item.id) {
+                        needNewStack = true;
+                    } else if (curStack.i1 && curStack.i1.id !== item.id && curStack.i2 && curStack.i2.id !== item.id) {
+                        needNewStack = true;
+                    }
+
+                    if (needNewStack) {
                         if (curStack.q1 > 0 || curStack.q2 > 0) stacks.push({...curStack});
                         curStack = { i1: null, q1: 0, l1: 0, i2: null, q2: 0, l2: 0 };
                         spaceLeft = maxH;
@@ -363,7 +349,7 @@
             return lotsA.some(id => lotsB.includes(id));
         }
 
-        // --- RENDER 1: LIST BÊN TRÁI (CHỨA CÔNG THỨC TOÁN HỌC) ---
+        // --- RENDER DANH SÁCH & CÔNG THỨC BÊN TRÁI ---
         function renderInputPanel() {
             const wh = getActiveWH();
             const container = document.getElementById('dataContainer');
@@ -375,23 +361,14 @@
             }
 
             wh.items.forEach((item, idx) => {
-                const maxH = wh.config.maxHeight;
                 const pck = Number(item.pack) || 1;
                 const qty = Number(item.qty) || 0;
                 
-                // Tính toán công thức
                 const fullB = Math.floor(qty / pck);
                 const left = qty % pck;
-                const physB = fullB + (left > 0 ? 1 : 0);
                 
-                const numFullStacks = Math.floor(physB / maxH);
-                const remB = physB % maxH;
-
-                let eqStr = numFullStacks > 0 ? `(${numFullStacks}x${maxH})` : ``;
-                if (remB > 0) eqStr += eqStr ? `+${remB}` : `${remB}`;
-                if (physB === 0) eqStr = "0";
-
-                let leftoverHtml = left > 0 ? `<span class="text-red-400 font-bold ml-1">(+ lẻ ${left}v)</span>` : '';
+                let eqStr = `SL: ${qty} = ${fullB}h`;
+                if (left > 0) eqStr += ` + ${left}`;
 
                 const isActive = state.activeLotId === item.id;
                 const activeClass = isActive ? "bg-blue-600/20 border-blue-500" : "bg-[#1e293b] border-[#334155] hover:border-slate-400";
@@ -405,7 +382,7 @@
                                 <span class="text-[10px] font-black text-[#38bdf8] truncate">${item.lot}</span>
                             </div>
                             <div class="text-[10.5px] text-slate-400 bg-[#0f172a] px-1.5 py-1 rounded inline-block">
-                                SL: <span class="text-slate-300 font-mono">${eqStr}</span> = <b class="text-blue-400">${physB}h</b> ${leftoverHtml}
+                                <span class="text-slate-300 font-mono font-bold">${eqStr}</span>
                             </div>
                         </div>
                         <div class="flex flex-col gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -418,7 +395,7 @@
             container.innerHTML = html;
         }
 
-        // --- RENDER 2: CANVAS CHUYÊN NGHIỆP ---
+        // --- RENDER BẢN VẼ ---
         function renderDiagram() {
             const wh = getActiveWH();
             const container = document.getElementById('svgContainer');
@@ -440,12 +417,9 @@
             if (viewMode === "1") {
                 const CELL_W = 100, CELL_H = 80;
                 const svgW = maxC * CELL_W, svgH = maxR * CELL_H;
-
                 const capacity = maxC * maxR;
                 const chunks = [];
-                for(let i=0; i<stacks.length; i+=capacity) {
-                    chunks.push(stacks.slice(i, i+capacity));
-                }
+                for(let i=0; i<stacks.length; i+=capacity) chunks.push(stacks.slice(i, i+capacity));
 
                 chunks.forEach((chunk, chunkIdx) => {
                     let grid = Array(maxR).fill().map(() => Array(maxC).fill(null));
@@ -458,79 +432,72 @@
                                     <div class="bg-slate-100 text-slate-600 text-center py-1.5 font-bold text-[10px] uppercase border-b border-slate-200">${wh.name} - Khu ${chunkIdx + 1}</div>
                                     <svg width="${svgW}" height="${svgH}" style="font-family: Arial, sans-serif;">`;
                     
-                    // Vẽ lưới kẻ mỏng cho TẤT CẢ các ô (kể cả trống)
+                    // Lưới mỏng tất cả các ô
                     svgHtml += `<g stroke="#cbd5e1" stroke-width="1">`;
                     for (let c = 0; c <= maxC; c++) svgHtml += `<line x1="${c * CELL_W}" y1="0" x2="${c * CELL_W}" y2="${svgH}" />`;
                     for (let r = 0; r <= maxR; r++) svgHtml += `<line x1="0" y1="${r * CELL_H}" x2="${svgW}" y2="${r * CELL_H}" />`;
                     svgHtml += `</g>`;
 
-                    // Vẽ dữ liệu ô đạn
+                    // Dữ liệu ô
                     for (let r = 0; r < maxR; r++) {
                         for (let c = 0; c < maxC; c++) {
                             let stack = grid[r][c];
                             let x = c * CELL_W, y = r * CELL_H;
 
                             if (stack) {
-                                let hlClass1 = state.activeLotId === stack.i1?.id ? "is-highlighted" : "";
-                                let hlClass2 = state.activeLotId === stack.i2?.id ? "is-highlighted" : "";
-                                let baseClass = (hlClass1 || hlClass2) ? "is-highlighted highlight-lot" : "highlight-lot";
-
-                                svgHtml += `<g class="${baseClass}">`;
-                                // Nền ô (ẩn ô trống)
-                                svgHtml += `<rect x="${x}" y="${y}" width="${CELL_W}" height="${CELL_H}" fill="transparent" stroke="none" class="cell-bg"/>`;
-
                                 if (stack.i2) {
-                                    // Chéo chia lô nét mỏng
-                                    svgHtml += `<line x1="${x}" y1="${y}" x2="${x + CELL_W}" y2="${y + CELL_H}" stroke="#0f172a" stroke-width="1" />`;
+                                    // Polygon 1 (Trái Dưới)
+                                    svgHtml += `<polygon points="${x},${y} ${x},${y+CELL_H} ${x+CELL_W},${y+CELL_H}" fill="transparent" class="fill-lot-${stack.i1.id}" />`;
+                                    // Polygon 2 (Phải Trên)
+                                    svgHtml += `<polygon points="${x},${y} ${x+CELL_W},${y} ${x+CELL_W},${y+CELL_H}" fill="transparent" class="fill-lot-${stack.i2.id}" />`;
+                                    // Đường chéo
+                                    svgHtml += `<line x1="${x}" y1="${y}" x2="${x + CELL_W}" y2="${y + CELL_H}" stroke="#0f172a" stroke-width="1.5" />`;
                                     
-                                    let t1 = stack.q1 + (stack.l1 > 0 ? `+${stack.l1}v` : '');
-                                    svgHtml += `<text x="${x + CELL_W * 0.25}" y="${y + CELL_H * 0.75 + 4}" font-size="12" font-weight="900" text-anchor="middle" fill="#0f172a">${t1}</text>`;
+                                    // Trái dưới (i1)
+                                    svgHtml += `<circle cx="${x + CELL_W/3}" cy="${y + (2*CELL_H)/3}" r="12" fill="white" stroke="#0f172a" stroke-width="1"/>`;
+                                    svgHtml += `<text x="${x + CELL_W/3}" y="${y + (2*CELL_H)/3 + 4}" font-size="11" font-weight="900" text-anchor="middle" fill="#0f172a">${stack.q1}</text>`;
+                                    if(stack.l1 > 0) svgHtml += `<text x="${x + CELL_W/3}" y="${y + (2*CELL_H)/3 + 22}" font-size="10" font-weight="bold" font-style="italic" text-anchor="middle" fill="#dc2626">lẻ ${stack.l1}</text>`;
                                     
-                                    let t2 = stack.q2 + (stack.l2 > 0 ? `+${stack.l2}v` : '');
-                                    svgHtml += `<text x="${x + CELL_W * 0.75}" y="${y + CELL_H * 0.25 + 4}" font-size="12" font-weight="900" text-anchor="middle" fill="#0f172a">${t2}</text>`;
+                                    // Phải trên (i2)
+                                    svgHtml += `<circle cx="${x + (2*CELL_W)/3}" cy="${y + CELL_H/3}" r="12" fill="white" stroke="#0f172a" stroke-width="1"/>`;
+                                    svgHtml += `<text x="${x + (2*CELL_W)/3}" y="${y + CELL_H/3 + 4}" font-size="11" font-weight="900" text-anchor="middle" fill="#0f172a">${stack.q2}</text>`;
+                                    if(stack.l2 > 0) svgHtml += `<text x="${x + (2*CELL_W)/3}" y="${y + CELL_H/3 - 14}" font-size="10" font-weight="bold" font-style="italic" text-anchor="middle" fill="#dc2626">lẻ ${stack.l2}</text>`;
+
                                 } else {
-                                    // 1 Lô
-                                    let text = stack.q1 + (stack.l1 > 0 ? `+${stack.l1}v` : '');
-                                    svgHtml += `<text x="${x + CELL_W/2}" y="${y + CELL_H/2 + 5}" font-size="14" font-weight="bold" text-anchor="middle" fill="#0f172a">${text}</text>`;
+                                    svgHtml += `<rect x="${x}" y="${y}" width="${CELL_W}" height="${CELL_H}" fill="transparent" class="fill-lot-${stack.i1.id}" />`;
+                                    svgHtml += `<circle cx="${x + CELL_W/2}" cy="${y + CELL_H/2}" r="14" fill="white" stroke="#0f172a" stroke-width="1.5"/>`;
+                                    svgHtml += `<text x="${x + CELL_W/2}" y="${y + CELL_H/2 + 5}" font-size="13" font-weight="900" text-anchor="middle" fill="#0f172a">${stack.q1}</text>`;
+                                    if(stack.l1 > 0) svgHtml += `<text x="${x + CELL_W - 5}" y="${y + 15}" font-size="10" font-weight="bold" font-style="italic" text-anchor="end" fill="#dc2626">lẻ ${stack.l1}</text>`;
                                 }
-                                svgHtml += `</g>`;
                             }
                         }
                     }
 
-                    // VẼ NÉT VIỀN ĐẬM PHÂN CÁCH LÔ
-                    svgHtml += `<g stroke="#0f172a" stroke-width="3" stroke-linecap="square">`;
+                    // NÉT BO ĐẬM PHÂN KHOẢNH
+                    svgHtml += `<g stroke="#0f172a" stroke-width="3.5" stroke-linecap="square">`;
                     for (let r = 0; r < maxR; r++) {
                         for (let c = 0; c < maxC; c++) {
                             let cell = grid[r][c];
                             if (cell) {
                                 let x = c * CELL_W, y = r * CELL_H;
-                                
-                                if (r===0 || !grid[r-1][c] || !hasSharedLot(cell, grid[r-1][c])) svgHtml += `<line x1="${x}" y1="${y}" x2="${x+CELL_W}" y2="${y}" />`; // Top
-                                if (c===0 || !grid[r][c-1] || !hasSharedLot(cell, grid[r][c-1])) svgHtml += `<line x1="${x}" y1="${y}" x2="${x}" y2="${y+CELL_H}" />`; // Left
-                                
-                                if (c < maxC - 1 && !hasSharedLot(cell, grid[r][c+1])) svgHtml += `<line x1="${x+CELL_W}" y1="${y}" x2="${x+CELL_W}" y2="${y+CELL_H}" />`; 
-                                if (c === maxC - 1) svgHtml += `<line x1="${x+CELL_W}" y1="${y}" x2="${x+CELL_W}" y2="${y+CELL_H}" />`;
-
-                                if (r < maxR - 1 && !hasSharedLot(cell, grid[r+1][c])) svgHtml += `<line x1="${x}" y1="${y+CELL_H}" x2="${x+CELL_W}" y2="${y+CELL_H}" />`;
-                                if (r === maxR - 1) svgHtml += `<line x1="${x}" y1="${y+CELL_H}" x2="${x+CELL_W}" y2="${y+CELL_H}" />`;
+                                if (r===0 || !grid[r-1][c] || !hasSharedLot(cell, grid[r-1][c])) svgHtml += `<line x1="${x}" y1="${y}" x2="${x+CELL_W}" y2="${y}" class="stroke-lot-${cell.i1?.id} stroke-lot-${cell.i2?.id}"/>`; // Top
+                                if (c===0 || !grid[r][c-1] || !hasSharedLot(cell, grid[r][c-1])) svgHtml += `<line x1="${x}" y1="${y}" x2="${x}" y2="${y+CELL_H}" class="stroke-lot-${cell.i1?.id} stroke-lot-${cell.i2?.id}"/>`; // Left
+                                if (c < maxC - 1 && !hasSharedLot(cell, grid[r][c+1])) svgHtml += `<line x1="${x+CELL_W}" y1="${y}" x2="${x+CELL_W}" y2="${y+CELL_H}" class="stroke-lot-${cell.i1?.id} stroke-lot-${cell.i2?.id}"/>`; 
+                                if (c === maxC - 1) svgHtml += `<line x1="${x+CELL_W}" y1="${y}" x2="${x+CELL_W}" y2="${y+CELL_H}" class="stroke-lot-${cell.i1?.id} stroke-lot-${cell.i2?.id}"/>`;
+                                if (r < maxR - 1 && !hasSharedLot(cell, grid[r+1][c])) svgHtml += `<line x1="${x}" y1="${y+CELL_H}" x2="${x+CELL_W}" y2="${y+CELL_H}" class="stroke-lot-${cell.i1?.id} stroke-lot-${cell.i2?.id}"/>`;
+                                if (r === maxR - 1) svgHtml += `<line x1="${x}" y1="${y+CELL_H}" x2="${x+CELL_W}" y2="${y+CELL_H}" class="stroke-lot-${cell.i1?.id} stroke-lot-${cell.i2?.id}"/>`;
                             }
                         }
                     }
-                    svgHtml += `</g>`;
-
-                    svgHtml += `</svg></div>`;
+                    svgHtml += `</g></svg></div>`;
                     html += svgHtml;
                 });
             } 
-            // ====== DẠNG 2: MẶT CẮT ZICZAC (CHUẨN CÓ TEXT GẦM) ======
+            // ====== DẠNG 2: MẶT CẮT ZICZAC ======
             else {
                 const COL_W = 100, MAX_COL_H = 260, BOX_H = MAX_COL_H / maxH, TOP_M = 40;
-                
                 const chunks = [];
-                for(let i=0; i<stacks.length; i+=maxC) {
-                    chunks.push(stacks.slice(i, i+maxC));
-                }
+                for(let i=0; i<stacks.length; i+=maxC) chunks.push(stacks.slice(i, i+maxC));
 
                 chunks.forEach((chunk, chunkIdx) => {
                     const svgW = maxC * COL_W;
@@ -540,34 +507,26 @@
                                     <div class="bg-slate-100 text-slate-600 px-3 py-1.5 font-bold text-[10px] uppercase border-b border-slate-200">${wh.name} - Dãy ${chunkIdx + 1}</div>
                                     <svg width="${svgW}" height="${svgH}" style="font-family: Arial, sans-serif;">`;
                     
-                    // Lưới ngang mờ
-                    svgHtml += `<g opacity="0.3">`;
-                    for (let i = 0; i <= 5; i++) svgHtml += `<line x1="0" y1="${TOP_M + (i * (MAX_COL_H/5))}" x2="${maxC * COL_W}" y2="${TOP_M + (i * (MAX_COL_H/5))}" stroke="#cbd5e1" stroke-width="1"/>`;
-                    svgHtml += `</g>`;
-
-                    // Đường Ziczac Profile
+                    // Đường Ziczac Mép ngoài
                     let profilePath = `M 0 ${TOP_M + MAX_COL_H}`;
                     chunk.forEach((col, i) => {
                         const y = TOP_M + MAX_COL_H - ((col.q1+col.q2) * BOX_H);
                         profilePath += ` L ${i*COL_W} ${y} L ${(i+1)*COL_W} ${y}`;
                     });
                     profilePath += ` L ${chunk.length*COL_W} ${TOP_M+MAX_COL_H} L ${maxC*COL_W} ${TOP_M+MAX_COL_H}`;
-                    svgHtml += `<path d="${profilePath}" fill="#f1f5f9" stroke="#0f172a" stroke-width="2" />`;
+                    svgHtml += `<path d="${profilePath}" fill="#f8fafc" stroke="#0f172a" stroke-width="2.5" />`;
 
-                    // Vẽ cột và vòng tròn số
+                    // Vẽ cột
                     chunk.forEach((col, i) => {
                         let x = i * COL_W;
                         let y = TOP_M + MAX_COL_H - ((col.q1+col.q2) * BOX_H);
 
-                        let hlClass1 = state.activeLotId === col.i1?.id ? "is-highlighted" : "";
-                        let hlClass2 = state.activeLotId === col.i2?.id ? "is-highlighted" : "";
-                        let baseClass = (hlClass1 || hlClass2) ? "is-highlighted highlight-lot" : "highlight-lot";
-
-                        svgHtml += `<g transform="translate(${x}, 0)" class="${baseClass}">`;
-                        svgHtml += `<rect x="0" y="${y}" width="${COL_W}" height="${(col.q1+col.q2)*BOX_H}" fill="transparent" class="ziczac-col transition-colors"/>`;
+                        svgHtml += `<g transform="translate(${x}, 0)">`;
                         
+                        // Nền mờ nếu Highlight
+                        if(col.i1) svgHtml += `<rect x="0" y="${y}" width="${COL_W}" height="${(col.q1+col.q2)*BOX_H}" fill="transparent" class="fill-lot-${col.i1.id} fill-lot-${col.i2?.id}"/>`;
+
                         // Vách
-                        svgHtml += `<line x1="${COL_W}" y1="${y}" x2="${COL_W}" y2="${TOP_M + MAX_COL_H}" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2" />`;
                         svgHtml += `<line x1="${COL_W}" y1="${y}" x2="${COL_W}" y2="${TOP_M + MAX_COL_H}" stroke="#0f172a" stroke-width="1.5" />`;
 
                         if (col.i2) {
@@ -575,21 +534,22 @@
                             svgHtml += `<line x1="0" y1="${y}" x2="${COL_W}" y2="${midY}" stroke="#0f172a" stroke-width="1.5" />`;
                             
                             svgHtml += `<circle cx="${COL_W*0.75}" cy="${y+(col.q2*BOX_H)/2}" r="12" fill="white" stroke="#0f172a" stroke-width="1.5" />`;
-                            svgHtml += `<text x="${COL_W*0.75}" y="${y+(col.q2*BOX_H)/2 + 4}" font-size="11" font-weight="bold" text-anchor="middle" fill="#0f172a">${col.q2}</text>`;
+                            svgHtml += `<text x="${COL_W*0.75}" y="${y+(col.q2*BOX_H)/2 + 4}" font-size="11" font-weight="900" text-anchor="middle" fill="#0f172a">${col.q2}</text>`;
                             
                             svgHtml += `<circle cx="${COL_W*0.25}" cy="${midY+(col.q1*BOX_H)/2}" r="12" fill="white" stroke="#0f172a" stroke-width="1.5" />`;
-                            svgHtml += `<text x="${COL_W*0.25}" y="${midY+(col.q1*BOX_H)/2 + 4}" font-size="11" font-weight="bold" text-anchor="middle" fill="#0f172a">${col.q1}</text>`;
+                            svgHtml += `<text x="${COL_W*0.25}" y="${midY+(col.q1*BOX_H)/2 + 4}" font-size="11" font-weight="900" text-anchor="middle" fill="#0f172a">${col.q1}</text>`;
                         } else if (col.q1 > 0) {
                             svgHtml += `<g transform="translate(${COL_W/2}, ${y + (col.q1*BOX_H)/2})">`;
                             svgHtml += `<circle cx="0" cy="0" r="14" fill="white" stroke="#0f172a" stroke-width="1.5" />`;
-                            svgHtml += `<text x="0" y="4" font-size="12" font-weight="bold" text-anchor="middle" fill="#0f172a">${col.q1}</text>`;
+                            svgHtml += `<text x="0" y="4" font-size="12" font-weight="900" text-anchor="middle" fill="#0f172a">${col.q1}</text>`;
                             svgHtml += `</g>`;
                         }
 
+                        // Lẻ
                         if(col.l1>0) svgHtml += `<text x="${COL_W/2}" y="${y-10}" font-size="10" font-style="italic" font-weight="bold" text-anchor="middle" fill="#dc2626">lẻ ${col.l1}</text>`;
-                        if(col.l2>0) svgHtml += `<text x="${COL_W/2}" y="${y-22}" font-size="10" font-style="italic" font-weight="bold" text-anchor="middle" fill="#dc2626">lẻ ${col.l2}</text>`;
+                        if(col.l2>0) svgHtml += `<text x="${COL_W/2}" y="${y-25}" font-size="10" font-style="italic" font-weight="bold" text-anchor="middle" fill="#dc2626">lẻ ${col.l2}</text>`;
 
-                        // Bảng TEXT dưới gầm
+                        // Text dưới gầm
                         svgHtml += `<g transform="translate(${COL_W/2}, ${TOP_M + MAX_COL_H + 20})">`;
                         if (col.i2) {
                             svgHtml += `
@@ -615,6 +575,19 @@
             }
 
             container.innerHTML = html;
+            updateHighlightCSS(); // Kích hoạt CSS highlight
+        }
+
+        function updateHighlightCSS() {
+            const style = document.getElementById('dynamicHighlight');
+            if (state.activeLotId) {
+                style.innerHTML = `
+                    .fill-lot-${state.activeLotId} { fill: #dbeafe !important; }
+                    .stroke-lot-${state.activeLotId} { stroke: #2563eb !important; stroke-width: 4.5px !important; z-index: 10;}
+                `;
+            } else {
+                style.innerHTML = '';
+            }
         }
 
         // --- CÁC HÀM CẬP NHẬT CHUNG ---
@@ -629,7 +602,6 @@
                 tBoxes += full + (left > 0 ? 1 : 0); 
             });
             document.getElementById('kpiLots').innerText = wh.items.length;
-            document.getElementById('kpiItems').innerText = tItems.toLocaleString('vi-VN');
             document.getElementById('kpiBoxes').innerText = tBoxes.toLocaleString('vi-VN');
         }
 
@@ -759,13 +731,6 @@
                 document.getElementById('excelUpload').value = '';
             };
             reader.readAsArrayBuffer(file);
-        }
-
-        function downloadTemplate() {
-            const data = [ ["Loại Đạn", "Mã Lô", "Số Lượng (V)", "Bao gói (Tùy chọn)"], ["ĐẠN CX14.5", "0312-75", 20400, 1000] ];
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "NhapLieu");
-            XLSX.writeFile(wb, "Mau_Nhap_Kho.xlsx");
         }
 
         // --- GIAO DIỆN CHUNG ---
