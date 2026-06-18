@@ -1,786 +1,389 @@
-Thi trắc nghiệm
 <!DOCTYPE html>
-<html lang="vi" class="light">
+<html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trắc nghiệm Cán bộ Đoàn 2026</title>
-    <!-- Tailwind CSS Config -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        ios: { bg: '#F2F2F7', darkbg: '#000000', card: '#ffffff', darkcard: '#1C1C1E', primary: '#007AFF' }
-                    },
-                    boxShadow: {
-                        'glow': '0 0 15px rgba(0, 122, 255, 0.3)',
-                        'glow-success': '0 0 15px rgba(52, 199, 89, 0.3)'
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- React & ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { 
-            font-family: 'Inter', sans-serif; 
-            -webkit-tap-highlight-color: transparent; 
-            transition: background-color 0.3s; 
-            /* Căn lề an toàn cho iPhone notch/home indicator */
-            padding-top: env(safe-area-inset-top);
-        }
-        
-        .glass-panel { 
-            background: rgba(255, 255, 255, 0.85); 
-            backdrop-filter: blur(20px); 
-            -webkit-backdrop-filter: blur(20px); 
-        }
-        .dark .glass-panel { 
-            background: rgba(28, 28, 30, 0.85); 
-            border-top: 1px solid rgba(255, 255, 255, 0.1); 
-        }
-        
-        /* Căn lề dưới an toàn cho Bottom Nav trên iPhone */
-        .safe-pb {
-            padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 16px) !important;
-        }
-        .safe-pb-quiz {
-            padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 16px) !important;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Sơ Đồ Xếp Kho Đạn</title>
 
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
-        /* iOS Toggle Switch */
-        .toggle-checkbox:checked { right: 0; border-color: #34C759; }
-        .toggle-checkbox:checked + .toggle-label { background-color: #34C759; }
-        .toggle-checkbox:checked + .toggle-label:after { transform: translateX(100%); border-color: white; }
-        .toggle-label { width: 50px; height: 30px; background-color: #e5e7eb; border-radius: 9999px; position: relative; cursor: pointer; transition: background-color 0.3s; }
-        .dark .toggle-label { background-color: #39393D; }
-        .toggle-label:after { content: ''; position: absolute; top: 2px; left: 2px; width: 26px; height: 26px; background-color: white; border-radius: 9999px; transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-    </style>
+  <!-- CDNs -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f4f8; overflow: hidden; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    input:focus { outline: none; }
+    /* Tùy chỉnh thanh cuộn */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
 </head>
-<body class="bg-ios-bg dark:bg-ios-darkbg text-slate-800 dark:text-white">
-    <div id="root"></div>
+<body>
+  <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+  <script type="text/babel">
+    const { useState, useMemo } = React;
 
-        const rawQuestionsData = [
-            { question: "Đồng chí cho biết từ khi thành lập đến nay, Đoàn TNCS Hồ Chí Minh đã bao nhiêu lần đổi tên?", options: ["A. 7 lần.", "B. 9 lần.", "C. 6 lần."], answer: 0 },
-            { question: "Đồng chí cho biết tổ chức đoàn chính thức lấy tên Đoàn TNCS Hồ Chí Minh vào năm nào?", options: ["A. Năm 1931", "B. Năm 1945", "C. Năm 1976"], answer: 2 },
-            { question: "Đồng chí hãy cho biết trong Đại hội đại biểu Đoàn TNCS Hồ Chí Minh Quân đội lần thứ XI, nhiệm kỳ 2025 - 2030 đã phát động phong trào thi đua nào?", options: ["A. Thanh niên Quân đội rèn đức luyện tài, xung kích sáng tạo xứng danh Bộ đội Cụ Hồ thời kỳ mới", "B. Phong trào “3 tiên phong Quyết thắng”", "C. Phong trào “Thanh niên tình nguyện”"], answer: 1 },
-            { question: "Tên hai “Công trình Thanh niên Cộng sản” nổi bật nhất trong những năm giữa thập kỷ 80 của thế kỷ XX là gì?", options: ["A. Xây dựng nhà máy Thủy điện Hòa Bình và xây dựng nhà máy Nhiệt điện Phả Lại", "B. Xây dựng đường dây điện Bắc Nam và Xây dựng nhà máy Nhiệt điện Cẩm Phả", "C. Xây dựng nhà máy Thủy điện Thác Bà và Xây dựng nhà máy Thủy điện Phú Bình."], answer: 0 },
-            { question: "Ngày 26/3/1931 được chọn là ngày thành lập Đoàn tại Đại hội Đoàn nào?", options: ["A. Đại hội Đoàn toàn quốc lần thứ I (2/1950).", "B. Đại hội Đoàn toàn quốc lần thứ II (11/1956).", "C. Đại hội Đoàn toàn quốc lần thứ III (3/1961)."], answer: 2 },
-            { question: "Bốn câu thơ sau được Bác Hồ tặng đơn vị nào? ở đâu?\n“Không có việc gì khó; Chỉ sợ lòng không bền; Đào núi và lấp biển; Quyết chí ắt làm nên”", options: ["A. Liên đội 312 ở Nà Cù (Bắc Cạn)", "B. Đại đoàn 308, tại Đền Hùng (Phú Thọ)", "C. Đại đoàn 312, tại Chiến khu Việt Bắc (Tuyên Quang)"], answer: 0 },
-            { question: "Hệ thống tổ chức của đoàn trong quân đội gồm mấy cấp?", options: ["A. Hai cấp.", "B. Ba cấp.", "C. Bốn cấp"], answer: 1 },
-            { question: "Đồng chí cho biết phát biểu chỉ đạo Đại hội đại biểu Đoàn TNCS Hồ Chí Minh Quân đội lần thứ 11, nhiệm kỳ 2025-2030, thay mặt Quân ủy Trung ương, Bộ Quốc phòng, Đại tướng Phan Văn Giang yêu cầu tuổi trẻ toàn quân thực hiện tốt 2 nội dung nào?", options: ["A. “2 xung kích, 2 sẵn sàng”", "B. “2 đột phá, 2 xung kích”", "C. “2 dân chủ, 2 quyết thắng”"], answer: 0 },
-            { question: "Hãy cho biết chủ đề phong trào thi đua quyết thắng năm 2026?", options: ["A. Đoàn kết, mẫu mực, sáng tạo, quyết thắng.", "B. Dân chủ, đoàn kết, kỷ cương, sáng tạo, quyết thắng", "C. Đoàn kết, kỷ cương, đột phá, sáng tạo, quyết thắng"], answer: 2 },
-            { question: "Đồng chí cho biết câu nói “con đường của thanh niên chỉ có thể là con đường cách mạng...” là của ai?", options: ["A. Phạm Văn Đồng", "B. Lê Duẩn", "C. Lý Tự Trọng"], answer: 2 },
-            { question: "Ủy viên ban chấp hành không tham gia họp BCH mà không có lý do chính đáng trong mấy kỳ liên tục thì bị xóa tên trong ban chấp hành?", options: ["A. 2 kỳ.", "B. 3 kỳ.", "C. 4 kỳ."], answer: 1 },
-            { question: "Đồng chí hãy cho biết thời gian tổ chức đoàn đầu tiên được thành lập ở các đơn vị trực thuộc Cục Quân khí?", options: ["A. Năm 1951", "B. Năm 1952", "C. Năm 1955"], answer: 0 },
-            { question: "Đồng chí cho biết câu nói “Quân đội ta trung với Đảng, hiếu với dân...” được Chủ tịch Hồ Chí Minh khái quát vào thời gian nào?", options: ["A. 22/12/1964.", "B. 22/12/1944.", "C. 22/12/1989."], answer: 0 },
-            { question: "Đồng chí cho biết Đại hội Đoàn toàn quốc lần thứ mấy đã quyết định lấy ngày 26/3/1931 làm ngày thành lập Đoàn?", options: ["A. Đại hội lần thứ I; từ ngày 7 đến ngày 14/2/1950", "B. Đại hội lần thứ II; từ ngày 25/10 đến ngày 04/11/1956", "C. Đại hội lần thứ III; từ ngày 23 đến ngày 25/3/1961"], answer: 2 },
-            { question: "Đại hội Đoàn TNCS Hồ Chí Minh Quân đội lần thứ XI diễn ra vào thời gian nào?", options: ["A. Từ ngày 9 đến ngày 10/12/2025", "B. Từ ngày 8 đến ngày 9/12/2025", "C. Từ ngày 7 đến ngày 8/12/2025"], answer: 2 },
-            { question: "Điều lệ hiện hành của Đoàn TNCS Hồ Chí Minh bao gồm?", options: ["A. 11 chương, 38 điều", "B. 12 chương, 45 điều", "C. 12 chương, 54 điều"], answer: 0 },
-            { question: "Đồng chí hãy cho biết khẩu hiệu hành động Đại hội đại biểu Đoàn TNCS Hồ Chí Minh Quân đội lần thứ XI, nhiệm kỳ 2025 - 2030:", options: ["A. “Thanh niên Quân đội - Bản lĩnh, tiên phong, đột phá, phát triển”", "B. “Thanh niên Quân đội - Trí tuệ, bản lĩnh, đột phá, phát triển”", "C. “Thanh niên Quân đội - Tự lực, tự cường, đột phá, phát triển”"], answer: 0 },
-            { question: "Đoàn viên có mấy nhiệm vụ?", options: ["A. 3 nhiệm vụ.", "B. 4 nhiệm vụ.", "C. 5 nhiệm vụ."], answer: 0 },
-            { question: "Đồng chí hãy cho biết độ tuổi để được xét kết nạp đoàn viên?", options: ["A. Thanh niên Việt Nam Từ 15 tuổi đến 30 tuổi", "B. Thanh niên Việt Nam Từ 16 tuổi đến 30 tuổi", "C. Cả 2 phương án trên đều đúng"], answer: 1 },
-            { question: "Chi đoàn có bao nhiêu đoàn viên thì chỉ được bầu bí thư, phó bí thư?", options: ["A. Dưới 9 đoàn viên.", "B. Dưới 12 đoàn viên.", "C. Dưới 15 đoàn viên."], answer: 0 },
-            { question: "Tại sao khi quá 30 tuổi, vẫn được tham gia sinh hoạt đoàn?", options: ["A. Có nguyện vọng tiếp tục sinh hoạt đoàn", "B. Làm công tác chuyên trách về đoàn", "C. Cả 2 phương án trên"], answer: 2 },
-            { question: "Đại tướng Phan Văn Giang trao tặng bức tranh cho thanh niên Quân đội tại Đại hội XI mang dòng chữ nào?", options: ["A. “Trung thành, bản lĩnh, đột phá, sáng tạo, xung kích, kiên cường - Xứng danh “Bộ đội Cụ Hồ” thời kỳ mới”.", "B. “Trí tuệ, bản lĩnh, đột phá, sáng tạo, xung kích, kiên cường - Xứng danh “Bộ đội Cụ Hồ” trong kỷ nguyên mới”.", "C. “Trung thành, bản lĩnh, đổi mới, sáng tạo, xung kích, dũng cảm - Xứng danh “Bộ đội Cụ Hồ” thời kỳ mới”."], answer: 2 },
-            { question: "Khẩu hiệu “Sống chiến đấu, lao động và học tập theo gương Bác Hồ vĩ đại” được chọn vào thời gian nào?", options: ["A. Tháng 12/1974", "B. Tháng 12/1975", "C. Tháng 12/1976"], answer: 2 },
-            { question: "Đồng chí hãy cho biết phương châm Đại hội đại biểu Đảng bộ Quân đội lần thứ XII, nhiệm kỳ 2025-2030:", options: ["A. “Đoàn kết - Dân chủ - Kỷ cương - Kiên định - Đột phá - Phát triển”", "B. “Đoàn kết - Đột phá - Kỷ cương - Kiên định - Dân chủ - Phát triển”", "C. “Đoàn kết - Đột phá - Kỷ cương - Kiên định - Dân chủ - Quyết thắng”"], answer: 0 },
-            { question: "Đồng chí hãy cho biết chủ đề Đại hội đại biểu Đoàn TNCS Hồ Chí Minh Quân đội lần thứ XI, nhiệm kỳ 2025 - 2030:", options: ["A. “Thanh niên Quân đội bản lĩnh, tiên phong, đột phá, phát triển, xứng danh Bộ đội Cụ Hồ, tự tin vững bước vào kỷ nguyên mới”", "B. “Thanh niên Quân đội bản lĩnh, trí tuệ, đột phá, phát triển, xứng danh Bộ đội Cụ Hồ, tự tin vững bước vào kỷ nguyên mới”", "C. “Thanh niên Quân đội bản lĩnh, tiên phong, tự tin, phát triển, xứng danh Bộ đội Cụ Hồ, tự tin vững bước vào kỷ nguyên mới”"], answer: 0 },
-            { question: "Trong Đại hội đại biểu toàn quốc lần thứ XIV của Đảng đã bầu ra bao nhiêu đồng chí là Ủy viên Bộ Chính trị?", options: ["A. 17", "B. 18", "C. 19"], answer: 2 },
-            { question: "Trong quân đội, trợ lý thanh niên và Ban công tác thanh niên được tổ chức từ cấp nào trở lên?", options: ["A. Cấp sư đoàn và tương đương trở lên", "B. Cấp trung đoàn, lữ đoàn và tương đương trở lên", "C. Cấp tiểu đoàn và tương đương trở lên"], answer: 1 },
-            { question: "Người được kết nạp vào đoàn tối thiểu có trình độ học vấn:", options: ["A. Tiểu học.", "B. Vận dụng linh hoạt đối với thanh niên dân tộc thiểu số, vùng đặc biệt khó khăn.", "C. Cả 2 phương án trên"], answer: 2 },
-            { question: "Giải thưởng Tuổi trẻ sáng tạo trong Quân đội được triển khai từ bao giờ?", options: ["A. Từ năm 1999", "B. Từ năm 2000", "C. Từ năm 2001"], answer: 1 },
-            { question: "Đồng chí cho biết Ngày truyền thống Kho KV1?", options: ["A. 15/3/1951", "B. 15/3/1952", "C. 15/3/1953"], answer: 2 },
-            { question: "Hãy cho biết nội dung “5 vững” theo phương châm của Tổng Bí thư Tô Lâm:", options: ["A. “Chính trị vững - Kỷ luật vững - Công nghệ vững - Nghệ thuật quân sự vững - Đời sống bộ đội vững”", "B. “Quân sự vững - Chính trị vững - Hậu cần vững - Kỹ thuật vững - Đời sống bộ đội vững”", "C. “Tâm lý vững - Kỷ luật vững - Chính trị vững - Nghệ thuật quân sự vững - Đời sống bộ đội vững”"], answer: 0 },
-            { question: "Chi đoàn có bao nhiêu đoàn viên thì được bầu ban chấp hành?", options: ["A. Dưới 9 đoàn viên.", "B. Từ 9 đoàn viên trở lên", "C. Từ 5 đoàn viên"], answer: 1 },
-            { question: "Hãy cho biết tác giả, thời gian ra đời mẫu Huy hiệu Đoàn TNCS Hồ Chí Minh?", options: ["A. Họa sĩ Tô Ngọc Vân; năm 1952", "B. Họa sĩ Huỳnh Văn Thuận; năm 1951", "C. Họa sĩ Nguyễn Tường Lân; năm 1954"], answer: 1 },
-            { question: "Bí thư Trung ương Đoàn đầu tiên của Việt Nam là ai?", options: ["A. Đồng chí Nguyễn Lam.", "B. Đồng chí Lê Duẩn.", "C. Đồng chí Lý Tự Trọng."], answer: 0 },
-            { question: "Ban Chấp hành chi đoàn, chi đoàn cơ sở và Đoàn cơ sở định kỳ bao lâu phải họp một lần?", options: ["A. Một tuần", "B. Một tháng", "C. Một quý"], answer: 1 },
-            { question: "Đồng chí cho biết Cục Quân khí được thành lập vào thời gian nào?", options: ["A. 22/12/1944.", "B. 22/4/2003.", "C. 16/9/1951."], answer: 2 },
-            { question: "Đơn vị có bao nhiêu đoàn viên trở lên được thành lập chi đoàn?", options: ["A. 3 đoàn viên", "B. 5 đoàn viên", "C. 9 đoàn viên"], answer: 0 },
-            { question: "Bác Hồ nói câu “Nhiệm vụ của thanh niên không phải là đòi hỏi Nước nhà đã cho mình những gì...” vào ngày nào?", options: ["A. Ngày 26/03/1931.", "B. Ngày 02/09/1945.", "C. Ngày 19/01/1955."], answer: 2 },
-            { question: "Câu nói “Đâu Đảng cần thanh niên có, việc gì khó thanh niên làm” được Bác Hồ căn dặn tại Đại hội Đoàn toàn quốc lần thứ mấy?", options: ["A. Lần thứ nhất", "B. Lần thứ hai", "C. Lần thứ ba"], answer: 2 },
-            { question: "Chủ tịch Hồ Chí Minh đã đến dự Đại hội Đoàn toàn quốc lần thứ mấy?", options: ["A. Đại hội lần thứ I và lần III.", "B. Đại hội lần thứ II và lần thứ III", "C. Đại hội lần thứ II và lần thứ IV."], answer: 1 }
-        ];
+    function App() {
+      const [items, setItems] = useState([
+        { id: 1, type: 'ĐẠN CX14.5', lot: '0312-1975-41', qty: 20404, pack: 1000 },
+        { id: 2, type: 'ĐẠN CX14.5', lot: '0038-75-41', qty: 2048, pack: 100 },
+        { id: 3, type: 'ĐẠN CX14.5', lot: '0308-1975-71', qty: 12866, pack: 1000 },
+        { id: 4, type: 'ĐẠN CX14.5', lot: '0071-1975-71', qty: 10865, pack: 1000 },
+        { id: 5, type: 'ĐẠN CX14.5', lot: '0074-75-41', qty: 4668, pack: 1000 },
+      ]);
 
-        const cleanData = (data) => data.map((q, idx) => ({
-            id: idx + 1,
-            question: q.question,
-            options: q.options.map(opt => opt.replace(/^[A-D][\.\)]\s*/, '')),
-            answer: q.answer
-        }));
+      const [maxHeight, setMaxHeight] = useState(24);
+      const [allowMix, setAllowMix] = useState(true);
+      const [activeTab, setActiveTab] = useState('input');
 
-        const initialQuestionsData = cleanData(rawQuestionsData);
-        const optionLabels = ["A", "B", "C", "D", "E"];
+      const handleAddItem = () => {
+        setItems([...items, { id: Date.now(), type: 'Loại mới', lot: 'Mã lô...', qty: 1000, pack: 100 }]);
+      };
 
-        const playSound = (type) => {
-            if(localStorage.getItem('quizSound') === 'false') return;
-            try {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                const ctx = new AudioContext();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                
-                if (type === 'tick') {
-                    osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime);
-                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
-                    osc.start(); osc.stop(ctx.currentTime + 0.1);
-                } else if (type === 'success') {
-                    osc.type = 'triangle'; osc.frequency.setValueAtTime(523.25, ctx.currentTime); 
-                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); 
-                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
-                    osc.start(); osc.stop(ctx.currentTime + 0.4);
-                }
-            } catch(e) {}
-        };
+      const handleUpdateItem = (id, field, value) => {
+        setItems(items.map(item => item.id === id ? { ...item, [field]: value } : item));
+      };
 
-        function App() {
-            const [view, setView] = useState('HOME'); 
-            const [questions, setQuestions] = useState(initialQuestionsData);
-            
-            const [quizConfig, setQuizConfig] = useState({ count: 10, time: 0 }); 
-            const [activeQuestions, setActiveQuestions] = useState([]);
-            const [currentQuestion, setCurrentQuestion] = useState(0);
-            const [userAnswers, setUserAnswers] = useState({});
-            const [timeLeft, setTimeLeft] = useState(null);
-            const [score, setScore] = useState(0);
-            
-            const [history, setHistory] = useState([]);
-            const [stats, setStats] = useState({});
-            
-            const [darkMode, setDarkMode] = useState(false);
-            const [soundEnabled, setSoundEnabled] = useState(true);
-            const [shuffleOptionsEnabled, setShuffleOptionsEnabled] = useState(true); // Trạng thái đảo đáp án
-            
-            const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
-            const [editModal, setEditModal] = useState({ visible: false, isNew: false, data: null });
-            const [confirmDialog, setConfirmDialog] = useState({ visible: false, title: '', message: '', confirmText: 'Đồng ý', isDanger: false, onConfirm: null });
+      const handleRemoveItem = (id) => {
+        if(confirm('Xóa lô này khỏi danh sách?')) setItems(items.filter(item => item.id !== id));
+      };
 
-            // Cập nhật State từ LocalStorage
-            useEffect(() => {
-                const savedHistory = localStorage.getItem('quizHistory');
-                const savedStats = localStorage.getItem('quizStats');
-                const savedQuestions = localStorage.getItem('quizQuestions');
-                const savedDark = localStorage.getItem('quizDarkMode') === 'true';
-                const savedSound = localStorage.getItem('quizSound') !== 'false';
-                const savedShuffleOpts = localStorage.getItem('quizShuffleOpts');
+      // Thuật toán chia cột
+      const columns = useMemo(() => {
+        const cols = [];
+        let currentStack = [];
+        let currentStackCount = 0;
 
-                if (savedHistory) setHistory(JSON.parse(savedHistory));
-                if (savedStats) setStats(JSON.parse(savedStats));
-                if (savedQuestions) setQuestions(JSON.parse(savedQuestions));
-                if (savedShuffleOpts !== null) setShuffleOptionsEnabled(savedShuffleOpts === 'true');
-                
-                setDarkMode(savedDark);
-                setSoundEnabled(savedSound);
-                if(savedDark) document.documentElement.classList.add('dark');
-            }, []);
+        items.forEach((item) => {
+          let totalQty = Number(item.qty) || 0;
+          let pack = Number(item.pack) || 1;
+          
+          let boxes = Math.floor(totalQty / pack);
+          let leftover = totalQty % pack;
 
-            // Lưu State vào LocalStorage
-            useEffect(() => {
-                if(history.length > 0) localStorage.setItem('quizHistory', JSON.stringify(history));
-                if(Object.keys(stats).length > 0) localStorage.setItem('quizStats', JSON.stringify(stats));
-                localStorage.setItem('quizQuestions', JSON.stringify(questions));
-                localStorage.setItem('quizDarkMode', darkMode);
-                localStorage.setItem('quizSound', soundEnabled);
-                localStorage.setItem('quizShuffleOpts', shuffleOptionsEnabled);
-                
-                if(darkMode) document.documentElement.classList.add('dark');
-                else document.documentElement.classList.remove('dark');
-            }, [history, stats, questions, darkMode, soundEnabled, shuffleOptionsEnabled]);
-
-            // Đồng hồ đếm ngược
-            useEffect(() => {
-                let timer;
-                if (view === 'QUIZ' && timeLeft !== null && timeLeft > 0) {
-                    timer = setInterval(() => {
-                        setTimeLeft(prev => {
-                            if (prev <= 1) { clearInterval(timer); handleAutoSubmit(); return 0; }
-                            return prev - 1;
-                        });
-                    }, 1000);
-                }
-                return () => clearInterval(timer);
-            }, [view, timeLeft]);
-
-            // Auto cuộn thanh Dots
-            useEffect(() => {
-                if (view === 'QUIZ') {
-                    const dotContainer = document.getElementById('dot-container');
-                    const activeDot = document.getElementById(`dot-${currentQuestion}`);
-                    if (dotContainer && activeDot) {
-                        const scrollPos = activeDot.offsetLeft - dotContainer.offsetWidth / 2 + activeDot.offsetWidth / 2;
-                        dotContainer.scrollTo({ left: scrollPos, behavior: 'smooth' });
-                    }
-                }
-            }, [currentQuestion, view]);
-
-            // HÀM HỖ TRỢ
-            const showToast = (message, type = 'success') => {
-                setToast({ visible: true, message, type });
-                setTimeout(() => setToast({ visible: false, message: '', type: 'success' }), 2500);
-            };
-
-            const openConfirm = (title, message, confirmText, isDanger, onConfirm) => {
-                setConfirmDialog({ visible: true, title, message, confirmText, isDanger, onConfirm });
-            };
-
-            const shuffleArray = (array) => {
-                let shuffled = [...array];
-                for (let i = shuffled.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-                }
-                return shuffled;
-            };
-
-            const formatTime = (sec) => `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
-
-            // LOGIC LÀM BÀI
-            const startQuiz = () => {
-                let minAttempts = Infinity;
-                const qStatsList = questions.map(q => {
-                    const right = stats[q.id]?.right || 0;
-                    const wrong = stats[q.id]?.wrong || 0;
-                    const attempts = right + wrong;
-                    if (attempts < minAttempts) minAttempts = attempts;
-                    return { q, attempts, wrongRatio: attempts > 0 ? wrong / attempts : 0 };
-                });
-                if (minAttempts === Infinity) minAttempts = 0;
-
-                let lotteryPool = [];
-                qStatsList.forEach(({ q, attempts, wrongRatio }) => {
-                    let weight = 1;
-                    if (attempts === minAttempts) weight += 5; 
-                    else if (attempts === minAttempts + 1) weight += 2;
-                    if (attempts > 0) {
-                        if (wrongRatio >= 0.5) weight += 6; 
-                        else if (wrongRatio >= 0.3) weight += 3;
-                    }
-                    for(let i=0; i<weight; i++) lotteryPool.push(q);
-                });
-
-                lotteryPool = shuffleArray(lotteryPool);
-                const selected = [], ids = new Set();
-                for (let q of lotteryPool) {
-                    if (selected.length >= quizConfig.count && quizConfig.count !== 'all') break;
-                    if (!ids.has(q.id)) { selected.push(q); ids.add(q.id); }
-                }
-                
-                let finalSel = quizConfig.count === 'all' ? questions : selected;
-
-                const randomizedQuiz = finalSel.map(q => {
-                    let optsWithFlag = q.options.map((txt, i) => ({ txt, isC: i === q.answer }));
-                    // Chỉ xáo trộn đáp án nếu người dùng BẬT tính năng này trong Cài đặt
-                    if (shuffleOptionsEnabled) {
-                        optsWithFlag = shuffleArray(optsWithFlag);
-                    }
-                    return { ...q, options: optsWithFlag.map(o => o.txt), answer: optsWithFlag.findIndex(o => o.isC) };
-                });
-
-                setActiveQuestions(randomizedQuiz);
-                setCurrentQuestion(0);
-                setUserAnswers({});
-                setScore(0);
-                setTimeLeft(quizConfig.time > 0 ? quizConfig.time * 60 : null);
-                window.scrollTo(0, 0);
-                setView('QUIZ');
-            };
-
-            const handleAnswer = (idx) => {
-                playSound('tick');
-                setUserAnswers({...userAnswers, [currentQuestion]: idx});
-            };
-
-            const handleAutoSubmit = () => {
-                processSubmit();
-                showToast('Hết giờ! Tự động nộp bài.', 'info');
-            };
-
-            const requestSubmit = () => {
-                const ansCount = Object.keys(userAnswers).length;
-                if (ansCount < activeQuestions.length) {
-                    openConfirm('Chưa hoàn thành', `Đồng chí mới làm ${ansCount}/${activeQuestions.length} câu. Bạn có chắc chắn muốn nộp bài sớm không?`, 'Nộp bài', false, processSubmit);
-                } else {
-                    processSubmit();
-                }
-            };
-
-            const processSubmit = () => {
-                playSound('success');
-                let finalScore = 0;
-                let newStats = { ...stats };
-
-                activeQuestions.forEach((q, i) => {
-                    const uA = userAnswers[i];
-                    const isC = uA === q.answer;
-                    if (isC) finalScore++;
-                    if (uA !== undefined) {
-                        if (!newStats[q.id]) newStats[q.id] = { right: 0, wrong: 0 };
-                        if (isC) newStats[q.id].right++; else newStats[q.id].wrong++;
-                    }
-                });
-
-                setHistory([{ date: new Date().toLocaleString('vi-VN'), score: finalScore, total: activeQuestions.length, percent: Math.round((finalScore / activeQuestions.length) * 100) }, ...history].slice(0, 15));
-                setStats(newStats);
-                setScore(finalScore);
-                window.scrollTo(0, 0);
-                setView('RESULT');
-            };
-
-            const handleSaveQuestion = (qData) => {
-                if(!qData.question.trim() || qData.options.some(o => !o.trim())) { 
-                    openConfirm('Lỗi nhập liệu', 'Vui lòng điền đầy đủ nội dung câu hỏi và các đáp án!', 'Đã hiểu', false, ()=>{});
-                    return; 
-                }
-                if (editModal.isNew) {
-                    const newId = questions.length > 0 ? Math.max(...questions.map(q => q.id)) + 1 : 1;
-                    setQuestions([...questions, { ...qData, id: newId }]);
-                    showToast('Đã thêm câu hỏi mới');
-                } else {
-                    setQuestions(questions.map(q => q.id === qData.id ? qData : q));
-                    showToast('Đã cập nhật câu hỏi');
-                }
-                setEditModal({ visible: false, isNew: false, data: null });
-            };
-
-            const handleDeleteQuestion = (id) => {
-                openConfirm('Xóa câu hỏi', 'Bạn có chắc chắn muốn xóa câu hỏi này không? Thao tác không thể hoàn tác.', 'Xóa', true, () => {
-                    setQuestions(questions.filter(q => q.id !== id));
-                    showToast('Đã xóa câu hỏi');
-                    setEditModal({ visible: false, isNew: false, data: null });
-                });
-            };
-
-            const resetToDefault = () => {
-                openConfirm('Khôi phục dữ liệu', 'Khôi phục lại toàn bộ 40 câu hỏi gốc? Mọi câu hỏi bạn đã tự thêm sẽ bị xóa mất.', 'Khôi phục', true, () => {
-                    setQuestions(initialQuestionsData);
-                    showToast('Đã khôi phục dữ liệu gốc');
-                });
-            };
-
-            // RENDER GIAO DIỆN
-            const renderHome = () => {
-                const seenCount = questions.filter(q => stats[q.id] && (stats[q.id].right + stats[q.id].wrong) > 0).length;
-                const seenPercent = Math.round((seenCount / questions.length) * 100) || 0;
-
-                return (
-                    <div className="animate-slide-up pb-[calc(env(safe-area-inset-bottom,20px)+80px)]">
-                        <div className="bg-gradient-to-br from-ios-primary to-indigo-800 rounded-b-[2rem] shadow-lg border-b border-blue-900/50">
-                            <div className="pt-14 pb-10 px-6 text-center relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
-                                <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-inner text-white text-4xl rotate-3">
-                                    <i className="fas fa-layer-group"></i>
-                                </div>
-                                <h2 className="text-3xl font-extrabold mb-1 text-white relative z-10 tracking-tight">Đoàn Giỏi 2026</h2>
-                                
-                                <div className="mt-6 bg-white/10 p-4 rounded-3xl backdrop-blur-lg border border-white/20 text-left relative z-10 max-w-[300px] mx-auto shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
-                                    <div className="flex justify-between text-white/90 text-sm font-bold mb-3">
-                                        <span>Tiến độ quét đề:</span>
-                                        <span>{seenCount}/{questions.length} câu</span>
-                                    </div>
-                                    <div className="w-full h-2.5 bg-black/20 rounded-full overflow-hidden shadow-inner">
-                                        <div className="h-full bg-green-400 transition-all duration-1000" style={{width: `${seenPercent}%`, boxShadow: '0 0 10px rgba(74,222,128,0.8)'}}></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-5 space-y-6 mt-2">
-                            <div className="bg-ios-card dark:bg-ios-darkcard p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
-                                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">Số lượng câu</label>
-                                <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl gap-1">
-                                    {[10, 20, 30, 'all'].map(num => (
-                                        <button key={num} onClick={() => setQuizConfig({...quizConfig, count: num})} className={`flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 ${quizConfig.count === num ? 'bg-white dark:bg-slate-600 shadow-md text-ios-primary dark:text-white transform scale-105' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}>
-                                            {num === 'all' ? 'Tất cả' : num}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="bg-ios-card dark:bg-ios-darkcard p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
-                                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">Thời gian (Phút)</label>
-                                <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl gap-1">
-                                    {[0, 10, 15, 20].map(time => (
-                                        <button key={time} onClick={() => setQuizConfig({...quizConfig, time})} className={`flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 ${quizConfig.time === time ? 'bg-white dark:bg-slate-600 shadow-md text-indigo-600 dark:text-white transform scale-105' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}>
-                                            {time === 0 ? 'Không' : time}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <button onClick={startQuiz} className="w-full py-5 bg-ios-primary text-white text-xl font-bold rounded-3xl active:scale-95 transition-all shadow-lg shadow-blue-500/30 flex justify-center items-center gap-3">
-                                <i className="fas fa-play"></i> Bắt đầu thi
-                            </button>
-                        </div>
-                    </div>
-                );
+          while (boxes > 0) {
+            if (currentStackCount === maxHeight || (!allowMix && currentStackCount > 0 && currentStack.length > 0)) {
+              cols.push([...currentStack]);
+              currentStack = [];
+              currentStackCount = 0;
             }
 
-            const renderQuiz = () => {
-                const timePct = timeLeft !== null && quizConfig.time > 0 ? (timeLeft / (quizConfig.time * 60)) * 100 : 100;
-                return (
-                    <div className="animate-fade-in min-h-[100dvh] bg-ios-bg dark:bg-ios-darkbg flex flex-col relative pb-32">
-                        <div className="sticky top-0 z-30 bg-ios-card/90 dark:bg-ios-darkcard/90 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 shadow-sm">
-                            {timeLeft !== null && <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800"><div className={`h-full transition-all duration-1000 ${timePct<20?'bg-red-500':'bg-ios-primary'}`} style={{width: `${timePct}%`}}></div></div>}
-                            
-                            <div className="px-6 py-4 flex justify-between items-center">
-                                <span className="font-bold text-slate-500 dark:text-slate-400 text-sm tracking-wide">Câu <span className="text-slate-800 dark:text-white text-lg">{currentQuestion + 1}</span> / {activeQuestions.length}</span>
-                                {timeLeft !== null && <span className={`font-mono font-bold text-sm bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl ${timePct<20?'text-red-500 animate-pulse':'text-ios-primary'}`}><i className="far fa-clock"></i> {formatTime(timeLeft)}</span>}
-                            </div>
-                            
-                            {/* Navigation Dots */}
-                            <div className="px-6 pb-5 flex gap-2 overflow-x-auto hide-scrollbar items-center scroll-smooth snap-x" id="dot-container">
-                                {activeQuestions.map((_, idx) => {
-                                    const isActive = idx === currentQuestion;
-                                    const isAnswered = userAnswers[idx] !== undefined;
-                                    let dotClasses = "h-2.5 rounded-full flex-shrink-0 transition-all duration-300 snap-center ";
-                                    if (isActive) dotClasses += "w-12 bg-ios-primary shadow-glow";
-                                    else if (isAnswered) dotClasses += "w-2.5 bg-blue-300 opacity-80";
-                                    else dotClasses += "w-2.5 bg-slate-300 dark:bg-slate-600";
-                                    
-                                    return (
-                                        <button 
-                                            key={idx} 
-                                            id={`dot-${idx}`}
-                                            onClick={() => setCurrentQuestion(idx)} 
-                                            className={dotClasses}
-                                            aria-label={`Câu ${idx + 1}`}
-                                        ></button>
-                                    );
-                                })}
-                            </div>
-                        </div>
+            let spaceLeft = maxHeight - currentStackCount;
+            let takeBoxes = Math.min(boxes, spaceLeft);
 
-                        <div className="p-6 flex-1">
-                            <h2 className="text-[1.3rem] font-bold leading-relaxed mb-8 dark:text-white text-slate-800">{activeQuestions[currentQuestion].question}</h2>
-                            <div className="space-y-4">
-                                {activeQuestions[currentQuestion].options.map((opt, i) => {
-                                    const isSel = userAnswers[currentQuestion] === i;
-                                    return (
-                                        <button key={i} onClick={() => handleAnswer(i)} className={`w-full text-left p-5 rounded-3xl border-2 transition-all duration-300 flex items-center ${isSel ? 'border-ios-primary bg-blue-50 dark:bg-blue-900/30 shadow-glow transform scale-[1.02]' : 'border-slate-200 dark:border-slate-700 bg-ios-card dark:bg-ios-darkcard hover:border-blue-300'}`}>
-                                            <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center mr-4 shrink-0 text-base font-bold transition-colors ${isSel ? 'border-ios-primary bg-ios-primary text-white' : 'border-slate-300 dark:border-slate-600 text-slate-400'}`}>{optionLabels[i]}</div>
-                                            <span className={`text-[1.1rem] leading-snug ${isSel ? 'text-blue-900 dark:text-blue-100 font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'}`}>{opt}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
+            currentStack.push({
+              ...item,
+              boxesInCol: takeBoxes,
+              showLeftover: (boxes - takeBoxes === 0) ? leftover : 0
+            });
 
-                        {/* Thanh Action Bar có viền dưới lớn để tránh thanh ngang iPhone */}
-                        <div className="fixed bottom-0 left-0 w-full glass-panel border-t border-slate-200 dark:border-slate-800 p-5 safe-pb-quiz z-30 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-                            <div className="max-w-md mx-auto flex gap-4">
-                                <button onClick={() => setCurrentQuestion(p=>Math.max(0,p-1))} disabled={currentQuestion===0} className="w-16 h-16 rounded-[1.25rem] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 active:scale-95 disabled:opacity-40 transition-all flex items-center justify-center"><i className="fas fa-chevron-left text-xl"></i></button>
-                                
-                                {currentQuestion === activeQuestions.length - 1 ? 
-                                    <button onClick={requestSubmit} className="flex-1 bg-green-500 text-white font-bold rounded-[1.25rem] active:scale-95 transition-all shadow-glow-success text-lg tracking-wide">Nộp Bài</button> : 
-                                    <button onClick={()=>setCurrentQuestion(p=>p+1)} className="flex-1 bg-ios-primary text-white font-bold rounded-[1.25rem] active:scale-95 transition-all shadow-glow text-lg tracking-wide flex items-center justify-center gap-2">Câu Tiếp <i className="fas fa-chevron-right text-sm"></i></button>
-                                }
-                            </div>
-                        </div>
+            currentStackCount += takeBoxes;
+            boxes -= takeBoxes;
+          }
+          
+          if (Math.floor(totalQty / pack) === 0 && leftover > 0) {
+               if (currentStackCount === maxHeight || (!allowMix && currentStackCount > 0)) {
+                  cols.push([...currentStack]);
+                  currentStack = [];
+                  currentStackCount = 0;
+               }
+               currentStack.push({
+                  ...item,
+                  boxesInCol: 0,
+                  showLeftover: leftover
+               });
+          }
+        });
+
+        if (currentStack.length > 0) cols.push([...currentStack]);
+        return cols;
+      }, [items, maxHeight, allowMix]);
+
+      // Thông số vẽ sơ đồ
+      const COL_W = 140;
+      const MAX_COL_H = 400;
+      const BOX_H = MAX_COL_H / maxHeight; 
+      const TOP_MARGIN = 100;
+      const BOTTOM_MARGIN = 180;
+      
+      const svgWidth = Math.max(columns.length * COL_W + 50, window.innerWidth > 768 ? 600 : window.innerWidth - 40);
+      const svgHeight = MAX_COL_H + TOP_MARGIN + BOTTOM_MARGIN;
+
+      let profilePath = `M 0 ${TOP_MARGIN + MAX_COL_H}`;
+      columns.forEach((col, i) => {
+        const colTotalBoxes = col.reduce((sum, c) => sum + c.boxesInCol, 0);
+        const colH = colTotalBoxes * BOX_H;
+        const y = TOP_MARGIN + MAX_COL_H - colH;
+        const x = i * COL_W;
+        profilePath += ` L ${x} ${y} L ${x + COL_W} ${y}`;
+      });
+      profilePath += ` L ${columns.length * COL_W} ${TOP_MARGIN + MAX_COL_H}`;
+
+      return (
+        <div className="flex flex-col h-screen overflow-hidden">
+          
+          {/* HEADER */}
+          <header className="bg-[#1976d2] text-white p-3 md:p-4 shadow-md shrink-0 z-20 flex justify-between items-center">
+            <h1 className="text-[15px] md:text-lg font-bold flex items-center gap-2 uppercase tracking-wide">
+              ⚙️ Sơ Đồ Kho Đạn
+            </h1>
+            
+            {/* Tab chuyển đổi Mobile */}
+            <div className="md:hidden flex bg-[#1565c0] rounded-lg p-1">
+              <button 
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'input' ? 'bg-white text-[#1976d2]' : 'text-white'}`}
+                onClick={() => setActiveTab('input')}
+              >
+                NHẬP LIỆU
+              </button>
+              <button 
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'diagram' ? 'bg-white text-[#1976d2]' : 'text-white'}`}
+                onClick={() => setActiveTab('diagram')}
+              >
+                XEM SƠ ĐỒ
+              </button>
+            </div>
+          </header>
+
+          <div className="flex flex-1 overflow-hidden relative">
+            
+            {/* ====== CỘT TRÁI: NHẬP LIỆU ====== */}
+            <div className={`w-full md:w-[400px] bg-white border-r shadow-lg flex flex-col shrink-0 absolute md:static h-full z-10 transition-transform duration-300 ${activeTab === 'input' ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+              
+              <div className="p-4 bg-slate-50 border-b flex justify-between items-center shrink-0">
+                <h2 className="font-extrabold text-[#1976d2] text-sm flex items-center gap-2">
+                  📋 DANH SÁCH LÔ
+                </h2>
+                <button 
+                  onClick={handleAddItem}
+                  className="flex items-center gap-1 bg-[#27ae60] hover:bg-[#2ecc71] active:scale-95 text-white px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
+                >
+                  ➕ THÊM
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50 pb-24 md:pb-4">
+                {items.map((item, idx) => (
+                  <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative group hover:border-[#1976d2] transition-colors">
+                    <div className="absolute -top-3 -left-3 w-6 h-6 bg-[#1976d2] text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md">
+                      {idx + 1}
                     </div>
-                );
-            };
-
-            const renderHistory = () => {
-                let hardQ = Object.entries(stats).filter(([_, d]) => d.wrong > 0).map(([id, d]) => ({ id: parseInt(id), ...d, r: d.wrong/(d.right+d.wrong) })).sort((a,b) => b.r - a.r || b.wrong - a.wrong).slice(0, 5);
-                return (
-                    <div className="animate-slide-up p-6 space-y-6 pb-[calc(env(safe-area-inset-bottom,20px)+80px)]">
-                        <h2 className="text-3xl font-extrabold mt-6 mb-4">Thống kê</h2>
-                        
-                        <div className="bg-ios-card dark:bg-ios-darkcard rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
-                            <h3 className="font-bold text-red-500 flex items-center gap-2 mb-5 text-lg"><i className="fas fa-fire text-xl"></i> Top 5 câu hay sai</h3>
-                            {hardQ.length === 0 ? <p className="text-slate-400 text-sm font-medium">Chưa có dữ liệu sai sót. Tuyệt vời!</p> : 
-                                <div className="space-y-4">
-                                    {hardQ.map((s,i) => {
-                                        const q = questions.find(x => x.id === s.id);
-                                        return q ? (
-                                            <div key={i} className="p-4 bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-100 dark:border-red-900/30">
-                                                <p className="text-[0.95rem] font-medium text-slate-800 dark:text-slate-200 line-clamp-2 mb-3 leading-relaxed">{q.question}</p>
-                                                <span className="text-xs font-bold bg-white dark:bg-red-900/50 text-red-600 dark:text-red-400 px-3 py-1.5 rounded-lg shadow-sm">Sai {s.wrong} lần</span>
-                                            </div>
-                                        ) : null;
-                                    })}
-                                </div>
-                            }
-                        </div>
-
-                        <div className="bg-ios-card dark:bg-ios-darkcard rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
-                            <h3 className="font-bold flex items-center gap-2 mb-2 text-lg"><i className="fas fa-history text-ios-primary text-xl"></i> Lịch sử thi</h3>
-                            {history.length === 0 ? <p className="text-slate-400 text-sm font-medium mt-4">Chưa có lịch sử làm bài.</p> : 
-                                <div className="space-y-0 divide-y divide-slate-100 dark:divide-slate-800/50">
-                                    {history.map((h,i) => (
-                                        <div key={i} className="flex justify-between items-center py-5">
-                                            <div>
-                                                <div className="font-bold text-slate-800 dark:text-white text-lg">{h.score}/{h.total} câu</div>
-                                                <div className="text-xs text-slate-400 mt-1 font-medium">{h.date}</div>
-                                            </div>
-                                            <span className={`text-sm font-extrabold px-3.5 py-1.5 rounded-xl ${h.percent>=80?'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400':h.percent>=50?'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400':'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'}`}>{h.percent}%</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            }
-                        </div>
-                    </div>
-                );
-            };
-
-            const renderSettings = () => (
-                <div className="animate-slide-up p-6 space-y-6 pb-[calc(env(safe-area-inset-bottom,20px)+80px)]">
-                    <h2 className="text-3xl font-extrabold mt-6 mb-4">Cài đặt</h2>
-
-                    <div className="bg-ios-card dark:bg-ios-darkcard rounded-3xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
-                        <div className="p-5 flex justify-between items-center">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center shadow-md"><i className="fas fa-moon text-lg"></i></div>
-                                <span className="font-semibold text-lg">Chế độ tối (Dark Mode)</span>
-                            </div>
-                            <label className="flex items-center">
-                                <input type="checkbox" className="hidden toggle-checkbox" checked={darkMode} onChange={()=>setDarkMode(!darkMode)} />
-                                <div className="toggle-label"></div>
-                            </label>
-                        </div>
-                        
-                        <div className="p-5 flex justify-between items-center">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-green-500 text-white flex items-center justify-center shadow-md shadow-green-500/30"><i className="fas fa-volume-up text-lg"></i></div>
-                                <span className="font-semibold text-lg">Âm thanh chạm</span>
-                            </div>
-                            <label className="flex items-center">
-                                <input type="checkbox" className="hidden toggle-checkbox" checked={soundEnabled} onChange={()=>setSoundEnabled(!soundEnabled)} />
-                                <div className="toggle-label"></div>
-                            </label>
-                        </div>
-
-                        {/* TÍNH NĂNG MỚI: ĐẢO VỊ TRÍ ĐÁP ÁN */}
-                        <div className="p-5 flex justify-between items-center">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shadow-md shadow-orange-500/30"><i className="fas fa-random text-lg"></i></div>
-                                <div>
-                                    <span className="font-semibold text-lg block">Đảo vị trí đáp án</span>
-                                    <span className="text-xs text-slate-400 dark:text-slate-500">Trộn thứ tự A, B, C khi tạo đề</span>
-                                </div>
-                            </div>
-                            <label className="flex items-center">
-                                <input type="checkbox" className="hidden toggle-checkbox" checked={shuffleOptionsEnabled} onChange={()=>setShuffleOptionsEnabled(!shuffleOptionsEnabled)} />
-                                <div className="toggle-label"></div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div className="bg-ios-card dark:bg-ios-darkcard rounded-3xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
-                        <button onClick={() => setView('MANAGE')} className="w-full p-5 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors active:bg-slate-100">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/30"><i className="fas fa-database text-lg"></i></div>
-                                <span className="font-semibold text-lg">Quản lý kho đề</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-slate-400">
-                                <span className="text-sm font-bold bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">{questions.length}</span>
-                                <i className="fas fa-chevron-right text-sm ml-1"></i>
-                            </div>
-                        </button>
-                        <button onClick={resetToDefault} className="w-full p-5 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-red-500 active:bg-red-50">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center"><i className="fas fa-undo text-lg"></i></div>
-                                <span className="font-semibold text-lg">Khôi phục 40 câu gốc</span>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-            );
-
-            const renderManage = () => (
-                <div className="animate-slide-up p-5 space-y-4 pb-[calc(env(safe-area-inset-bottom,20px)+80px)]">
-                    <div className="flex items-center justify-between mb-4 mt-6 px-1">
-                        <button onClick={() => setView('SETTINGS')} className="text-ios-primary flex items-center gap-1.5 text-[1.1rem] font-semibold active:opacity-70">
-                            <i className="fas fa-chevron-left"></i> Trở về
-                        </button>
-                        <button onClick={() => setEditModal({visible: true, isNew: true, data: {question: '', options: ['','',''], answer: 0}})} className="bg-blue-100 text-ios-primary dark:bg-blue-900/40 dark:text-blue-400 px-4 py-2 rounded-xl font-bold shadow-sm active:scale-95 transition-transform">
-                            <i className="fas fa-plus mr-1"></i> Thêm
-                        </button>
-                    </div>
-                    <h2 className="text-3xl font-extrabold mb-6 px-1">Kho câu hỏi</h2>
-
-                    <div className="space-y-4">
-                        {questions.map((q, idx) => (
-                            <button key={q.id} onClick={() => setEditModal({visible: true, isNew: false, data: q})} className="w-full bg-ios-card dark:bg-ios-darkcard p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 text-left flex gap-4 active:scale-[0.98] transition-transform">
-                                <span className="text-ios-primary font-bold shrink-0 mt-0.5 text-lg">{idx + 1}.</span>
-                                <span className="font-medium line-clamp-2 flex-1 text-slate-700 dark:text-slate-200 leading-relaxed text-[1.05rem]">{q.question}</span>
-                                <i className="fas fa-chevron-right text-slate-300 text-sm mt-2"></i>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            );
-
-            const renderResultReview = () => {
-                if(view === 'RESULT') return (
-                    <div className="animate-scale-in flex flex-col items-center justify-center min-h-[90dvh] p-6 pb-20">
-                        <div className="w-36 h-36 bg-gradient-to-tr from-yellow-400 to-amber-300 rounded-full flex items-center justify-center mb-8 shadow-[0_15px_40px_rgba(251,191,36,0.5)]">
-                            <i className="fas fa-star text-7xl text-white"></i>
-                        </div>
-                        <h2 className="text-4xl font-black mb-8 text-slate-800 dark:text-white tracking-tight">Kết Quả</h2>
-                        <div className="bg-ios-card dark:bg-ios-darkcard px-10 py-10 rounded-[2.5rem] shadow-xl mb-12 text-center w-full max-w-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-ios-primary to-indigo-500"></div>
-                            <div className="text-[5.5rem] font-black text-ios-primary dark:text-blue-400 mb-0 leading-none tracking-tighter">{score}<span className="text-4xl text-slate-300 dark:text-slate-600 font-bold tracking-normal">/{activeQuestions.length}</span></div>
-                        </div>
-                        <div className="flex w-full max-w-sm gap-4">
-                            <button onClick={()=>setView('REVIEW')} className="flex-1 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-white font-bold py-4.5 rounded-2xl active:opacity-80 transition-opacity text-lg">Xem chi tiết</button>
-                            <button onClick={()=>setView('HOME')} className="flex-1 bg-ios-primary text-white font-bold py-4.5 rounded-2xl shadow-glow active:scale-95 transition-all text-lg">Hoàn tất</button>
-                        </div>
-                    </div>
-                );
-
-                return (
-                    <div className="animate-fade-in p-6 space-y-6 pt-10 pb-safe-quiz">
-                        <div className="flex justify-between items-center mb-4 sticky top-0 bg-ios-bg/90 dark:bg-ios-darkbg/90 backdrop-blur-md py-4 z-10 border-b border-slate-200 dark:border-slate-800">
-                            <h2 className="text-2xl font-extrabold">Xem lại bài</h2>
-                            <button onClick={()=>setView('RESULT')} className="bg-slate-200 dark:bg-slate-800 px-4 py-2 rounded-xl font-bold text-slate-700 dark:text-slate-300 active:scale-95">Trở lại</button>
-                        </div>
-                        {activeQuestions.map((q, idx) => {
-                            const uA = userAnswers[idx]; const isC = uA === q.answer;
-                            return (
-                                <div key={idx} className="bg-ios-card dark:bg-ios-darkcard p-5 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800">
-                                    <h3 className="font-bold mb-5 flex gap-4 text-[1.1rem] leading-relaxed">
-                                        <span className={`w-8 h-8 flex items-center justify-center rounded-full text-white text-sm font-bold shrink-0 mt-0.5 shadow-md ${isC?'bg-green-500':(uA===undefined?'bg-slate-400 dark:bg-slate-600':'bg-red-500')}`}>{idx+1}</span>
-                                        {q.question}
-                                    </h3>
-                                    <div className="space-y-3">
-                                        {q.options.map((opt, i) => {
-                                            let st = "bg-slate-50 dark:bg-slate-800/50 text-slate-500"; let ic = null;
-                                            if (i === q.answer) { st = "bg-green-50 dark:bg-green-900/20 border-2 border-green-400 text-green-700 dark:text-green-400 font-bold shadow-sm"; ic = <i className="fas fa-check-circle text-green-500 text-lg"></i>; }
-                                            else if (i === uA && !isC) { st = "bg-red-50 dark:bg-red-900/20 border-2 border-red-200 text-red-600 dark:text-red-400 opacity-90 font-medium"; ic = <i className="fas fa-times-circle text-red-400 text-lg"></i>; }
-                                            else { st = "border-2 border-transparent"}
-                                            return <div key={i} className={`p-4 rounded-2xl flex justify-between gap-3 text-[1.05rem] items-center ${st}`}><span>{opt}</span>{ic}</div>;
-                                        })}
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </div>
-                );
-            };
-
-            return (
-                <div className="max-w-md mx-auto min-h-screen relative overflow-x-hidden">
+                    <button onClick={() => handleRemoveItem(item.id)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors">
+                      🗑️
+                    </button>
                     
-                    {/* TOAST */}
-                    <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[100] transition-all duration-400 cubic-bezier(0.16, 1, 0.3, 1) ${toast.visible ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-12 opacity-0 scale-90 pointer-events-none'}`}>
-                        <div className="glass-panel px-6 py-3.5 rounded-full shadow-xl flex items-center gap-3 border border-white/30 dark:border-slate-700">
-                            <i className={`fas ${toast.type==='success'?'fa-check-circle text-green-500':'fa-info-circle text-ios-primary'} text-xl`}></i>
-                            <span className="text-[0.95rem] font-bold dark:text-white whitespace-nowrap">{toast.message}</span>
-                        </div>
+                    <div className="grid grid-cols-1 gap-2 mb-3 pr-6 mt-1">
+                      <input 
+                        type="text" 
+                        placeholder="Loại (VD: ĐẠN CX14.5)"
+                        value={item.type}
+                        onChange={e => handleUpdateItem(item.id, 'type', e.target.value)}
+                        className="w-full border-b-2 border-transparent hover:border-gray-200 focus:border-[#1976d2] px-1 py-1 text-sm font-bold text-gray-700 transition-colors"
+                      />
+                      <input 
+                        type="text" 
+                        placeholder="Mã lô..."
+                        value={item.lot}
+                        onChange={e => handleUpdateItem(item.id, 'lot', e.target.value)}
+                        className="w-full border-b-2 border-transparent hover:border-gray-200 focus:border-[#1976d2] px-1 py-1 text-sm text-[#00bcd4] font-black transition-colors"
+                      />
                     </div>
+                    
+                    <div className="grid grid-cols-2 gap-3 mt-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                      <div>
+                        <label className="block text-[10px] uppercase text-gray-500 font-bold mb-1">Tổng Số Viên</label>
+                        <input 
+                          type="number" 
+                          value={item.qty}
+                          onChange={e => handleUpdateItem(item.id, 'qty', e.target.value)}
+                          className="w-full border rounded-md px-2 py-1.5 text-sm font-semibold focus:ring-2 focus:ring-[#1976d2]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase text-gray-500 font-bold mb-1">Viên / Hòm</label>
+                        <input 
+                          type="number" 
+                          value={item.pack}
+                          onChange={e => handleUpdateItem(item.id, 'pack', e.target.value)}
+                          className="w-full border rounded-md px-2 py-1.5 text-sm font-semibold focus:ring-2 focus:ring-[#1976d2]"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="mt-3 text-xs flex justify-between items-center px-1">
+                      <span className="text-gray-600 font-medium">Kết quả: <b className="text-lg text-[#1976d2] ml-1">{Math.floor(item.qty/item.pack)}</b> hòm</span>
+                      {item.qty % item.pack > 0 && <span className="bg-[#ffeeee] text-[#e74c3c] px-2 py-1 rounded-md font-bold text-[11px] border border-[#fadbd8]">Lẻ {item.qty % item.pack} viên</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Nút Xem Sơ Đồ nổi trên Mobile */}
+              <div className="md:hidden absolute bottom-4 left-4 right-4 z-50">
+                <button 
+                  onClick={() => setActiveTab('diagram')}
+                  className="w-full bg-[#f39c12] text-white font-bold py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 active:scale-95 text-sm uppercase"
+                >
+                  Vẽ Sơ Đồ Ngay ➡️
+                </button>
+              </div>
+            </div>
 
-                    {/* CONFIRM DIALOG */}
-                    {confirmDialog.visible && (
-                        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in px-5">
-                            <div className="bg-ios-card dark:bg-ios-darkcard w-full max-w-[320px] rounded-3xl shadow-2xl flex flex-col animate-scale-in overflow-hidden border border-slate-100 dark:border-slate-800">
-                                <div className="p-7 text-center">
-                                    <h3 className="text-[1.3rem] font-extrabold mb-2 dark:text-white">{confirmDialog.title}</h3>
-                                    <p className="text-[0.95rem] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">{confirmDialog.message}</p>
-                                </div>
-                                <div className="flex border-t border-slate-200 dark:border-slate-800">
-                                    <button onClick={() => setConfirmDialog({...confirmDialog, visible: false})} className="flex-1 py-4.5 border-r border-slate-200 dark:border-slate-800 text-ios-primary font-semibold active:bg-slate-50 dark:active:bg-slate-800 text-[1.1rem]">Hủy</button>
-                                    <button onClick={() => { confirmDialog.onConfirm(); setConfirmDialog({...confirmDialog, visible: false}); }} className={`flex-1 py-4.5 font-bold active:bg-slate-50 dark:active:bg-slate-800 text-[1.1rem] ${confirmDialog.isDanger ? 'text-red-500' : 'text-ios-primary'}`}>{confirmDialog.confirmText}</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {view === 'HOME' && renderHome()}
-                    {view === 'QUIZ' && renderQuiz()}
-                    {(view === 'RESULT' || view === 'REVIEW') && renderResultReview()}
-                    {view === 'HISTORY' && renderHistory()}
-                    {view === 'SETTINGS' && renderSettings()}
-                    {view === 'MANAGE' && renderManage()}
-
-                    {/* BOTTOM NAV BAR */}
-                    {['HOME', 'HISTORY', 'SETTINGS', 'MANAGE'].includes(view) && (
-                        <div className="fixed bottom-0 left-0 w-full z-40 glass-panel border-t border-slate-200/50 dark:border-slate-800/50 safe-pb shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
-                            <div className="max-w-md mx-auto flex justify-around pt-3">
-                                {[ {id:'HOME', icon:'fa-home', label:'Trang chủ'}, {id:'HISTORY', icon:'fa-chart-pie', label:'Thống kê'}, {id:'SETTINGS', icon:'fa-cog', label:'Cài đặt'} ].map(tab => (
-                                    <button key={tab.id} onClick={() => setView(tab.id)} className={`flex flex-col items-center gap-1 w-20 transition-all ${view===tab.id || (tab.id==='SETTINGS'&&view==='MANAGE') ? 'text-ios-primary' : 'text-slate-400 hover:text-slate-600'}`}>
-                                        <i className={`fas ${tab.icon} text-[1.4rem] mb-0.5 ${view===tab.id ? 'transform scale-110' : ''} transition-transform`}></i>
-                                        <span className="text-[11px] font-bold">{tab.label}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* MODAL THÊM/SỬA */}
-                    {editModal.visible && (
-                        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md animate-fade-in">
-                            <div className="bg-ios-card dark:bg-ios-darkcard w-full max-w-md h-[95vh] sm:h-auto sm:max-h-[90vh] rounded-t-[2rem] sm:rounded-3xl overflow-y-auto flex flex-col animate-slide-up border border-slate-100 dark:border-slate-800 shadow-2xl">
-                                <div className="sticky top-0 bg-ios-card/95 dark:bg-ios-darkcard/95 backdrop-blur-xl p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center z-10">
-                                    <button onClick={()=>setEditModal({...editModal, visible:false})} className="text-slate-500 font-medium text-[1.1rem]">Hủy</button>
-                                    <h3 className="font-extrabold text-lg">{editModal.isNew ? 'Thêm câu hỏi' : 'Sửa câu hỏi'}</h3>
-                                    <button onClick={()=>handleSaveQuestion(editModal.data)} className="text-ios-primary font-bold text-[1.1rem]">Lưu</button>
-                                </div>
-                                <div className="p-6 space-y-7 safe-pb-quiz">
-                                    <div>
-                                        <label className="text-sm font-bold text-slate-500 uppercase mb-3 block">Nội dung câu hỏi</label>
-                                        <textarea value={editModal.data.question} onChange={e=>setEditModal({visible:true, isNew:editModal.isNew, data:{...editModal.data, question:e.target.value}})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-ios-primary min-h-[120px] text-[1.05rem]" placeholder="Nhập câu hỏi..."></textarea>
-                                    </div>
-                                    <div>
-                                        <label className="text-sm font-bold text-slate-500 uppercase mb-3 block">Các đáp án (Tích chọn đáp án đúng)</label>
-                                        <div className="space-y-4">
-                                            {editModal.data.options.map((opt, i) => (
-                                                <div key={i} className="flex items-center gap-4">
-                                                    <input type="radio" name="correct" checked={editModal.data.answer === i} onChange={()=>setEditModal({visible:true, isNew:editModal.isNew, data:{...editModal.data, answer:i}})} className="w-6 h-6 accent-ios-primary"/>
-                                                    <input type="text" value={opt} onChange={e=>{const newOpts=[...editModal.data.options]; newOpts[i]=e.target.value; setEditModal({visible:true, isNew:editModal.isNew, data:{...editModal.data, options:newOpts}})}} className={`flex-1 bg-slate-50 dark:bg-slate-800 border rounded-2xl p-4 outline-none focus:ring-2 text-[1.05rem] transition-colors ${editModal.data.answer === i ? 'border-blue-400 focus:ring-ios-primary' : 'border-slate-200 dark:border-slate-700 focus:ring-slate-400'}`} placeholder={`Đáp án ${i+1}`}/>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        {editModal.data.options.length < 5 && (
-                                            <button onClick={()=>{const newOpts=[...editModal.data.options, '']; setEditModal({visible:true, isNew:editModal.isNew, data:{...editModal.data, options:newOpts}})}} className="mt-5 w-full bg-blue-50 dark:bg-blue-900/30 text-ios-primary dark:text-blue-400 px-4 py-3.5 rounded-xl text-base font-bold active:scale-95 transition-transform"><i className="fas fa-plus"></i> Thêm ô đáp án</button>
-                                        )}
-                                    </div>
-                                    {!editModal.isNew && (
-                                        <button onClick={()=>handleDeleteQuestion(editModal.data.id)} className="w-full py-4 text-red-500 font-bold bg-red-50 dark:bg-red-900/20 rounded-2xl mt-4 border border-red-100 dark:border-red-900/50 active:scale-95 transition-transform text-lg">Xóa câu hỏi này</button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
+            {/* ====== CỘT PHẢI: VẼ SƠ ĐỒ ====== */}
+            <div className={`flex-1 bg-[#e4e9f0] p-4 md:p-8 flex flex-col items-center overflow-auto h-full absolute md:static w-full transition-transform duration-300 ${activeTab === 'diagram' ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
+              
+              {/* Bảng điều khiển sơ đồ */}
+              <div className="bg-white px-4 py-3 rounded-xl mb-6 flex flex-wrap gap-4 md:gap-8 items-center justify-center shadow-sm border border-gray-200 w-full max-w-3xl shrink-0">
+                <div className="flex flex-col">
+                   <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Max Hòm / Chồng</label>
+                   <input 
+                      type="number" 
+                      className="w-20 px-3 py-1.5 border-2 border-gray-200 rounded-lg outline-none font-bold text-center focus:border-[#1976d2]"
+                      value={maxHeight}
+                      onChange={e => setMaxHeight(Math.max(1, Number(e.target.value)))}
+                    />
                 </div>
-            );
-        }
+                
+                <div className="h-10 w-[1px] bg-gray-200 hidden md:block"></div>
+                
+                <label className="flex items-center gap-3 cursor-pointer group bg-gray-50 px-4 py-2 rounded-lg border hover:bg-[#eaf6ff] transition-colors">
+                  <div className="relative flex items-center">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only"
+                      checked={allowMix}
+                      onChange={e => setAllowMix(e.target.checked)}
+                    />
+                    <div className={`block w-10 h-6 rounded-full transition-colors ${allowMix ? 'bg-[#27ae60]' : 'bg-gray-300'}`}></div>
+                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${allowMix ? 'translate-x-4' : ''}`}></div>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-gray-800">Thông minh</span>
+                    <span className="text-[10px] text-gray-500 leading-none">Cho phép ghép lô</span>
+                  </div>
+                </label>
+              </div>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+              {/* Sơ đồ SVG Area */}
+              <div className="bg-white shadow-2xl rounded-sm inline-block border-2 border-gray-800 relative overflow-hidden shrink-0">
+                <div className="absolute top-2 left-4 text-xs font-bold text-gray-400">MẶT CẮT KHO</div>
+                
+                <svg width={svgWidth} height={svgHeight} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                  
+                  {/* Lưới nền */}
+                  <g opacity="0.4">
+                    {Array.from({ length: columns.length + 1 }).map((_, i) => (
+                      <line 
+                        key={`v-${i}`}
+                        x1={i * COL_W} y1={TOP_MARGIN} 
+                        x2={i * COL_W} y2={TOP_MARGIN + MAX_COL_H} 
+                        stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4,4"
+                      />
+                    ))}
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <line 
+                        key={`h-${i}`}
+                        x1={0} y1={TOP_MARGIN + (i * (MAX_COL_H/5))} 
+                        x2={columns.length * COL_W} y2={TOP_MARGIN + (i * (MAX_COL_H/5))} 
+                        stroke="#cbd5e1" strokeWidth="1" 
+                      />
+                    ))}
+                  </g>
+
+                  {/* Đường ziczac bao ngoài */}
+                  <path d={profilePath} fill="#f8fafc" stroke="#1e293b" strokeWidth="4" strokeLinejoin="miter" />
+
+                  {/* Các cột */}
+                  {columns.map((col, i) => {
+                    const x = i * COL_W;
+                    const totalBoxes = col.reduce((sum, c) => sum + c.boxesInCol, 0);
+                    const colH = totalBoxes * BOX_H;
+                    const y = TOP_MARGIN + MAX_COL_H - colH;
+                    const isMixed = col.length > 1;
+
+                    return (
+                      <g key={`col-${i}`} transform={`translate(${x}, 0)`}>
+                        <line x1={COL_W} y1={y} x2={COL_W} y2={TOP_MARGIN + MAX_COL_H} stroke="#1e293b" strokeWidth="1.5" />
+
+                        {isMixed ? (
+                          <>
+                            <line x1={0} y1={y} x2={COL_W} y2={y + colH} stroke="#1e293b" strokeWidth="2" />
+                            
+                            <circle cx={COL_W * 0.75} cy={y + colH * 0.25} r={18} fill="white" stroke="#1e293b" strokeWidth="2" />
+                            <text x={COL_W * 0.75} y={y + colH * 0.25 + 5} fontSize="14" fontWeight="bold" textAnchor="middle" fill="#0f172a">{col[1].boxesInCol}</text>
+                            
+                            <circle cx={COL_W * 0.25} cy={y + colH * 0.75} r={18} fill="white" stroke="#1e293b" strokeWidth="2" />
+                            <text x={COL_W * 0.25} y={y + colH * 0.75 + 5} fontSize="14" fontWeight="bold" textAnchor="middle" fill="#0f172a">{col[0].boxesInCol}</text>
+                          </>
+                        ) : (
+                          col[0]?.boxesInCol > 0 && (
+                            <g transform={`translate(${COL_W / 2}, ${y + 30})`}>
+                              <circle cx={0} cy={0} r={20} fill="white" stroke="#1e293b" strokeWidth="2" />
+                              <text x={0} y={6} fontSize="16" fontWeight="bold" textAnchor="middle" fill="#0f172a">{col[0].boxesInCol}</text>
+                            </g>
+                          )
+                        )}
+
+                        {/* Text Hòm lẻ */}
+                        {col.map((item, idx) => item.showLeftover > 0 && (
+                          <g key={`left-${idx}`} transform={`translate(${COL_W / 2}, ${y - 25 - (idx * 25)})`}>
+                            <text x={0} y={0} fontSize="13" fontStyle="italic" fontWeight="600" textAnchor="middle" fill="#e74c3c">lẻ {item.showLeftover}</text>
+                            <line x1={40} y1={-4} x2={65} y2={-4} stroke="#1e293b" strokeWidth="1.5" markerEnd="url(#arrowhead)"/>
+                          </g>
+                        ))}
+
+                        {/* Thông tin Text gầm */}
+                        <g transform={`translate(${COL_W / 2}, ${TOP_MARGIN + MAX_COL_H + 30})`}>
+                          {isMixed ? (
+                            <>
+                              <text x={0} y={0} fontSize="11" fontWeight="600" textAnchor="middle" fill="#64748b">{col[1].type}</text>
+                              <text x={0} y={16} fontSize="13" fontWeight="900" textAnchor="middle" fill="#1976d2">{col[1].lot}</text>
+                              <text x={0} y={32} fontSize="11" fontWeight="600" textAnchor="middle" fill="#0f172a">SL: {col[1].qty.toLocaleString('vi-VN')} V</text>
+                              
+                              <line x1={-50} y1={48} x2={50} y2={48} stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3,3" />
+                              
+                              <text x={0} y={68} fontSize="11" fontWeight="600" textAnchor="middle" fill="#64748b">{col[0].type}</text>
+                              <text x={0} y={84} fontSize="13" fontWeight="900" textAnchor="middle" fill="#1976d2">{col[0].lot}</text>
+                              <text x={0} y={100} fontSize="11" fontWeight="600" textAnchor="middle" fill="#0f172a">SL: {col[0].qty.toLocaleString('vi-VN')} V</text>
+                            </>
+                          ) : (
+                            col[0] && (
+                              <>
+                                <text x={0} y={0} fontSize="11" fontWeight="600" textAnchor="middle" fill="#64748b">{col[0].type}</text>
+                                <text x={0} y={16} fontSize="13" fontWeight="900" textAnchor="middle" fill="#1976d2">{col[0].lot}</text>
+                                <text x={0} y={32} fontSize="11" fontWeight="600" textAnchor="middle" fill="#0f172a">SL: {col[0].qty.toLocaleString('vi-VN')} V</text>
+                              </>
+                            )
+                          )}
+                        </g>
+                      </g>
+                    );
+                  })}
+                  
+                  <rect x="0" y={TOP_MARGIN + MAX_COL_H} width={svgWidth} height="4" fill="#1e293b" />
+                </svg>
+                
+                <svg width="0" height="0" className="absolute">
+                  <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="8" refY="3.5" orient="auto">
+                      <polygon points="0 0, 10 3.5, 0 7" fill="#1e293b" />
+                    </marker>
+                  </defs>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 </body>
 </html>
-
-
-```
