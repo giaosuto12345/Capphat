@@ -68,17 +68,17 @@
 
     <!-- QUẢN LÝ NHÀ KHO (TABS) -->
     <div class="bg-[#0f172a] border-b border-[#334155] flex overflow-x-auto light-scroll shrink-0" id="warehouseTabs">
-        <!-- Javascript render các tab Nhà Kho -->
+        <!-- Javascript render -->
     </div>
 
     <!-- MAIN APP -->
     <div class="flex flex-1 overflow-hidden relative">
         
         <!-- SIDEBAR -->
-        <aside class="w-full md:w-[350px] bg-[#1e293b] border-r border-[#334155] flex flex-col absolute md:relative z-20 h-full transition-transform duration-300 shadow-2xl md:shadow-none" id="sidebar">
+        <aside class="w-full md:w-[380px] bg-[#1e293b] border-r border-[#334155] flex flex-col absolute md:relative z-20 h-full transition-transform duration-300 shadow-2xl md:shadow-none" id="sidebar">
             
             <div class="flex p-2 gap-1 bg-[#0f172a] shrink-0 border-b border-[#334155]">
-                <button onclick="switchPanel('data')" id="tabData" class="tab-btn active flex-1 py-2 rounded font-bold text-xs border border-transparent bg-[#1e293b] text-slate-400 transition-colors uppercase">📦 Lô Đạn</button>
+                <button onclick="switchPanel('data')" id="tabData" class="tab-btn active flex-1 py-2 rounded font-bold text-xs border border-transparent bg-[#1e293b] text-slate-400 transition-colors uppercase">📦 Danh sách Lô</button>
                 <button onclick="switchPanel('settings')" id="tabSettings" class="tab-btn flex-1 py-2 rounded font-bold text-xs border border-transparent bg-[#1e293b] text-slate-400 transition-colors uppercase">⚙️ Cài Đặt Không Gian</button>
             </div>
 
@@ -88,18 +88,19 @@
                     <div class="text-[10px] font-bold text-slate-400 flex gap-2">
                         <span>Lô: <b id="kpiLots" class="text-white">0</b></span>
                         <span>Viên: <b id="kpiItems" class="text-emerald-400">0</b></span>
+                        <span>Hòm: <b id="kpiBoxes" class="text-blue-400">0</b></span>
                     </div>
                     <div class="flex gap-1">
-                        <button onclick="deleteAllItems()" class="bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white px-2 py-1 rounded text-xs font-bold transition-all border border-red-500/30" title="Xóa toàn bộ lô trong nhà này">
-                            🗑 XÓA SẠCH
+                        <button onclick="deleteAllItems()" class="bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white px-2 py-1 rounded text-[10px] font-bold transition-all border border-red-500/30" title="Xóa toàn bộ">
+                            🗑 XÓA
                         </button>
-                        <button onclick="openModal(null)" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold transition-all shadow-md">
+                        <button onclick="openModal(null)" class="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-[10px] font-bold transition-all shadow-md">
                             + THÊM LÔ
                         </button>
                     </div>
                 </div>
                 
-                <!-- Khu vực Scroll Danh Sách 1 Dòng -->
+                <!-- Khu vực Scroll Danh Sách -->
                 <div class="flex-1 overflow-y-auto p-2 space-y-1.5 pb-20 md:pb-2" id="dataContainer" onclick="clearHighlight(event)" style="min-height:0;">
                     <!-- Render by JS -->
                 </div>
@@ -276,7 +277,6 @@
             }
         }
 
-        // --- ĐỒNG BỘ CẤU HÌNH VỚI UI ---
         function syncConfigToUI() {
             const wh = getActiveWH();
             if(!wh) return;
@@ -310,39 +310,46 @@
             triggerRender();
         }
 
-        // --- ALGORITHM: CHIA LÔ & CHỒNG (Cho Nhà hiện tại) ---
+        // --- ALGORITHM: LÕI TÍNH TOÁN XẾP HÒM (FIX LỖI LÔ NHỎ) ---
         function calculateStacks(wh) {
             const stacks = [];
             let curStack = { i1: null, q1: 0, l1: 0, i2: null, q2: 0, l2: 0 };
+            const maxH = wh.config.maxHeight;
 
             wh.items.forEach(item => {
-                let totalBoxes = Math.ceil((Number(item.qty)||0) / (Number(item.pack)||1));
-                if (totalBoxes === 0) return;
-                
-                let leftover = (Number(item.qty)||0) % (Number(item.pack)||1);
-                let boxesLeftToPlace = totalBoxes;
+                let qty = Number(item.qty) || 0;
+                let pack = Number(item.pack) || 1;
+                if (qty <= 0) return;
 
-                while (boxesLeftToPlace > 0) {
-                    let spaceLeft = wh.config.maxHeight - (curStack.q1 + curStack.q2);
+                // Tính chính xác số hòm vật lý cần xếp
+                let fullBoxes = Math.floor(qty / pack);
+                let leftover = qty % pack;
+                let boxesToPlace = fullBoxes + (leftover > 0 ? 1 : 0);
 
+                while (boxesToPlace > 0) {
+                    let spaceLeft = maxH - (curStack.q1 + curStack.q2);
+
+                    // Đẩy sang cột mới nếu: Hết chỗ, Hoặc Không cho ghép lô
                     if (spaceLeft === 0 || (!wh.config.allowMix && curStack.q1 > 0 && curStack.i1.id !== item.id)) {
                         if (curStack.q1 > 0 || curStack.q2 > 0) stacks.push({...curStack});
                         curStack = { i1: null, q1: 0, l1: 0, i2: null, q2: 0, l2: 0 };
-                        spaceLeft = wh.config.maxHeight;
+                        spaceLeft = maxH;
                     }
 
-                    let take = Math.min(boxesLeftToPlace, spaceLeft);
-                    let isLastPlacement = (boxesLeftToPlace === take);
-                    let leftoverForThisPlacement = (isLastPlacement && leftover > 0) ? leftover : 0;
+                    let take = Math.min(boxesToPlace, spaceLeft);
+                    let isLastBox = (boxesToPlace === take);
+                    let leftoverToRecord = (isLastBox && leftover > 0) ? leftover : 0;
 
                     if (curStack.i1 === null || curStack.i1.id === item.id) {
-                        curStack.i1 = item; curStack.q1 += take;
-                        if (leftoverForThisPlacement) curStack.l1 = leftoverForThisPlacement;
+                        curStack.i1 = item;
+                        curStack.q1 += take;
+                        if (leftoverToRecord) curStack.l1 = leftoverToRecord;
                     } else {
-                        curStack.i2 = item; curStack.q2 += take;
-                        if (leftoverForThisPlacement) curStack.l2 = leftoverForThisPlacement;
+                        curStack.i2 = item;
+                        curStack.q2 += take;
+                        if (leftoverToRecord) curStack.l2 = leftoverToRecord;
                     }
-                    boxesLeftToPlace -= take;
+                    boxesToPlace -= take;
                 }
             });
             if (curStack.q1 > 0 || curStack.q2 > 0) stacks.push(curStack);
@@ -356,7 +363,7 @@
             return lotsA.some(id => lotsB.includes(id));
         }
 
-        // --- RENDER 1: LIST COMPACT ---
+        // --- RENDER 1: LIST BÊN TRÁI (CHỨA CÔNG THỨC TOÁN HỌC) ---
         function renderInputPanel() {
             const wh = getActiveWH();
             const container = document.getElementById('dataContainer');
@@ -368,24 +375,42 @@
             }
 
             wh.items.forEach((item, idx) => {
-                const pck = Number(item.pack)||1;
-                const boxes = Math.floor(item.qty / pck);
+                const maxH = wh.config.maxHeight;
+                const pck = Number(item.pack) || 1;
+                const qty = Number(item.qty) || 0;
+                
+                // Tính toán công thức
+                const fullB = Math.floor(qty / pck);
+                const left = qty % pck;
+                const physB = fullB + (left > 0 ? 1 : 0);
+                
+                const numFullStacks = Math.floor(physB / maxH);
+                const remB = physB % maxH;
+
+                let eqStr = numFullStacks > 0 ? `(${numFullStacks}x${maxH})` : ``;
+                if (remB > 0) eqStr += eqStr ? `+${remB}` : `${remB}`;
+                if (physB === 0) eqStr = "0";
+
+                let leftoverHtml = left > 0 ? `<span class="text-red-400 font-bold ml-1">(+ lẻ ${left}v)</span>` : '';
+
                 const isActive = state.activeLotId === item.id;
                 const activeClass = isActive ? "bg-blue-600/20 border-blue-500" : "bg-[#1e293b] border-[#334155] hover:border-slate-400";
 
                 html += `
-                    <div class="flex items-center gap-2 ${activeClass} border rounded p-2 transition-colors cursor-pointer" onclick="highlightLot(event, ${item.id})" ondblclick="openModal(${item.id})">
-                        <div class="w-5 h-5 bg-slate-700 text-white rounded flex items-center justify-center text-[9px] font-bold shrink-0">${idx + 1}</div>
+                    <div class="flex items-start gap-2 ${activeClass} border rounded p-2 transition-colors cursor-pointer group" onclick="highlightLot(event, ${item.id})" ondblclick="openModal(${item.id})">
+                        <div class="w-5 h-5 bg-slate-700 text-white rounded flex items-center justify-center text-[9px] font-bold shrink-0 mt-1">${idx + 1}</div>
                         <div class="flex-1 min-w-0">
-                            <div class="flex justify-between items-baseline">
+                            <div class="flex justify-between items-baseline mb-0.5">
                                 <span class="text-xs font-bold text-white truncate pr-2">${item.type}</span>
-                                <span class="text-[10px] text-slate-400 shrink-0">${boxes} hòm</span>
+                                <span class="text-[10px] font-black text-[#38bdf8] truncate">${item.lot}</span>
                             </div>
-                            <div class="text-[10px] font-black text-[#38bdf8] truncate">${item.lot}</div>
+                            <div class="text-[10.5px] text-slate-400 bg-[#0f172a] px-1.5 py-1 rounded inline-block">
+                                SL: <span class="text-slate-300 font-mono">${eqStr}</span> = <b class="text-blue-400">${physB}h</b> ${leftoverHtml}
+                            </div>
                         </div>
-                        <div class="flex gap-1 shrink-0">
-                            <button onclick="openModal(${item.id}); event.stopPropagation();" class="text-slate-400 hover:text-blue-400 p-1" title="Sửa">✏️</button>
-                            <button onclick="removeItem(${item.id}); event.stopPropagation();" class="text-slate-400 hover:text-red-400 p-1" title="Xóa">🗑</button>
+                        <div class="flex flex-col gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="openModal(${item.id}); event.stopPropagation();" class="text-slate-400 hover:text-blue-400 p-0.5" title="Sửa">✏️</button>
+                            <button onclick="removeItem(${item.id}); event.stopPropagation();" class="text-slate-400 hover:text-red-400 p-0.5" title="Xóa">🗑</button>
                         </div>
                     </div>
                 `;
@@ -411,12 +436,11 @@
 
             let html = '';
 
-            // ====== DẠNG 1: MẶT BẰNG (CHUẨN ẢNH) ======
+            // ====== DẠNG 1: MẶT BẰNG LƯỚI KHỐI ======
             if (viewMode === "1") {
                 const CELL_W = 100, CELL_H = 80;
                 const svgW = maxC * CELL_W, svgH = maxR * CELL_H;
 
-                // Tự động phân trang (Nếu số lượng stack vượt quá sức chứa 1 bảng vẽ RxC, chia thành nhiều khu vực)
                 const capacity = maxC * maxR;
                 const chunks = [];
                 for(let i=0; i<stacks.length; i+=capacity) {
@@ -434,13 +458,13 @@
                                     <div class="bg-slate-100 text-slate-600 text-center py-1.5 font-bold text-[10px] uppercase border-b border-slate-200">${wh.name} - Khu ${chunkIdx + 1}</div>
                                     <svg width="${svgW}" height="${svgH}" style="font-family: Arial, sans-serif;">`;
                     
-                    // Lưới nền mờ (Chỉ vẽ mờ)
-                    svgHtml += `<g opacity="0.2">`;
-                    for (let c = 0; c <= maxC; c++) svgHtml += `<line x1="${c * CELL_W}" y1="0" x2="${c * CELL_W}" y2="${svgH}" stroke="#64748b" stroke-width="1"/>`;
-                    for (let r = 0; r <= maxR; r++) svgHtml += `<line x1="0" y1="${r * CELL_H}" x2="${svgW}" y2="${r * CELL_H}" stroke="#64748b" stroke-width="1"/>`;
+                    // Vẽ lưới kẻ mỏng cho TẤT CẢ các ô (kể cả trống)
+                    svgHtml += `<g stroke="#cbd5e1" stroke-width="1">`;
+                    for (let c = 0; c <= maxC; c++) svgHtml += `<line x1="${c * CELL_W}" y1="0" x2="${c * CELL_W}" y2="${svgH}" />`;
+                    for (let r = 0; r <= maxR; r++) svgHtml += `<line x1="0" y1="${r * CELL_H}" x2="${svgW}" y2="${r * CELL_H}" />`;
                     svgHtml += `</g>`;
 
-                    // Vẽ Ô đạn
+                    // Vẽ dữ liệu ô đạn
                     for (let r = 0; r < maxR; r++) {
                         for (let c = 0; c < maxC; c++) {
                             let stack = grid[r][c];
@@ -453,44 +477,38 @@
 
                                 svgHtml += `<g class="${baseClass}">`;
                                 // Nền ô (ẩn ô trống)
-                                svgHtml += `<rect x="${x}" y="${y}" width="${CELL_W}" height="${CELL_H}" fill="#ffffff" stroke="none" class="cell-bg"/>`;
+                                svgHtml += `<rect x="${x}" y="${y}" width="${CELL_W}" height="${CELL_H}" fill="transparent" stroke="none" class="cell-bg"/>`;
 
                                 if (stack.i2) {
-                                    // Chéo chia lô
+                                    // Chéo chia lô nét mỏng
                                     svgHtml += `<line x1="${x}" y1="${y}" x2="${x + CELL_W}" y2="${y + CELL_H}" stroke="#0f172a" stroke-width="1" />`;
                                     
-                                    // Lô cũ (Góc trái dưới)
                                     let t1 = stack.q1 + (stack.l1 > 0 ? `+${stack.l1}v` : '');
                                     svgHtml += `<text x="${x + CELL_W * 0.25}" y="${y + CELL_H * 0.75 + 4}" font-size="12" font-weight="900" text-anchor="middle" fill="#0f172a">${t1}</text>`;
                                     
-                                    // Lô mới (Góc phải trên)
                                     let t2 = stack.q2 + (stack.l2 > 0 ? `+${stack.l2}v` : '');
                                     svgHtml += `<text x="${x + CELL_W * 0.75}" y="${y + CELL_H * 0.25 + 4}" font-size="12" font-weight="900" text-anchor="middle" fill="#0f172a">${t2}</text>`;
                                 } else {
-                                    // Full lô
+                                    // 1 Lô
                                     let text = stack.q1 + (stack.l1 > 0 ? `+${stack.l1}v` : '');
-                                    let isFull = (stack.q1 === maxH && stack.l1 === 0);
-                                    let fw = isFull ? "normal" : "900";
-                                    let fc = isFull ? "#94a3b8" : "#0f172a";
-                                    svgHtml += `<text x="${x + CELL_W/2}" y="${y + CELL_H/2 + 5}" font-size="14" font-weight="${fw}" text-anchor="middle" fill="${fc}">${text}</text>`;
+                                    svgHtml += `<text x="${x + CELL_W/2}" y="${y + CELL_H/2 + 5}" font-size="14" font-weight="bold" text-anchor="middle" fill="#0f172a">${text}</text>`;
                                 }
                                 svgHtml += `</g>`;
                             }
                         }
                     }
 
-                    // NÉT VIỀN ĐẬM PHÂN CÁCH LÔ
+                    // VẼ NÉT VIỀN ĐẬM PHÂN CÁCH LÔ
                     svgHtml += `<g stroke="#0f172a" stroke-width="3" stroke-linecap="square">`;
                     for (let r = 0; r < maxR; r++) {
                         for (let c = 0; c < maxC; c++) {
                             let cell = grid[r][c];
                             if (cell) {
                                 let x = c * CELL_W, y = r * CELL_H;
-                                // Viền bo ngoài cùng nếu có ô
-                                if (r===0 || !grid[r-1][c]) svgHtml += `<line x1="${x}" y1="${y}" x2="${x+CELL_W}" y2="${y}" />`; // Top
-                                if (c===0 || !grid[r][c-1]) svgHtml += `<line x1="${x}" y1="${y}" x2="${x}" y2="${y+CELL_H}" />`; // Left
                                 
-                                // Viền phân cách Lô
+                                if (r===0 || !grid[r-1][c] || !hasSharedLot(cell, grid[r-1][c])) svgHtml += `<line x1="${x}" y1="${y}" x2="${x+CELL_W}" y2="${y}" />`; // Top
+                                if (c===0 || !grid[r][c-1] || !hasSharedLot(cell, grid[r][c-1])) svgHtml += `<line x1="${x}" y1="${y}" x2="${x}" y2="${y+CELL_H}" />`; // Left
+                                
                                 if (c < maxC - 1 && !hasSharedLot(cell, grid[r][c+1])) svgHtml += `<line x1="${x+CELL_W}" y1="${y}" x2="${x+CELL_W}" y2="${y+CELL_H}" />`; 
                                 if (c === maxC - 1) svgHtml += `<line x1="${x+CELL_W}" y1="${y}" x2="${x+CELL_W}" y2="${y+CELL_H}" />`;
 
@@ -501,56 +519,14 @@
                     }
                     svgHtml += `</g>`;
 
-                    // GHI CHÚ TÊN LÔ TRỰC TIẾP LÊN GRID (Căn giữa vùng chứa)
-                    const lotBounds = {};
-                    chunk.forEach((s, idx) => {
-                        let r = Math.floor(idx / maxC), c = idx % maxC;
-                        const proc = (i, q, l) => {
-                            if(!i) return;
-                            if(!lotBounds[i.id]) lotBounds[i.id] = { i, f:0, p:0, lSum:0, minR:99, maxR:-1, minC:99, maxC:-1 };
-                            let b = lotBounds[i.id];
-                            if(q===maxH && l===0) b.f++; else b.p+=q;
-                            b.lSum+=l;
-                            if(r<b.minR) b.minR=r; if(r>b.maxR) b.maxR=r; if(c<b.minC) b.minC=c; if(c>b.maxC) b.maxC=c;
-                        };
-                        proc(s.i1, s.q1, s.l1); proc(s.i2, s.q2, s.l2);
-                    });
-
-                    Object.values(lotBounds).forEach(b => {
-                        let total = b.f * maxH + b.p;
-                        let eq = b.f>0 ? `(${b.f}x${maxH})` : ``;
-                        if(b.p>0) eq += eq?`+${b.p}`:`${b.p}`;
-                        let lStr = b.lSum>0 ? ` (+lẻ ${b.lSum}v)` : '';
-                        
-                        // Căn giữa hộp thông tin
-                        let cx = (b.minC + b.maxC + 1)/2 * CELL_W;
-                        let cy = (b.minR + b.maxR + 1)/2 * CELL_H;
-                        
-                        let hlClass = state.activeLotId === b.i.id ? "border-blue-500 bg-blue-50" : "border-slate-800 bg-white/95";
-
-                        // Box text HTML chèn vào SVG
-                        svgHtml += `
-                            <foreignObject x="${cx - 100}" y="${cy - 30}" width="200" height="60">
-                                <div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%;">
-                                    <div class="${hlClass} transition-colors" style="border-width:1px; border-style:solid; padding:4px 6px; border-radius:4px; text-align:center; box-shadow:0 2px 5px rgba(0,0,0,0.15);">
-                                        <div style="font-size:11px; font-weight:bold; color:#1e293b; display:inline;">${b.i.type}</div>
-                                        <div style="font-size:11px; font-weight:900; color:#2563eb; display:inline; margin-left:4px;">${b.i.lot}</div>
-                                        <div style="font-size:10px; color:#475569; margin-top:2px;">SL: ${eq}=${total}h ${lStr}</div>
-                                    </div>
-                                </div>
-                            </foreignObject>
-                        `;
-                    });
-
                     svgHtml += `</svg></div>`;
                     html += svgHtml;
                 });
             } 
-            // ====== DẠNG 2: MẶT CẮT ZICZAC (CHUẨN NHƯ CŨ) ======
+            // ====== DẠNG 2: MẶT CẮT ZICZAC (CHUẨN CÓ TEXT GẦM) ======
             else {
-                const COL_W = 120, MAX_COL_H = 300, BOX_H = MAX_COL_H / maxH, TOP_M = 40;
+                const COL_W = 100, MAX_COL_H = 260, BOX_H = MAX_COL_H / maxH, TOP_M = 40;
                 
-                // Ziczac vẽ dàn ngang 1 đường thẳng dài
                 const chunks = [];
                 for(let i=0; i<stacks.length; i+=maxC) {
                     chunks.push(stacks.slice(i, i+maxC));
@@ -558,18 +534,18 @@
 
                 chunks.forEach((chunk, chunkIdx) => {
                     const svgW = maxC * COL_W;
-                    const svgH = TOP_M + MAX_COL_H + 80; // Dành chỗ cho ghi chú dưới
+                    const svgH = TOP_M + MAX_COL_H + 90; // Khoảng trống cho bảng dưới
 
                     let svgHtml = `<div class="relative bg-white shadow-xl rounded border border-slate-300 p-0 overflow-hidden w-max mx-auto mb-10">
                                     <div class="bg-slate-100 text-slate-600 px-3 py-1.5 font-bold text-[10px] uppercase border-b border-slate-200">${wh.name} - Dãy ${chunkIdx + 1}</div>
                                     <svg width="${svgW}" height="${svgH}" style="font-family: Arial, sans-serif;">`;
                     
-                    // Lưới ngang
+                    // Lưới ngang mờ
                     svgHtml += `<g opacity="0.3">`;
                     for (let i = 0; i <= 5; i++) svgHtml += `<line x1="0" y1="${TOP_M + (i * (MAX_COL_H/5))}" x2="${maxC * COL_W}" y2="${TOP_M + (i * (MAX_COL_H/5))}" stroke="#cbd5e1" stroke-width="1"/>`;
                     svgHtml += `</g>`;
 
-                    // Đường Ziczac
+                    // Đường Ziczac Profile
                     let profilePath = `M 0 ${TOP_M + MAX_COL_H}`;
                     chunk.forEach((col, i) => {
                         const y = TOP_M + MAX_COL_H - ((col.q1+col.q2) * BOX_H);
@@ -578,7 +554,7 @@
                     profilePath += ` L ${chunk.length*COL_W} ${TOP_M+MAX_COL_H} L ${maxC*COL_W} ${TOP_M+MAX_COL_H}`;
                     svgHtml += `<path d="${profilePath}" fill="#f1f5f9" stroke="#0f172a" stroke-width="2" />`;
 
-                    // Vẽ cột và số
+                    // Vẽ cột và vòng tròn số
                     chunk.forEach((col, i) => {
                         let x = i * COL_W;
                         let y = TOP_M + MAX_COL_H - ((col.q1+col.q2) * BOX_H);
@@ -588,10 +564,9 @@
                         let baseClass = (hlClass1 || hlClass2) ? "is-highlighted highlight-lot" : "highlight-lot";
 
                         svgHtml += `<g transform="translate(${x}, 0)" class="${baseClass}">`;
-                        // Background Highlight
                         svgHtml += `<rect x="0" y="${y}" width="${COL_W}" height="${(col.q1+col.q2)*BOX_H}" fill="transparent" class="ziczac-col transition-colors"/>`;
                         
-                        // Vách phải
+                        // Vách
                         svgHtml += `<line x1="${COL_W}" y1="${y}" x2="${COL_W}" y2="${TOP_M + MAX_COL_H}" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2" />`;
                         svgHtml += `<line x1="${COL_W}" y1="${y}" x2="${COL_W}" y2="${TOP_M + MAX_COL_H}" stroke="#0f172a" stroke-width="1.5" />`;
 
@@ -599,11 +574,11 @@
                             let midY = y + (col.q2 * BOX_H);
                             svgHtml += `<line x1="0" y1="${y}" x2="${COL_W}" y2="${midY}" stroke="#0f172a" stroke-width="1.5" />`;
                             
-                            svgHtml += `<circle cx="${COL_W*0.7}" cy="${y+(col.q2*BOX_H)/2}" r="12" fill="white" stroke="#0f172a" stroke-width="1.5" />`;
-                            svgHtml += `<text x="${COL_W*0.7}" y="${y+(col.q2*BOX_H)/2 + 4}" font-size="10" font-weight="bold" text-anchor="middle" fill="#0f172a">${col.q2}</text>`;
+                            svgHtml += `<circle cx="${COL_W*0.75}" cy="${y+(col.q2*BOX_H)/2}" r="12" fill="white" stroke="#0f172a" stroke-width="1.5" />`;
+                            svgHtml += `<text x="${COL_W*0.75}" y="${y+(col.q2*BOX_H)/2 + 4}" font-size="11" font-weight="bold" text-anchor="middle" fill="#0f172a">${col.q2}</text>`;
                             
-                            svgHtml += `<circle cx="${COL_W*0.3}" cy="${midY+(col.q1*BOX_H)/2}" r="12" fill="white" stroke="#0f172a" stroke-width="1.5" />`;
-                            svgHtml += `<text x="${COL_W*0.3}" y="${midY+(col.q1*BOX_H)/2 + 4}" font-size="10" font-weight="bold" text-anchor="middle" fill="#0f172a">${col.q1}</text>`;
+                            svgHtml += `<circle cx="${COL_W*0.25}" cy="${midY+(col.q1*BOX_H)/2}" r="12" fill="white" stroke="#0f172a" stroke-width="1.5" />`;
+                            svgHtml += `<text x="${COL_W*0.25}" y="${midY+(col.q1*BOX_H)/2 + 4}" font-size="11" font-weight="bold" text-anchor="middle" fill="#0f172a">${col.q1}</text>`;
                         } else if (col.q1 > 0) {
                             svgHtml += `<g transform="translate(${COL_W/2}, ${y + (col.q1*BOX_H)/2})">`;
                             svgHtml += `<circle cx="0" cy="0" r="14" fill="white" stroke="#0f172a" stroke-width="1.5" />`;
@@ -611,11 +586,10 @@
                             svgHtml += `</g>`;
                         }
 
-                        // Lẻ
                         if(col.l1>0) svgHtml += `<text x="${COL_W/2}" y="${y-10}" font-size="10" font-style="italic" font-weight="bold" text-anchor="middle" fill="#dc2626">lẻ ${col.l1}</text>`;
                         if(col.l2>0) svgHtml += `<text x="${COL_W/2}" y="${y-22}" font-size="10" font-style="italic" font-weight="bold" text-anchor="middle" fill="#dc2626">lẻ ${col.l2}</text>`;
 
-                        // Text dưới gầm
+                        // Bảng TEXT dưới gầm
                         svgHtml += `<g transform="translate(${COL_W/2}, ${TOP_M + MAX_COL_H + 20})">`;
                         if (col.i2) {
                             svgHtml += `
@@ -643,14 +617,16 @@
             container.innerHTML = html;
         }
 
-        // --- CÁC HÀM CẬP NHẬT ---
+        // --- CÁC HÀM CẬP NHẬT CHUNG ---
         function updateKPIs() {
             const wh = getActiveWH();
             if(!wh) return;
             let tItems = 0; let tBoxes = 0;
             wh.items.forEach(i => {
                 tItems += Number(i.qty) || 0;
-                tBoxes += Math.ceil((Number(i.qty)||0) / (Number(i.pack)||1)); 
+                let full = Math.floor((Number(i.qty)||0) / (Number(i.pack)||1));
+                let left = (Number(i.qty)||0) % (Number(i.pack)||1);
+                tBoxes += full + (left > 0 ? 1 : 0); 
             });
             document.getElementById('kpiLots').innerText = wh.items.length;
             document.getElementById('kpiItems').innerText = tItems.toLocaleString('vi-VN');
@@ -664,7 +640,7 @@
             updateKPIs();
         }
 
-        // --- TƯƠNG TÁC DỮ LIỆU ---
+        // --- TƯƠNG TÁC MODAL ---
         function openModal(id) {
             const modal = document.getElementById('itemModal');
             const content = document.getElementById('modalContent');
@@ -688,10 +664,7 @@
             }
             
             modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                content.classList.remove('scale-95');
-            }, 10);
+            setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
         }
 
         function closeModal() {
@@ -718,8 +691,7 @@
             } else {
                 wh.items.push({ id: Date.now(), ...itemObj });
             }
-            closeModal();
-            triggerRender();
+            closeModal(); triggerRender();
         }
 
         function removeItem(id) {
@@ -734,8 +706,7 @@
         function deleteAllItems() {
             const wh = getActiveWH();
             if(confirm(`Xóa toàn bộ danh sách trong kho [${wh.name}]?`)) {
-                wh.items = []; state.activeLotId = null;
-                triggerRender();
+                wh.items = []; state.activeLotId = null; triggerRender();
             }
         }
 
@@ -743,8 +714,7 @@
             const wh = getActiveWH();
             const p = wh.config.defaultPack;
             if(confirm(`Đồng bộ quy cách [${p}] cho toàn bộ kho [${wh.name}]?`)) {
-                wh.items.forEach(i => i.pack = p);
-                triggerRender();
+                wh.items.forEach(i => i.pack = p); triggerRender();
             }
         }
 
@@ -756,10 +726,7 @@
         }
         
         function clearHighlight(e) {
-            if (state.activeLotId !== null) {
-                state.activeLotId = null;
-                triggerRender();
-            }
+            if (state.activeLotId !== null) { state.activeLotId = null; triggerRender(); }
         }
 
         // --- EXCEL ---
@@ -795,10 +762,7 @@
         }
 
         function downloadTemplate() {
-            const data = [
-                ["Loại Đạn", "Mã Lô", "Số Lượng (V)", "Bao gói (Tùy chọn)"],
-                ["ĐẠN CX14.5", "0312-75", 20400, 1000]
-            ];
+            const data = [ ["Loại Đạn", "Mã Lô", "Số Lượng (V)", "Bao gói (Tùy chọn)"], ["ĐẠN CX14.5", "0312-75", 20400, 1000] ];
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "NhapLieu");
             XLSX.writeFile(wb, "Mau_Nhap_Kho.xlsx");
@@ -824,10 +788,7 @@
             }
         }
 
-        function toggleMobileSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('-translate-x-full');
-        }
+        function toggleMobileSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
 
         let toastTimeout;
         function showToast(msg) {
@@ -839,8 +800,7 @@
         }
 
         window.onload = () => {
-            syncConfigToUI();
-            triggerRender();
+            syncConfigToUI(); triggerRender();
             if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
         };
     </script>
