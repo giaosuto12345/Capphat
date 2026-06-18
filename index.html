@@ -1,389 +1,409 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sơ Đồ Xếp Kho Đạn</title>
-
-  <!-- CDNs -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-
   <style>
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f4f8; overflow: hidden; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f4f8; overflow: hidden; margin: 0; }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     input:focus { outline: none; }
-    /* Tùy chỉnh thanh cuộn */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: flex; }
+    
+    @media (min-width: 768px) {
+        .mobile-tab-nav { display: none !important; }
+        .desktop-flex { display: flex !important; }
+        .tab-content { display: flex !important; }
+    }
   </style>
 </head>
-<body>
-  <div id="root"></div>
+<body class="flex flex-col h-screen">
 
-  <script type="text/babel">
-    const { useState, useMemo } = React;
+  <!-- HEADER -->
+  <header class="bg-[#1976d2] text-white p-3 md:p-4 shadow-md shrink-0 z-20 flex justify-between items-center">
+    <h1 class="text-[15px] md:text-lg font-bold flex items-center gap-2 uppercase tracking-wide">
+      ⚙️ Sơ Đồ Kho Đạn
+    </h1>
+    
+    <!-- Tab chuyển đổi Mobile -->
+    <div class="mobile-tab-nav flex bg-[#1565c0] rounded-lg p-1">
+      <button id="btnTabInput" class="px-3 py-1.5 text-xs font-bold rounded-md transition-all bg-white text-[#1976d2] shadow" onclick="switchTab('input')">
+        NHẬP LIỆU
+      </button>
+      <button id="btnTabDiagram" class="px-3 py-1.5 text-xs font-bold rounded-md transition-all text-white hover:bg-[#1976d2]" onclick="switchTab('diagram')">
+        XEM SƠ ĐỒ
+      </button>
+    </div>
+  </header>
 
-    function App() {
-      const [items, setItems] = useState([
-        { id: 1, type: 'ĐẠN CX14.5', lot: '0312-1975-41', qty: 20404, pack: 1000 },
-        { id: 2, type: 'ĐẠN CX14.5', lot: '0038-75-41', qty: 2048, pack: 100 },
-        { id: 3, type: 'ĐẠN CX14.5', lot: '0308-1975-71', qty: 12866, pack: 1000 },
-        { id: 4, type: 'ĐẠN CX14.5', lot: '0071-1975-71', qty: 10865, pack: 1000 },
-        { id: 5, type: 'ĐẠN CX14.5', lot: '0074-75-41', qty: 4668, pack: 1000 },
-      ]);
+  <div class="flex flex-1 overflow-hidden relative desktop-flex">
+    
+    <!-- ====== CỘT TRÁI: NHẬP LIỆU ====== -->
+    <div id="tabInput" class="tab-content active w-full md:w-[400px] bg-white border-r shadow-lg flex-col shrink-0 absolute md:static h-full z-10">
+      <div class="p-4 bg-slate-50 border-b flex justify-between items-center shrink-0">
+        <h2 class="font-extrabold text-[#1976d2] text-sm flex items-center gap-2">
+          📋 DANH SÁCH LÔ
+        </h2>
+        <button onclick="handleAddItem()" class="flex items-center gap-1 bg-[#27ae60] hover:bg-[#2ecc71] active:scale-95 text-white px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
+          ➕ THÊM
+        </button>
+      </div>
+      
+      <div id="itemsContainer" class="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50 pb-24 md:pb-4">
+        <!-- Danh sách item sẽ được render ở đây -->
+      </div>
+      
+      <!-- Nút Xem Sơ Đồ nổi trên Mobile -->
+      <div class="md:hidden absolute bottom-4 left-4 right-4 z-50">
+        <button onclick="switchTab('diagram')" class="w-full bg-[#f39c12] text-white font-bold py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 active:scale-95 text-sm uppercase">
+          Vẽ Sơ Đồ Ngay ➡️
+        </button>
+      </div>
+    </div>
 
-      const [maxHeight, setMaxHeight] = useState(24);
-      const [allowMix, setAllowMix] = useState(true);
-      const [activeTab, setActiveTab] = useState('input');
+    <!-- ====== CỘT PHẢI: VẼ SƠ ĐỒ ====== -->
+    <div id="tabDiagram" class="tab-content w-full flex-1 bg-[#e4e9f0] p-4 md:p-8 flex-col items-center overflow-auto h-full absolute md:static">
+      
+      <!-- Bảng điều khiển sơ đồ -->
+      <div class="bg-white px-4 py-3 rounded-xl mb-6 flex flex-wrap gap-4 md:gap-8 items-center justify-center shadow-sm border border-gray-200 w-full max-w-3xl shrink-0">
+        <div class="flex flex-col">
+           <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Max Hòm / Chồng</label>
+           <input type="number" id="inputMaxHeight" class="w-20 px-3 py-1.5 border-2 border-gray-200 rounded-lg outline-none font-bold text-center focus:border-[#1976d2]" value="24" onchange="handleMaxHeightChange(event)">
+        </div>
+        
+        <div class="h-10 w-[1px] bg-gray-200 hidden md:block"></div>
+        
+        <label class="flex items-center gap-3 cursor-pointer group bg-gray-50 px-4 py-2 rounded-lg border hover:bg-[#eaf6ff] transition-colors">
+          <div class="relative flex items-center">
+            <input type="checkbox" id="checkAllowMix" class="sr-only" checked onchange="handleAllowMixChange(event)">
+            <div id="toggleBg" class="block w-10 h-6 rounded-full transition-colors bg-[#27ae60]"></div>
+            <div id="toggleDot" class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform translate-x-4"></div>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-sm font-bold text-gray-800">Thông minh</span>
+            <span class="text-[10px] text-gray-500 leading-none">Cho phép ghép lô</span>
+          </div>
+        </label>
+      </div>
 
-      const handleAddItem = () => {
-        setItems([...items, { id: Date.now(), type: 'Loại mới', lot: 'Mã lô...', qty: 1000, pack: 100 }]);
-      };
+      <!-- Sơ đồ SVG Area -->
+      <div class="bg-white shadow-2xl rounded-sm inline-block border-2 border-gray-800 relative overflow-hidden shrink-0">
+        <div class="absolute top-2 left-4 text-xs font-bold text-gray-400 tracking-widest">MẶT CẮT KHO</div>
+        
+        <svg id="svgCanvas" style="font-family: system-ui, -apple-system, sans-serif;">
+            <!-- SVG content sẽ được render ở đây -->
+        </svg>
+        
+        <svg width="0" height="0" class="absolute">
+          <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="8" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#1e293b" />
+            </marker>
+          </defs>
+        </svg>
+      </div>
+    </div>
+  </div>
 
-      const handleUpdateItem = (id, field, value) => {
-        setItems(items.map(item => item.id === id ? { ...item, [field]: value } : item));
-      };
+  <script>
+    // State management
+    let state = {
+        items: [
+            { id: 1, type: 'ĐẠN CX14.5', lot: '0312-1975-41', qty: 20404, pack: 1000 },
+            { id: 2, type: 'ĐẠN CX14.5', lot: '0038-75-41', qty: 2048, pack: 100 },
+            { id: 3, type: 'ĐẠN CX14.5', lot: '0308-1975-71', qty: 12866, pack: 1000 },
+            { id: 4, type: 'ĐẠN CX14.5', lot: '0071-1975-71', qty: 10865, pack: 1000 },
+            { id: 5, type: 'ĐẠN CX14.5', lot: '0074-75-41', qty: 4668, pack: 1000 },
+        ],
+        maxHeight: 24,
+        allowMix: true
+    };
 
-      const handleRemoveItem = (id) => {
-        if(confirm('Xóa lô này khỏi danh sách?')) setItems(items.filter(item => item.id !== id));
-      };
+    // --- Tab Switching Logic (Mobile) ---
+    function switchTab(tab) {
+        document.getElementById('tabInput').classList.remove('active');
+        document.getElementById('tabDiagram').classList.remove('active');
+        
+        document.getElementById('btnTabInput').className = "px-3 py-1.5 text-xs font-bold rounded-md transition-all text-white hover:bg-[#1976d2]";
+        document.getElementById('btnTabDiagram').className = "px-3 py-1.5 text-xs font-bold rounded-md transition-all text-white hover:bg-[#1976d2]";
 
-      // Thuật toán chia cột
-      const columns = useMemo(() => {
+        if (tab === 'input') {
+            document.getElementById('tabInput').classList.add('active');
+            document.getElementById('btnTabInput').className = "px-3 py-1.5 text-xs font-bold rounded-md transition-all bg-white text-[#1976d2] shadow";
+        } else {
+            document.getElementById('tabDiagram').classList.add('active');
+            document.getElementById('btnTabDiagram').className = "px-3 py-1.5 text-xs font-bold rounded-md transition-all bg-white text-[#1976d2] shadow";
+        }
+    }
+
+    // --- Data Handlers ---
+    function handleAddItem() {
+        state.items.push({ id: Date.now(), type: '', lot: '', qty: 1000, pack: 100 });
+        render();
+    }
+
+    function handleRemoveItem(id) {
+        if(confirm('Xóa lô này khỏi danh sách?')) {
+            state.items = state.items.filter(item => item.id !== id);
+            render();
+        }
+    }
+
+    function handleUpdateItem(id, field, value) {
+        let item = state.items.find(i => i.id === id);
+        if (item) {
+            item[field] = value;
+            render();
+        }
+    }
+
+    function handleMaxHeightChange(e) {
+        state.maxHeight = Math.max(1, Number(e.target.value));
+        renderSVG();
+    }
+
+    function handleAllowMixChange(e) {
+        state.allowMix = e.target.checked;
+        const toggleBg = document.getElementById('toggleBg');
+        const toggleDot = document.getElementById('toggleDot');
+        
+        if (state.allowMix) {
+            toggleBg.className = "block w-10 h-6 rounded-full transition-colors bg-[#27ae60]";
+            toggleDot.className = "absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform translate-x-4";
+        } else {
+            toggleBg.className = "block w-10 h-6 rounded-full transition-colors bg-gray-300";
+            toggleDot.className = "absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform";
+        }
+        renderSVG();
+    }
+
+    // --- Core Logic ---
+    function calculateColumns() {
         const cols = [];
         let currentStack = [];
         let currentStackCount = 0;
 
-        items.forEach((item) => {
-          let totalQty = Number(item.qty) || 0;
-          let pack = Number(item.pack) || 1;
-          
-          let boxes = Math.floor(totalQty / pack);
-          let leftover = totalQty % pack;
+        state.items.forEach((item) => {
+            let totalQty = Number(item.qty) || 0;
+            let pack = Number(item.pack) || 1;
+            
+            let boxes = Math.floor(totalQty / pack);
+            let leftover = totalQty % pack;
 
-          while (boxes > 0) {
-            if (currentStackCount === maxHeight || (!allowMix && currentStackCount > 0 && currentStack.length > 0)) {
-              cols.push([...currentStack]);
-              currentStack = [];
-              currentStackCount = 0;
+            while (boxes > 0) {
+                if (currentStackCount === state.maxHeight || (!state.allowMix && currentStackCount > 0 && currentStack.length > 0)) {
+                    cols.push([...currentStack]);
+                    currentStack = [];
+                    currentStackCount = 0;
+                }
+
+                let spaceLeft = state.maxHeight - currentStackCount;
+                let takeBoxes = Math.min(boxes, spaceLeft);
+
+                currentStack.push({
+                    ...item,
+                    boxesInCol: takeBoxes,
+                    showLeftover: (boxes - takeBoxes === 0) ? leftover : 0
+                });
+
+                currentStackCount += takeBoxes;
+                boxes -= takeBoxes;
             }
-
-            let spaceLeft = maxHeight - currentStackCount;
-            let takeBoxes = Math.min(boxes, spaceLeft);
-
-            currentStack.push({
-              ...item,
-              boxesInCol: takeBoxes,
-              showLeftover: (boxes - takeBoxes === 0) ? leftover : 0
-            });
-
-            currentStackCount += takeBoxes;
-            boxes -= takeBoxes;
-          }
-          
-          if (Math.floor(totalQty / pack) === 0 && leftover > 0) {
-               if (currentStackCount === maxHeight || (!allowMix && currentStackCount > 0)) {
-                  cols.push([...currentStack]);
-                  currentStack = [];
-                  currentStackCount = 0;
-               }
-               currentStack.push({
-                  ...item,
-                  boxesInCol: 0,
-                  showLeftover: leftover
-               });
-          }
+            
+            if (Math.floor(totalQty / pack) === 0 && leftover > 0) {
+                if (currentStackCount === state.maxHeight || (!state.allowMix && currentStackCount > 0)) {
+                    cols.push([...currentStack]);
+                    currentStack = [];
+                    currentStackCount = 0;
+                }
+                currentStack.push({
+                    ...item,
+                    boxesInCol: 0,
+                    showLeftover: leftover
+                });
+            }
         });
 
         if (currentStack.length > 0) cols.push([...currentStack]);
         return cols;
-      }, [items, maxHeight, allowMix]);
-
-      // Thông số vẽ sơ đồ
-      const COL_W = 140;
-      const MAX_COL_H = 400;
-      const BOX_H = MAX_COL_H / maxHeight; 
-      const TOP_MARGIN = 100;
-      const BOTTOM_MARGIN = 180;
-      
-      const svgWidth = Math.max(columns.length * COL_W + 50, window.innerWidth > 768 ? 600 : window.innerWidth - 40);
-      const svgHeight = MAX_COL_H + TOP_MARGIN + BOTTOM_MARGIN;
-
-      let profilePath = `M 0 ${TOP_MARGIN + MAX_COL_H}`;
-      columns.forEach((col, i) => {
-        const colTotalBoxes = col.reduce((sum, c) => sum + c.boxesInCol, 0);
-        const colH = colTotalBoxes * BOX_H;
-        const y = TOP_MARGIN + MAX_COL_H - colH;
-        const x = i * COL_W;
-        profilePath += ` L ${x} ${y} L ${x + COL_W} ${y}`;
-      });
-      profilePath += ` L ${columns.length * COL_W} ${TOP_MARGIN + MAX_COL_H}`;
-
-      return (
-        <div className="flex flex-col h-screen overflow-hidden">
-          
-          {/* HEADER */}
-          <header className="bg-[#1976d2] text-white p-3 md:p-4 shadow-md shrink-0 z-20 flex justify-between items-center">
-            <h1 className="text-[15px] md:text-lg font-bold flex items-center gap-2 uppercase tracking-wide">
-              ⚙️ Sơ Đồ Kho Đạn
-            </h1>
-            
-            {/* Tab chuyển đổi Mobile */}
-            <div className="md:hidden flex bg-[#1565c0] rounded-lg p-1">
-              <button 
-                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'input' ? 'bg-white text-[#1976d2]' : 'text-white'}`}
-                onClick={() => setActiveTab('input')}
-              >
-                NHẬP LIỆU
-              </button>
-              <button 
-                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'diagram' ? 'bg-white text-[#1976d2]' : 'text-white'}`}
-                onClick={() => setActiveTab('diagram')}
-              >
-                XEM SƠ ĐỒ
-              </button>
-            </div>
-          </header>
-
-          <div className="flex flex-1 overflow-hidden relative">
-            
-            {/* ====== CỘT TRÁI: NHẬP LIỆU ====== */}
-            <div className={`w-full md:w-[400px] bg-white border-r shadow-lg flex flex-col shrink-0 absolute md:static h-full z-10 transition-transform duration-300 ${activeTab === 'input' ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-              
-              <div className="p-4 bg-slate-50 border-b flex justify-between items-center shrink-0">
-                <h2 className="font-extrabold text-[#1976d2] text-sm flex items-center gap-2">
-                  📋 DANH SÁCH LÔ
-                </h2>
-                <button 
-                  onClick={handleAddItem}
-                  className="flex items-center gap-1 bg-[#27ae60] hover:bg-[#2ecc71] active:scale-95 text-white px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
-                >
-                  ➕ THÊM
-                </button>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50 pb-24 md:pb-4">
-                {items.map((item, idx) => (
-                  <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative group hover:border-[#1976d2] transition-colors">
-                    <div className="absolute -top-3 -left-3 w-6 h-6 bg-[#1976d2] text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md">
-                      {idx + 1}
-                    </div>
-                    <button onClick={() => handleRemoveItem(item.id)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors">
-                      🗑️
-                    </button>
-                    
-                    <div className="grid grid-cols-1 gap-2 mb-3 pr-6 mt-1">
-                      <input 
-                        type="text" 
-                        placeholder="Loại (VD: ĐẠN CX14.5)"
-                        value={item.type}
-                        onChange={e => handleUpdateItem(item.id, 'type', e.target.value)}
-                        className="w-full border-b-2 border-transparent hover:border-gray-200 focus:border-[#1976d2] px-1 py-1 text-sm font-bold text-gray-700 transition-colors"
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="Mã lô..."
-                        value={item.lot}
-                        onChange={e => handleUpdateItem(item.id, 'lot', e.target.value)}
-                        className="w-full border-b-2 border-transparent hover:border-gray-200 focus:border-[#1976d2] px-1 py-1 text-sm text-[#00bcd4] font-black transition-colors"
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3 mt-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                      <div>
-                        <label className="block text-[10px] uppercase text-gray-500 font-bold mb-1">Tổng Số Viên</label>
-                        <input 
-                          type="number" 
-                          value={item.qty}
-                          onChange={e => handleUpdateItem(item.id, 'qty', e.target.value)}
-                          className="w-full border rounded-md px-2 py-1.5 text-sm font-semibold focus:ring-2 focus:ring-[#1976d2]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] uppercase text-gray-500 font-bold mb-1">Viên / Hòm</label>
-                        <input 
-                          type="number" 
-                          value={item.pack}
-                          onChange={e => handleUpdateItem(item.id, 'pack', e.target.value)}
-                          className="w-full border rounded-md px-2 py-1.5 text-sm font-semibold focus:ring-2 focus:ring-[#1976d2]"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="mt-3 text-xs flex justify-between items-center px-1">
-                      <span className="text-gray-600 font-medium">Kết quả: <b className="text-lg text-[#1976d2] ml-1">{Math.floor(item.qty/item.pack)}</b> hòm</span>
-                      {item.qty % item.pack > 0 && <span className="bg-[#ffeeee] text-[#e74c3c] px-2 py-1 rounded-md font-bold text-[11px] border border-[#fadbd8]">Lẻ {item.qty % item.pack} viên</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Nút Xem Sơ Đồ nổi trên Mobile */}
-              <div className="md:hidden absolute bottom-4 left-4 right-4 z-50">
-                <button 
-                  onClick={() => setActiveTab('diagram')}
-                  className="w-full bg-[#f39c12] text-white font-bold py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 active:scale-95 text-sm uppercase"
-                >
-                  Vẽ Sơ Đồ Ngay ➡️
-                </button>
-              </div>
-            </div>
-
-            {/* ====== CỘT PHẢI: VẼ SƠ ĐỒ ====== */}
-            <div className={`flex-1 bg-[#e4e9f0] p-4 md:p-8 flex flex-col items-center overflow-auto h-full absolute md:static w-full transition-transform duration-300 ${activeTab === 'diagram' ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
-              
-              {/* Bảng điều khiển sơ đồ */}
-              <div className="bg-white px-4 py-3 rounded-xl mb-6 flex flex-wrap gap-4 md:gap-8 items-center justify-center shadow-sm border border-gray-200 w-full max-w-3xl shrink-0">
-                <div className="flex flex-col">
-                   <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Max Hòm / Chồng</label>
-                   <input 
-                      type="number" 
-                      className="w-20 px-3 py-1.5 border-2 border-gray-200 rounded-lg outline-none font-bold text-center focus:border-[#1976d2]"
-                      value={maxHeight}
-                      onChange={e => setMaxHeight(Math.max(1, Number(e.target.value)))}
-                    />
-                </div>
-                
-                <div className="h-10 w-[1px] bg-gray-200 hidden md:block"></div>
-                
-                <label className="flex items-center gap-3 cursor-pointer group bg-gray-50 px-4 py-2 rounded-lg border hover:bg-[#eaf6ff] transition-colors">
-                  <div className="relative flex items-center">
-                    <input 
-                      type="checkbox" 
-                      className="sr-only"
-                      checked={allowMix}
-                      onChange={e => setAllowMix(e.target.checked)}
-                    />
-                    <div className={`block w-10 h-6 rounded-full transition-colors ${allowMix ? 'bg-[#27ae60]' : 'bg-gray-300'}`}></div>
-                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${allowMix ? 'translate-x-4' : ''}`}></div>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-gray-800">Thông minh</span>
-                    <span className="text-[10px] text-gray-500 leading-none">Cho phép ghép lô</span>
-                  </div>
-                </label>
-              </div>
-
-              {/* Sơ đồ SVG Area */}
-              <div className="bg-white shadow-2xl rounded-sm inline-block border-2 border-gray-800 relative overflow-hidden shrink-0">
-                <div className="absolute top-2 left-4 text-xs font-bold text-gray-400">MẶT CẮT KHO</div>
-                
-                <svg width={svgWidth} height={svgHeight} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-                  
-                  {/* Lưới nền */}
-                  <g opacity="0.4">
-                    {Array.from({ length: columns.length + 1 }).map((_, i) => (
-                      <line 
-                        key={`v-${i}`}
-                        x1={i * COL_W} y1={TOP_MARGIN} 
-                        x2={i * COL_W} y2={TOP_MARGIN + MAX_COL_H} 
-                        stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4,4"
-                      />
-                    ))}
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <line 
-                        key={`h-${i}`}
-                        x1={0} y1={TOP_MARGIN + (i * (MAX_COL_H/5))} 
-                        x2={columns.length * COL_W} y2={TOP_MARGIN + (i * (MAX_COL_H/5))} 
-                        stroke="#cbd5e1" strokeWidth="1" 
-                      />
-                    ))}
-                  </g>
-
-                  {/* Đường ziczac bao ngoài */}
-                  <path d={profilePath} fill="#f8fafc" stroke="#1e293b" strokeWidth="4" strokeLinejoin="miter" />
-
-                  {/* Các cột */}
-                  {columns.map((col, i) => {
-                    const x = i * COL_W;
-                    const totalBoxes = col.reduce((sum, c) => sum + c.boxesInCol, 0);
-                    const colH = totalBoxes * BOX_H;
-                    const y = TOP_MARGIN + MAX_COL_H - colH;
-                    const isMixed = col.length > 1;
-
-                    return (
-                      <g key={`col-${i}`} transform={`translate(${x}, 0)`}>
-                        <line x1={COL_W} y1={y} x2={COL_W} y2={TOP_MARGIN + MAX_COL_H} stroke="#1e293b" strokeWidth="1.5" />
-
-                        {isMixed ? (
-                          <>
-                            <line x1={0} y1={y} x2={COL_W} y2={y + colH} stroke="#1e293b" strokeWidth="2" />
-                            
-                            <circle cx={COL_W * 0.75} cy={y + colH * 0.25} r={18} fill="white" stroke="#1e293b" strokeWidth="2" />
-                            <text x={COL_W * 0.75} y={y + colH * 0.25 + 5} fontSize="14" fontWeight="bold" textAnchor="middle" fill="#0f172a">{col[1].boxesInCol}</text>
-                            
-                            <circle cx={COL_W * 0.25} cy={y + colH * 0.75} r={18} fill="white" stroke="#1e293b" strokeWidth="2" />
-                            <text x={COL_W * 0.25} y={y + colH * 0.75 + 5} fontSize="14" fontWeight="bold" textAnchor="middle" fill="#0f172a">{col[0].boxesInCol}</text>
-                          </>
-                        ) : (
-                          col[0]?.boxesInCol > 0 && (
-                            <g transform={`translate(${COL_W / 2}, ${y + 30})`}>
-                              <circle cx={0} cy={0} r={20} fill="white" stroke="#1e293b" strokeWidth="2" />
-                              <text x={0} y={6} fontSize="16" fontWeight="bold" textAnchor="middle" fill="#0f172a">{col[0].boxesInCol}</text>
-                            </g>
-                          )
-                        )}
-
-                        {/* Text Hòm lẻ */}
-                        {col.map((item, idx) => item.showLeftover > 0 && (
-                          <g key={`left-${idx}`} transform={`translate(${COL_W / 2}, ${y - 25 - (idx * 25)})`}>
-                            <text x={0} y={0} fontSize="13" fontStyle="italic" fontWeight="600" textAnchor="middle" fill="#e74c3c">lẻ {item.showLeftover}</text>
-                            <line x1={40} y1={-4} x2={65} y2={-4} stroke="#1e293b" strokeWidth="1.5" markerEnd="url(#arrowhead)"/>
-                          </g>
-                        ))}
-
-                        {/* Thông tin Text gầm */}
-                        <g transform={`translate(${COL_W / 2}, ${TOP_MARGIN + MAX_COL_H + 30})`}>
-                          {isMixed ? (
-                            <>
-                              <text x={0} y={0} fontSize="11" fontWeight="600" textAnchor="middle" fill="#64748b">{col[1].type}</text>
-                              <text x={0} y={16} fontSize="13" fontWeight="900" textAnchor="middle" fill="#1976d2">{col[1].lot}</text>
-                              <text x={0} y={32} fontSize="11" fontWeight="600" textAnchor="middle" fill="#0f172a">SL: {col[1].qty.toLocaleString('vi-VN')} V</text>
-                              
-                              <line x1={-50} y1={48} x2={50} y2={48} stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3,3" />
-                              
-                              <text x={0} y={68} fontSize="11" fontWeight="600" textAnchor="middle" fill="#64748b">{col[0].type}</text>
-                              <text x={0} y={84} fontSize="13" fontWeight="900" textAnchor="middle" fill="#1976d2">{col[0].lot}</text>
-                              <text x={0} y={100} fontSize="11" fontWeight="600" textAnchor="middle" fill="#0f172a">SL: {col[0].qty.toLocaleString('vi-VN')} V</text>
-                            </>
-                          ) : (
-                            col[0] && (
-                              <>
-                                <text x={0} y={0} fontSize="11" fontWeight="600" textAnchor="middle" fill="#64748b">{col[0].type}</text>
-                                <text x={0} y={16} fontSize="13" fontWeight="900" textAnchor="middle" fill="#1976d2">{col[0].lot}</text>
-                                <text x={0} y={32} fontSize="11" fontWeight="600" textAnchor="middle" fill="#0f172a">SL: {col[0].qty.toLocaleString('vi-VN')} V</text>
-                              </>
-                            )
-                          )}
-                        </g>
-                      </g>
-                    );
-                  })}
-                  
-                  <rect x="0" y={TOP_MARGIN + MAX_COL_H} width={svgWidth} height="4" fill="#1e293b" />
-                </svg>
-                
-                <svg width="0" height="0" className="absolute">
-                  <defs>
-                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="8" refY="3.5" orient="auto">
-                      <polygon points="0 0, 10 3.5, 0 7" fill="#1e293b" />
-                    </marker>
-                  </defs>
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
     }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    // --- Render Functions ---
+    function renderItems() {
+        const container = document.getElementById('itemsContainer');
+        let html = '';
+
+        state.items.forEach((item, idx) => {
+            const boxes = item.pack > 0 ? Math.floor(item.qty / item.pack) : 0;
+            const leftover = item.pack > 0 ? item.qty % item.pack : 0;
+            const leftoverHtml = leftover > 0 ? `<span class="bg-[#ffeeee] text-[#e74c3c] px-2 py-1 rounded-md font-bold text-[11px] border border-[#fadbd8]">Lẻ ${leftover} viên</span>` : '';
+
+            html += `
+                <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative group hover:border-[#1976d2] transition-colors">
+                    <div class="absolute -top-3 -left-3 w-6 h-6 bg-[#1976d2] text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md">
+                        ${idx + 1}
+                    </div>
+                    <button onclick="handleRemoveItem(${item.id})" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors">
+                        🗑️
+                    </button>
+                    
+                    <div class="grid grid-cols-1 gap-2 mb-3 pr-6 mt-1">
+                        <input type="text" placeholder="Loại (VD: ĐẠN CX14.5)" value="${item.type}" onchange="handleUpdateItem(${item.id}, 'type', this.value)" class="w-full border-b-2 border-transparent hover:border-gray-200 focus:border-[#1976d2] px-1 py-1 text-sm font-bold text-gray-700 transition-colors">
+                        <input type="text" placeholder="Mã lô..." value="${item.lot}" onchange="handleUpdateItem(${item.id}, 'lot', this.value)" class="w-full border-b-2 border-transparent hover:border-gray-200 focus:border-[#1976d2] px-1 py-1 text-sm text-[#00bcd4] font-black transition-colors">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3 mt-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <div>
+                            <label class="block text-[10px] uppercase text-gray-500 font-bold mb-1">Tổng Số Viên</label>
+                            <input type="number" value="${item.qty}" onchange="handleUpdateItem(${item.id}, 'qty', this.value)" class="w-full border rounded-md px-2 py-1.5 text-sm font-semibold focus:ring-2 focus:ring-[#1976d2]">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase text-gray-500 font-bold mb-1">Viên / Hòm</label>
+                            <input type="number" value="${item.pack}" onchange="handleUpdateItem(${item.id}, 'pack', this.value)" class="w-full border rounded-md px-2 py-1.5 text-sm font-semibold focus:ring-2 focus:ring-[#1976d2]">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 text-xs flex justify-between items-center px-1">
+                        <span class="text-gray-600 font-medium">Kết quả: <b class="text-lg text-[#1976d2] ml-1">${boxes}</b> hòm</span>
+                        ${leftoverHtml}
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderSVG() {
+        const columns = calculateColumns();
+        const svgCanvas = document.getElementById('svgCanvas');
+        
+        const COL_W = 140;
+        const MAX_COL_H = 400;
+        const BOX_H = MAX_COL_H / state.maxHeight; 
+        const TOP_MARGIN = 100;
+        const BOTTOM_MARGIN = 180;
+        
+        const svgWidth = Math.max(columns.length * COL_W + 50, window.innerWidth > 768 ? 600 : window.innerWidth - 40);
+        const svgHeight = MAX_COL_H + TOP_MARGIN + BOTTOM_MARGIN;
+
+        svgCanvas.setAttribute('width', svgWidth);
+        svgCanvas.setAttribute('height', svgHeight);
+
+        let svgHtml = '';
+
+        // Lưới nền
+        svgHtml += `<g opacity="0.4">`;
+        for (let i = 0; i <= columns.length; i++) {
+            svgHtml += `<line x1="${i * COL_W}" y1="${TOP_MARGIN}" x2="${i * COL_W}" y2="${TOP_MARGIN + MAX_COL_H}" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,4" />`;
+        }
+        for (let i = 0; i < 6; i++) {
+            svgHtml += `<line x1="0" y1="${TOP_MARGIN + (i * (MAX_COL_H/5))}" x2="${columns.length * COL_W}" y2="${TOP_MARGIN + (i * (MAX_COL_H/5))}" stroke="#cbd5e1" stroke-width="1" />`;
+        }
+        svgHtml += `</g>`;
+
+        // Đường Profile
+        let profilePath = `M 0 ${TOP_MARGIN + MAX_COL_H}`;
+        columns.forEach((col, i) => {
+            const colTotalBoxes = col.reduce((sum, c) => sum + c.boxesInCol, 0);
+            const colH = colTotalBoxes * BOX_H;
+            const y = TOP_MARGIN + MAX_COL_H - colH;
+            const x = i * COL_W;
+            profilePath += ` L ${x} ${y} L ${x + COL_W} ${y}`;
+        });
+        profilePath += ` L ${columns.length * COL_W} ${TOP_MARGIN + MAX_COL_H}`;
+        svgHtml += `<path d="${profilePath}" fill="#f8fafc" stroke="#1e293b" stroke-width="4" stroke-linejoin="miter" />`;
+
+        // Các cột
+        columns.forEach((col, i) => {
+            const x = i * COL_W;
+            const totalBoxes = col.reduce((sum, c) => sum + c.boxesInCol, 0);
+            const colH = totalBoxes * BOX_H;
+            const y = TOP_MARGIN + MAX_COL_H - colH;
+            const isMixed = col.length > 1;
+
+            svgHtml += `<g transform="translate(${x}, 0)">`;
+            svgHtml += `<line x1="${COL_W}" y1="${y}" x2="${COL_W}" y2="${TOP_MARGIN + MAX_COL_H}" stroke="#1e293b" stroke-width="1.5" />`;
+
+            if (isMixed) {
+                svgHtml += `
+                    <line x1="0" y1="${y}" x2="${COL_W}" y2="${y + colH}" stroke="#1e293b" stroke-width="2" />
+                    
+                    <circle cx="${COL_W * 0.75}" cy="${y + colH * 0.25}" r="18" fill="white" stroke="#1e293b" stroke-width="2" />
+                    <text x="${COL_W * 0.75}" y="${y + colH * 0.25 + 5}" font-size="14" font-weight="bold" text-anchor="middle" fill="#0f172a">${col[1].boxesInCol}</text>
+                    
+                    <circle cx="${COL_W * 0.25}" cy="${y + colH * 0.75}" r="18" fill="white" stroke="#1e293b" stroke-width="2" />
+                    <text x="${COL_W * 0.25}" y="${y + colH * 0.75 + 5}" font-size="14" font-weight="bold" text-anchor="middle" fill="#0f172a">${col[0].boxesInCol}</text>
+                `;
+            } else if (col[0]?.boxesInCol > 0) {
+                svgHtml += `
+                    <g transform="translate(${COL_W / 2}, ${y + 30})">
+                        <circle cx="0" cy="0" r="20" fill="white" stroke="#1e293b" stroke-width="2" />
+                        <text x="0" y="6" font-size="16" font-weight="bold" text-anchor="middle" fill="#0f172a">${col[0].boxesInCol}</text>
+                    </g>
+                `;
+            }
+
+            // Hòm lẻ
+            col.forEach((item, idx) => {
+                if (item.showLeftover > 0) {
+                    svgHtml += `
+                        <g transform="translate(${COL_W / 2}, ${y - 25 - (idx * 25)})">
+                            <text x="0" y="0" font-size="13" font-style="italic" font-weight="600" text-anchor="middle" fill="#e74c3c">lẻ ${item.showLeftover}</text>
+                            <line x1="40" y1="-4" x2="65" y2="-4" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+                        </g>
+                    `;
+                }
+            });
+
+            // Text dưới gầm
+            svgHtml += `<g transform="translate(${COL_W / 2}, ${TOP_MARGIN + MAX_COL_H + 30})">`;
+            if (isMixed) {
+                svgHtml += `
+                    <text x="0" y="0" font-size="11" font-weight="600" text-anchor="middle" fill="#64748b">${col[1].type || ''}</text>
+                    <text x="0" y="16" font-size="13" font-weight="900" text-anchor="middle" fill="#1976d2">${col[1].lot || ''}</text>
+                    <text x="0" y="32" font-size="11" font-weight="600" text-anchor="middle" fill="#0f172a">SL: ${Number(col[1].qty).toLocaleString('vi-VN')} V</text>
+                    
+                    <line x1="-50" y1="48" x2="50" y2="48" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3,3" />
+                    
+                    <text x="0" y="68" font-size="11" font-weight="600" text-anchor="middle" fill="#64748b">${col[0].type || ''}</text>
+                    <text x="0" y="84" font-size="13" font-weight="900" text-anchor="middle" fill="#1976d2">${col[0].lot || ''}</text>
+                    <text x="0" y="100" font-size="11" font-weight="600" text-anchor="middle" fill="#0f172a">SL: ${Number(col[0].qty).toLocaleString('vi-VN')} V</text>
+                `;
+            } else if (col[0]) {
+                svgHtml += `
+                    <text x="0" y="0" font-size="11" font-weight="600" text-anchor="middle" fill="#64748b">${col[0].type || ''}</text>
+                    <text x="0" y="16" font-size="13" font-weight="900" text-anchor="middle" fill="#1976d2">${col[0].lot || ''}</text>
+                    <text x="0" y="32" font-size="11" font-weight="600" text-anchor="middle" fill="#0f172a">SL: ${Number(col[0].qty).toLocaleString('vi-VN')} V</text>
+                `;
+            }
+            svgHtml += `</g></g>`;
+        });
+
+        svgHtml += `<rect x="0" y="${TOP_MARGIN + MAX_COL_H}" width="${svgWidth}" height="4" fill="#1e293b" />`;
+        svgCanvas.innerHTML = svgHtml;
+    }
+
+    function render() {
+        renderItems();
+        renderSVG();
+    }
+
+    // Initialize
+    window.onload = () => {
+        render();
+    };
+    
+    window.onresize = () => {
+        renderSVG();
+    };
+
   </script>
 </body>
 </html>
