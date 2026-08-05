@@ -2,838 +2,360 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hệ Thống Quản Lý Kho Đạn Chuyên Nghiệp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Aura Reader</title>
     
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0f172a; margin: 0; overflow: hidden; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        input:focus, button:focus, select:focus { outline: none; }
+        :root {
+            --safe-top: env(safe-area-inset-top, 47px);
+            --safe-bottom: env(safe-area-inset-bottom, 34px);
+        }
         
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-        .light-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; }
-
-        .blueprint-bg {
-            background-color: #f8fafc;
-            background-image: linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
-            background-size: 20px 20px;
+        body { 
+            margin: 0; 
+            background-color: #000; 
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            overflow: hidden;
         }
 
-        .tab-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
-        .wh-tab.active { background: #2563eb; color: white; border-bottom: 2px solid #60a5fa; }
+        .font-ui { font-family: 'Inter', sans-serif; }
+        .font-book { font-family: 'Lora', serif; }
         
-        .panel-section { display: none; }
-        .panel-section.active { display: flex; flex-direction: column; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Chặn click vào text trên SVG để click xuyên qua polygon */
-        svg text, svg circle { user-select: none; pointer-events: none; }
+        /* Hiệu ứng phần cứng cho 120Hz */
+        .will-change-transform { will-change: transform, opacity; }
         
-        /* Màu Fill cơ bản */
-        .lot-shape { fill: #f8fafc; transition: all 0.2s ease; cursor: pointer; }
-        .lot-shape:hover { fill: #e2e8f0; }
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        .modal-overlay { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); }
+        .slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        /* Themes */
+        .theme-light { background-color: #FFFFFF; color: #1C1C1E; }
+        .theme-sepia { background-color: #F4ECD8; color: #5B4636; }
+        .theme-dark { background-color: #1C1C1E; color: #D1D1D6; }
+        .theme-oled { background-color: #000000; color: #8E8E93; }
+        
+        .theme-oled h1, .theme-oled h2 { color: #E5E5EA; }
+        .theme-dark h1, .theme-dark h2 { color: #FFFFFF; }
+
+        /* Audio Bars */
+        .playing-bar {
+            width: 3px; background-color: currentColor; border-radius: 3px;
+            animation: bounce 1s infinite ease-in-out;
+            transform-origin: bottom;
+        }
+        .playing-bar:nth-child(1) { animation-delay: 0s; }
+        .playing-bar:nth-child(2) { animation-delay: 0.2s; }
+        .playing-bar:nth-child(3) { animation-delay: 0.4s; }
+        .playing-bar:nth-child(4) { animation-delay: 0.1s; }
+        @keyframes bounce { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
     </style>
-    <!-- Style động để Highlight chính xác Lô -->
-    <style id="dynamicHighlight"></style>
 </head>
-<body class="flex flex-col h-screen text-sm">
+<body>
+    <div id="root"></div>
 
-    <!-- HEADER -->
-    <header class="bg-[#1e293b] text-white h-[56px] shrink-0 flex justify-between items-center px-4 border-b border-[#334155] z-30 shadow-md">
-        <div class="flex items-center gap-3">
-            <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 rounded-lg shadow-lg">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-            </div>
-            <h1 class="font-black text-sm md:text-base tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 m-0 uppercase">Ammo Planner <span class="text-white text-[10px] bg-red-600 px-1 rounded ml-1 hidden sm:inline-block">PRO</span></h1>
-        </div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-        <div class="flex gap-2 items-center">
-            <select id="viewMode" onchange="triggerRender()" class="bg-[#0f172a] border border-[#334155] text-blue-400 text-xs font-bold rounded px-2 py-1.5 outline-none cursor-pointer">
-                <option value="1">Dạng 1: Mặt Bằng Khu</option>
-                <option value="2">Dạng 2: Mặt Cắt Ziczac</option>
-            </select>
-            <button onclick="document.getElementById('excelUpload').click()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded font-bold flex items-center gap-1.5 transition-colors text-xs shadow-md">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                <span class="hidden sm:inline">Nhập Excel</span>
-            </button>
-            <input type="file" id="excelUpload" accept=".xlsx, .xls" class="hidden" onchange="importExcel(event)">
-        </div>
-    </header>
-
-    <!-- QUẢN LÝ NHÀ KHO -->
-    <div class="bg-[#0f172a] border-b border-[#334155] flex overflow-x-auto light-scroll shrink-0" id="warehouseTabs"></div>
-
-    <!-- MAIN APP -->
-    <div class="flex flex-1 overflow-hidden relative">
-        
-        <!-- SIDEBAR -->
-        <aside class="w-full md:w-[380px] bg-[#1e293b] border-r border-[#334155] flex flex-col absolute md:relative z-20 h-full transition-transform duration-300 shadow-2xl md:shadow-none" id="sidebar">
-            
-            <div class="flex p-2 gap-1 bg-[#0f172a] shrink-0 border-b border-[#334155]">
-                <button onclick="switchPanel('data')" id="tabData" class="tab-btn active flex-1 py-2 rounded font-bold text-xs border border-transparent bg-[#1e293b] text-slate-400 transition-colors uppercase">📦 Lô Đạn</button>
-                <button onclick="switchPanel('settings')" id="tabSettings" class="tab-btn flex-1 py-2 rounded font-bold text-xs border border-transparent bg-[#1e293b] text-slate-400 transition-colors uppercase">⚙️ Thiết Lập</button>
-            </div>
-
-            <!-- PANEL 1: DATA -->
-            <div id="panelData" class="panel-section active flex-1 overflow-hidden">
-                <div class="p-2 border-b border-[#334155] flex justify-between items-center bg-[#0f172a] shrink-0">
-                    <div class="text-[10px] font-bold text-slate-400 flex gap-2">
-                        <span>Lô: <b id="kpiLots" class="text-white">0</b></span>
-                        <span>Hòm: <b id="kpiBoxes" class="text-blue-400">0</b></span>
-                    </div>
-                    <div class="flex gap-1">
-                        <button onclick="deleteAllItems()" class="bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white px-2 py-1 rounded text-[10px] font-bold transition-all border border-red-500/30" title="Xóa toàn bộ">
-                            🗑 XÓA SẠCH
-                        </button>
-                        <button onclick="openModal(null)" class="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-[10px] font-bold transition-all shadow-md">
-                            + THÊM LÔ
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="flex-1 overflow-y-auto p-2 space-y-1.5 pb-20 md:pb-2" id="dataContainer" style="min-height:0;"></div>
-            </div>
-
-            <!-- PANEL 2: SETTINGS -->
-            <div id="panelSettings" class="panel-section flex-1 overflow-y-auto p-4 pb-20 md:pb-4" style="min-height:0;">
-                <div class="bg-[#0f172a] p-3 rounded-lg border border-[#334155] mb-4">
-                    <h3 class="text-[11px] font-black text-blue-400 mb-3 uppercase flex items-center gap-1">📏 Thiết lập Không Gian Kho</h3>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div>
-                            <label class="text-[9px] text-slate-400 font-bold block mb-1">Ngang (Cột)</label>
-                            <input type="number" id="cfgMaxCols" onchange="updateConfig()" class="w-full bg-[#1e293b] text-white font-bold text-sm p-1.5 rounded outline-none border border-[#334155] text-center">
-                        </div>
-                        <div>
-                            <label class="text-[9px] text-slate-400 font-bold block mb-1">Dọc (Dãy)</label>
-                            <input type="number" id="cfgMaxRows" onchange="updateConfig()" class="w-full bg-[#1e293b] text-white font-bold text-sm p-1.5 rounded outline-none border border-[#334155] text-center">
-                        </div>
-                        <div>
-                            <label class="text-[9px] text-slate-400 font-bold block mb-1">Cao (Hòm)</label>
-                            <input type="number" id="cfgMaxHeight" onchange="updateConfig()" class="w-full bg-[#1e293b] text-white font-bold text-sm p-1.5 rounded outline-none border border-[#334155] text-center">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-[#0f172a] p-3 rounded-lg border border-[#334155] mb-4">
-                    <h3 class="text-[11px] font-black text-emerald-400 mb-2 uppercase">🧠 Thuật toán</h3>
-                    
-                    <div class="mb-3">
-                        <label class="text-[9px] text-slate-400 font-bold block mb-1">Hướng Xếp Kho</label>
-                        <select id="cfgFillDir" onchange="updateConfig()" class="w-full bg-[#1e293b] text-white text-xs font-bold rounded p-2 outline-none border border-[#334155]">
-                            <option value="horizontal">Ngang (Hết dãy 1 sang dãy 2)</option>
-                            <option value="vertical">Dọc (Hết cột dọc sang cột ngang)</option>
-                        </select>
-                    </div>
-
-                    <label class="flex items-center justify-between cursor-pointer border-t border-[#334155] pt-3">
-                        <span class="text-xs font-bold text-white">Xếp ghép Lô (Chung chồng)</span>
-                        <div class="relative w-10 h-5 rounded-full transition-colors shrink-0" id="toggleBg">
-                            <input type="checkbox" id="cfgAllowMix" onchange="updateConfig()" class="sr-only">
-                            <div class="absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform" id="toggleDot"></div>
-                        </div>
-                    </label>
-                </div>
-
-                <div class="bg-[#0f172a] p-3 rounded-lg border border-[#334155] mb-4">
-                    <h3 class="text-[11px] font-black text-purple-400 mb-2 uppercase">📦 Bao gói mặc định</h3>
-                    <div class="flex gap-2">
-                        <input type="number" id="cfgDefaultPack" onchange="updateConfig()" class="w-1/2 bg-[#1e293b] text-white font-bold p-1.5 rounded outline-none border border-[#334155] text-center text-sm">
-                        <button onclick="applyPackToAll()" class="w-1/2 bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold rounded transition-colors">ĐỒNG BỘ TOÀN BỘ</button>
-                    </div>
-                </div>
-                
-                <button onclick="downloadTemplate()" class="w-full mt-2 bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded text-[11px] font-bold border border-slate-600 transition-colors">
-                    ⬇️ Tải File Mẫu Excel
-                </button>
-            </div>
-
-            <div class="md:hidden absolute bottom-0 left-0 right-0 p-2 bg-[#1e293b] border-t border-[#334155] flex gap-2">
-                <button onclick="toggleMobileSidebar()" class="w-full bg-red-500 text-white font-bold py-2 rounded text-xs shadow-lg">ĐÓNG BẢNG ĐIỀU KHIỂN</button>
-            </div>
-        </aside>
-
-        <!-- CANVAS RIGHT -->
-        <main class="flex-1 blueprint-bg overflow-auto relative flex flex-col" id="canvasWrapper" onclick="clearHighlight(event)">
-            <button onclick="toggleMobileSidebar()" class="md:hidden fixed bottom-4 right-4 bg-blue-600 text-white p-3 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.6)] z-40">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
-            </button>
-
-            <div class="flex-1 p-4 md:p-8 flex flex-col items-center">
-                <div id="svgContainer" class="w-full flex flex-col items-center gap-12 pb-16">
-                    <!-- RENDER HERE -->
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- MODAL -->
-    <div id="itemModal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center opacity-0 transition-opacity">
-        <div class="bg-[#1e293b] border border-[#334155] rounded-xl shadow-2xl w-[90%] max-w-[320px] p-5 transform scale-95 transition-transform" id="modalContent">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-sm font-black text-white" id="modalTitle">THÊM LÔ ĐẠN</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-white">✕</button>
-            </div>
-            <input type="hidden" id="modalId">
-            <div class="space-y-3">
-                <div>
-                    <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Loại Đạn</label>
-                    <input type="text" id="modalType" class="w-full bg-[#0f172a] text-white border border-[#334155] p-2 rounded text-sm outline-none focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Mã Lô</label>
-                    <input type="text" id="modalLot" class="w-full bg-[#0f172a] text-[#38bdf8] font-bold border border-[#334155] p-2 rounded text-sm outline-none focus:border-blue-500">
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Số Lượng (V)</label>
-                        <input type="number" id="modalQty" class="w-full bg-[#0f172a] text-emerald-400 font-bold border border-[#334155] p-2 rounded text-sm outline-none focus:border-emerald-500">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Viên/Hòm</label>
-                        <input type="number" id="modalPack" class="w-full bg-[#0f172a] text-purple-400 font-bold border border-[#334155] p-2 rounded text-sm outline-none focus:border-purple-500">
-                    </div>
-                </div>
-            </div>
-            <div class="flex gap-2 mt-5">
-                <button onclick="closeModal()" class="flex-1 bg-slate-700 text-white font-bold py-2 rounded text-xs">HỦY</button>
-                <button onclick="saveModal()" class="flex-1 bg-blue-600 text-white font-bold py-2 rounded text-xs">LƯU LẠI</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Thông báo -->
-    <div id="toastMsg" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white px-4 py-2 rounded shadow-lg font-bold text-xs transition-all duration-300 opacity-0 pointer-events-none -translate-y-4 z-50">
-        ✅ <span id="toastText">Thành công!</span>
-    </div>
-
-    <script>
-        // --- STATE CHÍNH ---
-        const state = {
-            warehouses: [
-                {
-                    id: 1, name: "Nhà Kho 1",
-                    config: { maxHeight: 20, maxCols: 8, maxRows: 5, defaultPack: 10, allowMix: true, fillDir: 'horizontal' },
-                    items: []
+        const Icon = ({ name, size = 24, className = '', color = 'currentColor', fill="none" }) => {
+            const iconRef = useRef(null);
+            useEffect(() => {
+                if (iconRef.current && window.lucide) {
+                    iconRef.current.innerHTML = '';
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = `<i data-lucide="${name}" style="width:${size}px; height:${size}px; stroke:${color}; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: ${fill};"></i>`;
+                    iconRef.current.appendChild(tempDiv.firstChild);
+                    window.lucide.createIcons({ root: iconRef.current });
                 }
-            ],
-            activeWhId: 1,
-            activeLotId: null
+            }, [name, size, color, fill]);
+            return <span ref={iconRef} className={`inline-flex items-center justify-center ${className}`}></span>;
         };
 
-        function getActiveWH() { return state.warehouses.find(w => w.id === state.activeWhId); }
+        const INITIAL_BOOK = { 
+            id: 'mock-1', 
+            title: "Sapiens: Lược Sử Loài Người", 
+            author: "Yuval Noah Harari", 
+            cover: "bg-gradient-to-br from-slate-800 to-slate-900", 
+            type: "MẪU",
+            content: `Khoảng 14 tỷ năm trước, vật chất, năng lượng, thời gian và không gian đã xuất hiện trong một điểm kỳ dị được gọi là Vụ nổ lớn (Big Bang). Câu chuyện về những đặc tính cơ bản của vũ trụ chúng ta được gọi là vật lý học.\n\nKhoảng 300.000 năm sau khi xuất hiện, vật chất và năng lượng bắt đầu kết hợp thành những cấu trúc phức tạp, được gọi là các nguyên tử, sau đó chúng lại kết hợp thành các phân tử. Câu chuyện về các nguyên tử, phân tử, và các tương tác của chúng được gọi là hóa học.\n\nKhoảng 3,8 tỷ năm trước, trên một hành tinh được gọi là Trái Đất, các phân tử nhất định đã kết hợp với nhau để tạo thành các cấu trúc đặc biệt lớn và phức tạp gọi là các sinh vật. Câu chuyện về các sinh vật được gọi là sinh học.\n\nKhoảng 70.000 năm trước, các sinh vật thuộc loài Homo sapiens (Người tinh khôn) bắt đầu hình thành nên các cấu trúc thậm chí còn phức tạp hơn, được gọi là các nền văn hóa. Sự phát triển tiếp theo của những nền văn hóa con người này được gọi là lịch sử.`
+        };
 
-        // --- QUẢN LÝ TABS NHÀ KHO ---
-        function renderWarehouseTabs() {
-            const container = document.getElementById('warehouseTabs');
-            let html = '';
-            state.warehouses.forEach(w => {
-                const isActive = w.id === state.activeWhId;
-                const cls = isActive ? 'wh-tab active' : 'wh-tab text-slate-400 hover:text-white hover:bg-[#1e293b]';
-                html += `
-                    <div class="flex items-center shrink-0 ${cls} transition-colors cursor-pointer" onclick="switchWarehouse(${w.id})">
-                        <span class="px-4 py-2 text-xs font-bold uppercase tracking-wider">${w.name}</span>
-                        ${state.warehouses.length > 1 ? `<button onclick="deleteWarehouse(event, ${w.id})" class="pr-3 text-slate-500 hover:text-red-400">✕</button>` : ''}
-                    </div>
-                `;
+        function App() {
+            const [view, setView] = useState('library'); 
+            const [books, setBooks] = useState(() => {
+                const saved = localStorage.getItem('aura_books');
+                return saved ? JSON.parse(saved) : [INITIAL_BOOK];
             });
-            html += `<button onclick="addWarehouse()" class="px-4 py-2 text-xs font-bold text-blue-400 hover:text-white hover:bg-blue-600 transition-colors uppercase">+ Thêm Nhà</button>`;
-            container.innerHTML = html;
-        }
-
-        function switchWarehouse(id) { state.activeWhId = id; state.activeLotId = null; syncConfigToUI(); triggerRender(); }
-        function addWarehouse() {
-            const newId = Date.now();
-            state.warehouses.push({ id: newId, name: `Nhà Kho ${state.warehouses.length + 1}`, config: { maxHeight: 20, maxCols: 8, maxRows: 5, defaultPack: 10, allowMix: true, fillDir: 'horizontal' }, items: [] });
-            switchWarehouse(newId);
-        }
-        function deleteWarehouse(e, id) {
-            e.stopPropagation();
-            if(confirm("Xóa nhà kho này và toàn bộ lô đạn bên trong?")) {
-                state.warehouses = state.warehouses.filter(w => w.id !== id);
-                if (state.activeWhId === id) state.activeWhId = state.warehouses[0].id;
-                syncConfigToUI(); triggerRender();
-            }
-        }
-
-        function syncConfigToUI() {
-            const wh = getActiveWH(); if(!wh) return;
-            document.getElementById('cfgMaxHeight').value = wh.config.maxHeight;
-            document.getElementById('cfgMaxCols').value = wh.config.maxCols;
-            document.getElementById('cfgMaxRows').value = wh.config.maxRows;
-            document.getElementById('cfgDefaultPack').value = wh.config.defaultPack;
-            document.getElementById('cfgAllowMix').checked = wh.config.allowMix;
-            document.getElementById('cfgFillDir').value = wh.config.fillDir || 'horizontal';
-
-            const toggleBg = document.getElementById('toggleBg');
-            const toggleDot = document.getElementById('toggleDot');
-            if (wh.config.allowMix) {
-                toggleBg.classList.replace('bg-slate-600', 'bg-emerald-500');
-                toggleDot.classList.replace('translate-x-1', 'translate-x-5');
-            } else {
-                toggleBg.classList.replace('bg-emerald-500', 'bg-slate-600');
-                toggleDot.classList.replace('translate-x-5', 'translate-x-1');
-            }
-        }
-
-        function updateConfig() {
-            const wh = getActiveWH(); if(!wh) return;
-            wh.config.maxHeight = Math.max(1, Number(document.getElementById('cfgMaxHeight').value));
-            wh.config.maxCols = Math.max(1, Number(document.getElementById('cfgMaxCols').value));
-            wh.config.maxRows = Math.max(1, Number(document.getElementById('cfgMaxRows').value));
-            wh.config.defaultPack = Math.max(1, Number(document.getElementById('cfgDefaultPack').value));
-            wh.config.allowMix = document.getElementById('cfgAllowMix').checked;
-            wh.config.fillDir = document.getElementById('cfgFillDir').value;
-            syncConfigToUI(); triggerRender();
-        }
-
-        // --- LÕI THUẬT TOÁN ĐÃ ĐƯỢC LÀM MỚI (CHUẨN 2D GRID) ---
-        function calculateGrid(wh) {
-            const maxC = wh.config.maxCols;
-            const maxR = wh.config.maxRows;
-            const maxH = wh.config.maxHeight;
-            const dir = wh.config.fillDir || 'horizontal';
+            const [activeBook, setActiveBook] = useState(null);
             
-            // Tính số "Khu" (Nhà phụ) cần thiết dựa vào tổng số hòm
-            let totalPlacements = 0;
-            wh.items.forEach(item => {
-                let p = Number(item.pack)||1;
-                totalPlacements += Math.ceil((Number(item.qty)||0) / p);
-            });
-            let totalCellsNeeded = Math.ceil(totalPlacements / maxH);
-            let numZones = Math.max(1, Math.ceil(totalCellsNeeded / (maxR * maxC)));
+            // Cài đặt Reader
+            const [theme, setTheme] = useState(() => localStorage.getItem('aura_theme') || 'oled');
+            const [fontSize, setFontSize] = useState(() => parseInt(localStorage.getItem('aura_font')) || 18);
+            const [uiVisible, setUiVisible] = useState(true);
+            const [showSettings, setShowSettings] = useState(false);
 
-            // Khởi tạo Lưới 3D [Zone][Row][Col]
-            let grid = Array(numZones).fill().map(() => Array(maxR).fill().map(() => Array(maxC).fill(null)));
-            
-            let z = 0, r = 0, c = 0;
-            let cur = { botLot: null, botQty: 0, botL: 0, topLot: null, topQty: 0, topL: 0 };
-            let curH = 0;
+            // TTS State
+            const [isSpeaking, setIsSpeaking] = useState(false);
+            const synth = window.speechSynthesis;
+            const fileInputRef = useRef(null);
 
-            function nextCell() {
-                if (curH > 0) grid[z][r][c] = { ...cur };
-                cur = { botLot: null, botQty: 0, botL: 0, topLot: null, topQty: 0, topL: 0 };
-                curH = 0;
-                
-                if (dir === 'horizontal') {
-                    c++; if (c >= maxC) { c = 0; r++; }
+            useEffect(() => { localStorage.setItem('aura_theme', theme); }, [theme]);
+            useEffect(() => { localStorage.setItem('aura_font', fontSize); }, [fontSize]);
+            useEffect(() => { localStorage.setItem('aura_books', JSON.stringify(books)); }, [books]);
+
+            // Dọn dẹp TTS khi unmount
+            useEffect(() => {
+                return () => { if (synth.speaking) synth.cancel(); }
+            }, []);
+
+            // --- XỬ LÝ NHẬP FILE TEXT ---
+            const handleFileUpload = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const content = evt.target.result;
+                    const newBook = {
+                        id: 'book-' + Date.now(),
+                        title: file.name.replace('.txt', ''),
+                        author: "Tài liệu nạp vào",
+                        cover: "bg-gradient-to-br from-indigo-500 to-purple-700",
+                        type: "TXT",
+                        content: content
+                    };
+                    setBooks([newBook, ...books]);
+                };
+                reader.readAsText(file);
+            };
+
+            const toggleUI = (e) => {
+                // Chỉ toggle UI nếu bấm vào nền (không phải bấm vào nút/văn bản đang bôi đen)
+                if (showSettings) {
+                    setShowSettings(false);
+                    return;
+                }
+                setUiVisible(!uiVisible);
+            };
+
+            const handlePlayTTS = (e) => {
+                e.stopPropagation();
+                if (!activeBook) return;
+
+                if (isSpeaking) {
+                    synth.pause();
+                    setIsSpeaking(false);
+                } else if (synth.paused) {
+                    synth.resume();
+                    setIsSpeaking(true);
                 } else {
-                    r++; if (r >= maxR) { r = 0; c++; }
+                    synth.cancel();
+                    const utterance = new SpeechSynthesisUtterance(activeBook.content.substring(0, 1000)); // Đọc thử 1000 ký tự đầu
+                    utterance.lang = 'vi-VN';
+                    utterance.rate = 0.95;
+                    utterance.onend = () => setIsSpeaking(false);
+                    synth.speak(utterance);
+                    setIsSpeaking(true);
                 }
-                if (r >= maxR || c >= maxC) { z++; r = 0; c = 0; }
-            }
-
-            wh.items.forEach(item => {
-                let qty = Number(item.qty) || 0;
-                let pack = Number(item.pack) || 1;
-                if (qty <= 0) return;
-
-                let full = Math.floor(qty / pack);
-                let left = qty % pack;
-                let boxesToPlace = full + (left > 0 ? 1 : 0);
-
-                while (boxesToPlace > 0) {
-                    if (z >= numZones) return; // Fail-safe
-                    
-                    if (curH >= maxH || (!wh.config.allowMix && curH > 0 && cur.botLot.id !== item.id) || (curH > 0 && cur.topLot !== null)) {
-                        nextCell();
-                        if (z >= numZones) return;
-                    }
-
-                    let space = maxH - curH;
-                    let take = Math.min(boxesToPlace, space);
-                    let isLastBox = (boxesToPlace === take);
-                    let leftVal = (isLastBox && left > 0) ? left : 0;
-
-                    if (cur.botLot === null || cur.botLot.id === item.id) {
-                        cur.botLot = item; cur.botQty += take; if(leftVal) cur.botL = leftVal;
-                    } else {
-                        cur.topLot = item; cur.topQty += take; if(leftVal) cur.topL = leftVal;
-                    }
-
-                    curH += take;
-                    boxesToPlace -= take;
-                }
-            });
-            if (curH > 0 && z < numZones) grid[z][r][c] = { ...cur };
-
-            return grid;
-        }
-
-        // --- RENDER 1: DANH SÁCH & CÔNG THỨC (CỘT TRÁI) ---
-        function renderInputPanel() {
-            const wh = getActiveWH();
-            const container = document.getElementById('dataContainer');
-            let html = '';
-
-            if (!wh || wh.items.length === 0) {
-                container.innerHTML = `<div class="text-center p-6 text-slate-500 text-xs italic border border-dashed border-[#334155] rounded mx-1 mt-4">Kho đang trống.<br>Bấm THÊM LÔ hoặc NHẬP EXCEL.</div>`;
-                return;
-            }
-
-            wh.items.forEach((item, idx) => {
-                const pck = Number(item.pack) || 1;
-                const qty = Number(item.qty) || 0;
-                
-                const fullB = Math.floor(qty / pck);
-                const left = qty % pck;
-                const physB = fullB + (left > 0 ? 1 : 0);
-                
-                // Công thức tính số hòm
-                let eqStr = `SL: ${qty} = ${fullB}h`;
-                let leftoverHtml = left > 0 ? `<span class="text-red-400 font-bold ml-1">(+ lẻ ${left}v)</span>` : '';
-
-                const isActive = state.activeLotId === item.id;
-                const activeClass = isActive ? "bg-blue-600/30 border-blue-400" : "bg-[#1e293b] border-[#334155] hover:border-slate-400";
-
-                html += `
-                    <div class="flex items-start gap-2 ${activeClass} border rounded p-2 transition-all cursor-pointer group shadow-sm" onclick="highlightLot(event, ${item.id})" ondblclick="openModal(${item.id})">
-                        <div class="w-5 h-5 bg-slate-700 text-white rounded flex items-center justify-center text-[9px] font-bold shrink-0 mt-1">${idx + 1}</div>
-                        <div class="flex-1 min-w-0 pointer-events-none">
-                            <div class="flex justify-between items-baseline mb-1">
-                                <span class="text-xs font-bold text-white truncate pr-2">${item.type}</span>
-                                <span class="text-[10px] font-black text-[#38bdf8] truncate">${item.lot}</span>
-                            </div>
-                            <div class="text-[10px] text-slate-400 bg-[#0f172a] px-1.5 py-1 rounded inline-block border border-[#1e293b]">
-                                <span class="text-slate-300 font-mono font-bold">${eqStr}</span> ${leftoverHtml}
-                            </div>
-                        </div>
-                        <div class="flex flex-col gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="openModal(${item.id}); event.stopPropagation();" class="text-slate-400 hover:text-blue-400 p-0.5" title="Sửa">✏️</button>
-                            <button onclick="removeItem(${item.id}); event.stopPropagation();" class="text-slate-400 hover:text-red-400 p-0.5" title="Xóa">🗑</button>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
-
-        // Vẽ Vòng tròn Text SVG
-        function drawCircle(cx, cy, boxes, leftover, isTopRight=false) {
-            let res = `<circle cx="${cx}" cy="${cy}" r="15" fill="white" stroke="#0f172a" stroke-width="1.5" />`;
-            res += `<text x="${cx}" y="${cy+4}" font-size="12" font-weight="900" text-anchor="middle" fill="#0f172a">${boxes}</text>`;
-            if (leftover > 0) {
-                let tx = isTopRight ? cx - 18 : cx + 18;
-                let ty = isTopRight ? cy - 6 : cy + 12;
-                res += `<text x="${tx}" y="${ty}" font-size="11" font-weight="bold" font-style="italic" fill="#dc2626" text-anchor="${isTopRight?'end':'start'}">lẻ ${leftover}</text>`;
-            }
-            return res;
-        }
-
-        // Check Viền Lô chung
-        function hasSharedLot(cellA, cellB) {
-            if (!cellA || !cellB) return false;
-            let lotsA = [cellA.botLot?.id, cellA.topLot?.id].filter(Boolean);
-            let lotsB = [cellB.botLot?.id, cellB.topLot?.id].filter(Boolean);
-            return lotsA.some(id => lotsB.includes(id));
-        }
-
-        // --- RENDER CANVAS ---
-        function renderDiagram() {
-            const wh = getActiveWH();
-            const container = document.getElementById('svgContainer');
-            const viewMode = document.getElementById('viewMode').value;
-            
-            if (!wh || wh.items.length === 0) {
-                container.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm border border-slate-200 text-slate-400 text-center flex flex-col items-center justify-center text-xs mt-10"><span class="text-4xl mb-2">📐</span>Khu vực bản vẽ trống.</div>`;
-                return;
-            }
-
-            const maxC = wh.config.maxCols, maxR = wh.config.maxRows, maxH = wh.config.maxHeight;
-            const grid3D = calculateGrid(wh); // Array of Zones, each Zone is Array[R][C]
-            let html = '';
-
-            // ====== DẠNG 1: MẶT BẰNG LƯỚI KHỐI (CHUẨN) ======
-            if (viewMode === "1") {
-                const CELL_W = 100, CELL_H = 80;
-                const svgW = maxC * CELL_W, svgH = maxR * CELL_H;
-
-                grid3D.forEach((grid, zIdx) => {
-                    let hasData = false;
-                    for (let r=0; r<maxR; r++) for (let c=0; c<maxC; c++) if(grid[r][c]) hasData = true;
-                    if (!hasData) return;
-
-                    let svgHtml = `<div class="relative bg-white shadow-xl rounded border border-slate-300 p-0 overflow-hidden w-max mx-auto mb-10">
-                                    <div class="bg-slate-100 text-slate-600 text-center py-2 font-bold text-[10px] uppercase border-b border-slate-200">${wh.name} - Khu ${zIdx + 1}</div>
-                                    <svg width="${svgW}" height="${svgH}" style="font-family: Arial, sans-serif;">`;
-                    
-                    // 1. Lưới mảnh toàn bộ
-                    svgHtml += `<g stroke="#cbd5e1" stroke-width="1">`;
-                    for (let c = 0; c <= maxC; c++) svgHtml += `<line x1="${c * CELL_W}" y1="0" x2="${c * CELL_W}" y2="${svgH}" />`;
-                    for (let r = 0; r <= maxR; r++) svgHtml += `<line x1="0" y1="${r * CELL_H}" x2="${svgW}" y2="${r * CELL_H}" />`;
-                    svgHtml += `</g>`;
-
-                    // 2. Vẽ Highlight Nền Hình Dáng
-                    for (let r = 0; r < maxR; r++) {
-                        for (let c = 0; c < maxC; c++) {
-                            let cell = grid[r][c];
-                            if (cell) {
-                                let x = c * CELL_W, y = r * CELL_H;
-                                if (cell.topLot) {
-                                    // Trái dưới (botLot)
-                                    svgHtml += `<polygon points="${x},${y} ${x},${y+CELL_H} ${x+CELL_W},${y+CELL_H}" class="lot-shape lot-${cell.botLot.id}" onclick="highlightLot(event, ${cell.botLot.id})" />`;
-                                    // Phải trên (topLot)
-                                    svgHtml += `<polygon points="${x},${y} ${x+CELL_W},${y} ${x+CELL_W},${y+CELL_H}" class="lot-shape lot-${cell.topLot.id}" onclick="highlightLot(event, ${cell.topLot.id})" />`;
-                                } else {
-                                    svgHtml += `<rect x="${x}" y="${y}" width="${CELL_W}" height="${CELL_H}" class="lot-shape lot-${cell.botLot.id}" onclick="highlightLot(event, ${cell.botLot.id})" />`;
-                                }
-                            }
-                        }
-                    }
-
-                    // 3. NÉT VIỀN ĐẬM PHÂN KHOẢNH LÔ (Logic Cắt chuẩn)
-                    svgHtml += `<g stroke="#0f172a" stroke-width="3" stroke-linecap="square">`;
-                    for (let r = 0; r < maxR; r++) {
-                        for (let c = 0; c < maxC; c++) {
-                            let cell = grid[r][c];
-                            if (cell) {
-                                let x = c * CELL_W, y = r * CELL_H;
-                                
-                                // Top
-                                let topC = r > 0 ? grid[r-1][c] : null;
-                                if (!topC || topC.botLot?.id !== cell.topLot?.id) svgHtml += `<line x1="${x}" y1="${y}" x2="${x+CELL_W}" y2="${y}" />`;
-                                
-                                // Bottom
-                                let botC = r < maxR - 1 ? grid[r+1][c] : null;
-                                if (!botC || botC.topLot?.id !== cell.botLot?.id) svgHtml += `<line x1="${x}" y1="${y+CELL_H}" x2="${x+CELL_W}" y2="${y+CELL_H}" />`;
-                                
-                                // Left
-                                let leftC = c > 0 ? grid[r][c-1] : null;
-                                let thisLeftId = cell.botLot?.id; 
-                                let nbrRightId = leftC ? (leftC.topLot ? leftC.topLot.id : leftC.botLot.id) : null;
-                                if (thisLeftId !== nbrRightId) svgHtml += `<line x1="${x}" y1="${y}" x2="${x}" y2="${y+CELL_H}" />`;
-                                
-                                // Right
-                                let rightC = c < maxC - 1 ? grid[r][c+1] : null;
-                                let thisRightId = cell.topLot ? cell.topLot.id : cell.botLot.id;
-                                let nbrLeftId = rightC ? rightC.botLot?.id : null;
-                                if (thisRightId !== nbrLeftId) svgHtml += `<line x1="${x+CELL_W}" y1="${y}" x2="${x+CELL_W}" y2="${y+CELL_H}" />`;
-                                
-                                // Diagonal
-                                if (cell.topLot && cell.botLot.id !== cell.topLot.id) {
-                                    svgHtml += `<line x1="${x}" y1="${y}" x2="${x+CELL_W}" y2="${y+CELL_H}" stroke-width="2.5" />`;
-                                }
-                            }
-                        }
-                    }
-                    svgHtml += `</g>`;
-
-                    // 4. Vẽ Vòng tròn và Số liệu
-                    for (let r = 0; r < maxR; r++) {
-                        for (let c = 0; c < maxC; c++) {
-                            let cell = grid[r][c];
-                            if (cell) {
-                                let x = c * CELL_W, y = r * CELL_H;
-                                if (cell.topLot) {
-                                    svgHtml += drawCircle(x + CELL_W*0.3, y + CELL_H*0.7, cell.botQty, cell.botL, false);
-                                    svgHtml += drawCircle(x + CELL_W*0.7, y + CELL_H*0.3, cell.topQty, cell.topL, true);
-                                } else {
-                                    svgHtml += drawCircle(x + CELL_W/2, y + CELL_H/2, cell.botQty, cell.botL, false);
-                                }
-                            }
-                        }
-                    }
-
-                    svgHtml += `</svg></div>`;
-                    html += svgHtml;
-                });
-            } 
-            // ====== DẠNG 2: MẶT CẮT ZICZAC ======
-            else {
-                const COL_W = 100, MAX_COL_H = 260, BOX_H = MAX_COL_H / maxH, TOP_M = 40;
-                
-                grid3D.forEach((grid, zIdx) => {
-                    // Dàn ngang các cột trong grid 2D thành mảng 1D để vẽ dốc ziczac
-                    let flatStacks = [];
-                    // Đọc theo chiều ngang
-                    for(let r=0; r<maxR; r++) {
-                        for(let c=0; c<maxC; c++) {
-                            if(grid[r][c]) flatStacks.push(grid[r][c]);
-                        }
-                    }
-                    if (flatStacks.length === 0) return;
-
-                    // Cắt thành từng dải maxC để vẽ (Hoặc vẽ một đường dài? Để theo maxC cho gọn màn hình)
-                    const chunks = [];
-                    for(let i=0; i<flatStacks.length; i+=maxC) chunks.push(flatStacks.slice(i, i+maxC));
-
-                    chunks.forEach((chunk, chunkIdx) => {
-                        const svgW = maxC * COL_W;
-                        const svgH = TOP_M + MAX_COL_H + 90;
-
-                        let svgHtml = `<div class="relative bg-white shadow-xl rounded border border-slate-300 p-0 overflow-hidden w-max mx-auto mb-10">
-                                        <div class="bg-slate-100 text-slate-600 px-3 py-1.5 font-bold text-[10px] uppercase border-b border-slate-200">${wh.name} - Dãy ${zIdx*maxR + chunkIdx + 1}</div>
-                                        <svg width="${svgW}" height="${svgH}" style="font-family: Arial, sans-serif;">`;
-                        
-                        // Lưới ngang
-                        svgHtml += `<g stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,3">`;
-                        for (let i = 0; i <= 5; i++) svgHtml += `<line x1="0" y1="${TOP_M + (i * (MAX_COL_H/5))}" x2="${maxC * COL_W}" y2="${TOP_M + (i * (MAX_COL_H/5))}" />`;
-                        svgHtml += `</g>`;
-
-                        // Highlight Rects
-                        chunk.forEach((cell, i) => {
-                            let x = i * COL_W;
-                            let y = TOP_M + MAX_COL_H - ((cell.botQty+cell.topQty) * BOX_H);
-                            if (cell.topLot) {
-                                let midY = y + (cell.topQty * BOX_H);
-                                svgHtml += `<rect x="${x}" y="${midY}" width="${COL_W}" height="${cell.botQty*BOX_H}" class="lot-shape lot-${cell.botLot.id}" onclick="highlightLot(event, ${cell.botLot.id})" />`;
-                                svgHtml += `<rect x="${x}" y="${y}" width="${COL_W}" height="${cell.topQty*BOX_H}" class="lot-shape lot-${cell.topLot.id}" onclick="highlightLot(event, ${cell.topLot.id})" />`;
-                            } else if (cell.botLot) {
-                                svgHtml += `<rect x="${x}" y="${y}" width="${COL_W}" height="${cell.botQty*BOX_H}" class="lot-shape lot-${cell.botLot.id}" onclick="highlightLot(event, ${cell.botLot.id})" />`;
-                            }
-                        });
-
-                        // Đường Ziczac Mép ngoài
-                        let profilePath = `M 0 ${TOP_M + MAX_COL_H}`;
-                        chunk.forEach((cell, i) => {
-                            const y = TOP_M + MAX_COL_H - ((cell.botQty+cell.topQty) * BOX_H);
-                            profilePath += ` L ${i*COL_W} ${y} L ${(i+1)*COL_W} ${y}`;
-                        });
-                        profilePath += ` L ${chunk.length*COL_W} ${TOP_M+MAX_COL_H} L ${maxC*COL_W} ${TOP_M+MAX_COL_H}`;
-                        svgHtml += `<path d="${profilePath}" fill="transparent" stroke="#0f172a" stroke-width="2.5" class="pointer-events-none"/>`;
-
-                        // Cột & Vòng tròn & Text gầm
-                        chunk.forEach((cell, i) => {
-                            let x = i * COL_W;
-                            let y = TOP_M + MAX_COL_H - ((cell.botQty+cell.topQty) * BOX_H);
-
-                            svgHtml += `<g transform="translate(${x}, 0)" class="pointer-events-none">`;
-                            svgHtml += `<line x1="${COL_W}" y1="${y}" x2="${COL_W}" y2="${TOP_M + MAX_COL_H}" stroke="#0f172a" stroke-width="1.5" />`;
-
-                            if (cell.topLot) {
-                                let midY = y + (cell.topQty * BOX_H);
-                                svgHtml += `<line x1="0" y1="${midY}" x2="${COL_W}" y2="${midY}" stroke="#0f172a" stroke-width="1.5" stroke-dasharray="4,4"/>`;
-                                svgHtml += drawCircle(COL_W*0.5, y+(cell.topQty*BOX_H)/2, cell.topQty, cell.topL, true);
-                                svgHtml += drawCircle(COL_W*0.5, midY+(cell.botQty*BOX_H)/2, cell.botQty, cell.botL, false);
-                            } else if (cell.botQty > 0) {
-                                svgHtml += drawCircle(COL_W/2, y + (cell.botQty*BOX_H)/2, cell.botQty, cell.botL, false);
-                            }
-
-                            // Text dưới gầm
-                            svgHtml += `<g transform="translate(${COL_W/2}, ${TOP_M + MAX_COL_H + 20})">`;
-                            if (cell.topLot) {
-                                svgHtml += `
-                                    <text x="0" y="0" font-size="10" font-weight="bold" text-anchor="middle" fill="#475569">${cell.topLot.type}</text>
-                                    <text x="0" y="14" font-size="12" font-weight="900" text-anchor="middle" fill="#2563eb">${cell.topLot.lot}</text>
-                                    <line x1="-30" y1="22" x2="30" y2="22" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>
-                                    <text x="0" y="36" font-size="10" font-weight="bold" text-anchor="middle" fill="#475569">${cell.botLot.type}</text>
-                                    <text x="0" y="50" font-size="12" font-weight="900" text-anchor="middle" fill="#2563eb">${cell.botLot.lot}</text>
-                                `;
-                            } else if (cell.botLot) {
-                                 svgHtml += `
-                                    <text x="0" y="10" font-size="10" font-weight="bold" text-anchor="middle" fill="#475569">${cell.botLot.type}</text>
-                                    <text x="0" y="26" font-size="12" font-weight="900" text-anchor="middle" fill="#2563eb">${cell.botLot.lot}</text>
-                                `;
-                            }
-                            svgHtml += `</g></g>`;
-                        });
-                        
-                        svgHtml += `<rect x="0" y="${TOP_M + MAX_COL_H}" width="${svgW}" height="3" fill="#0f172a" />`;
-                        svgHtml += `</svg></div>`;
-                        html += svgHtml;
-                    });
-                });
-            }
-            container.innerHTML = html;
-            updateHighlightCSS(); 
-        }
-
-        // --- HIGHLIGHT CSS ĐỘNG ---
-        function updateHighlightCSS() {
-            const style = document.getElementById('dynamicHighlight');
-            if (state.activeLotId) {
-                style.innerHTML = `
-                    .lot-${state.activeLotId} { fill: #dbeafe !important; }
-                `;
-            } else {
-                style.innerHTML = '';
-            }
-        }
-
-        // --- CÁC HÀM CẬP NHẬT CHUNG ---
-        function updateKPIs() {
-            const wh = getActiveWH();
-            if(!wh) return;
-            let tItems = 0; let tBoxes = 0;
-            wh.items.forEach(i => {
-                tItems += Number(i.qty) || 0;
-                let full = Math.floor((Number(i.qty)||0) / (Number(i.pack)||1));
-                let left = (Number(i.qty)||0) % (Number(i.pack)||1);
-                tBoxes += full + (left > 0 ? 1 : 0); 
-            });
-            document.getElementById('kpiLots').innerText = wh.items.length;
-            document.getElementById('kpiBoxes').innerText = tBoxes.toLocaleString('vi-VN');
-        }
-
-        function triggerRender() {
-            renderWarehouseTabs();
-            renderInputPanel();
-            renderDiagram();
-            updateKPIs();
-        }
-
-        // --- TƯƠNG TÁC MODAL & THAO TÁC LÔ ---
-        function openModal(id) {
-            const modal = document.getElementById('itemModal');
-            const content = document.getElementById('modalContent');
-            const wh = getActiveWH();
-            
-            if (id) {
-                const item = wh.items.find(i => i.id === id);
-                document.getElementById('modalTitle').innerText = "CHỈNH SỬA LÔ";
-                document.getElementById('modalId').value = id;
-                document.getElementById('modalType').value = item.type;
-                document.getElementById('modalLot').value = item.lot;
-                document.getElementById('modalQty').value = item.qty;
-                document.getElementById('modalPack').value = item.pack;
-            } else {
-                document.getElementById('modalTitle').innerText = "THÊM LÔ MỚI";
-                document.getElementById('modalId').value = "";
-                document.getElementById('modalType').value = "";
-                document.getElementById('modalLot').value = "";
-                document.getElementById('modalQty').value = "";
-                document.getElementById('modalPack').value = wh.config.defaultPack;
-            }
-            
-            modal.classList.remove('hidden');
-            setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('itemModal');
-            const content = document.getElementById('modalContent');
-            modal.classList.add('opacity-0');
-            content.classList.add('scale-95');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        }
-
-        function saveModal() {
-            const wh = getActiveWH();
-            const id = document.getElementById('modalId').value;
-            const itemObj = {
-                type: document.getElementById('modalType').value.trim() || 'Chưa Đặt Tên',
-                lot: document.getElementById('modalLot').value.trim() || 'N/A',
-                qty: Number(document.getElementById('modalQty').value) || 0,
-                pack: Number(document.getElementById('modalPack').value) || wh.config.defaultPack
             };
 
-            if (id) {
-                const idx = wh.items.findIndex(i => i.id == id);
-                if (idx > -1) wh.items[idx] = { ...wh.items[idx], ...itemObj };
-            } else {
-                wh.items.push({ id: Date.now(), ...itemObj });
-            }
-            closeModal(); triggerRender();
-        }
-
-        function removeItem(id) {
-            if(confirm('Xóa lô đạn này?')) {
-                const wh = getActiveWH();
-                wh.items = wh.items.filter(i => i.id !== id);
-                if(state.activeLotId === id) state.activeLotId = null;
-                triggerRender();
-            }
-        }
-        
-        function deleteAllItems() {
-            const wh = getActiveWH();
-            if(confirm(`Xóa toàn bộ danh sách trong kho [${wh.name}]?`)) {
-                wh.items = []; state.activeLotId = null; triggerRender();
-            }
-        }
-
-        function applyPackToAll() {
-            const wh = getActiveWH();
-            const p = wh.config.defaultPack;
-            if(confirm(`Đồng bộ quy cách [${p}] cho toàn bộ kho [${wh.name}]?`)) {
-                wh.items.forEach(i => i.pack = p); triggerRender();
-            }
-        }
-
-        function highlightLot(e, id) {
-            e.stopPropagation();
-            state.activeLotId = (state.activeLotId === id) ? null : id;
-            triggerRender();
-        }
-        
-        function clearHighlight(e) {
-            if (state.activeLotId !== null) { state.activeLotId = null; triggerRender(); }
-        }
-
-        // --- EXCEL ---
-        function importExcel(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const wh = getActiveWH();
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
-                    
-                    let c = 0;
-                    for(let i = 1; i < json.length; i++) {
-                        const row = json[i];
-                        if(!row || !row[0]) continue; 
-                        wh.items.push({
-                            id: Date.now() + i,
-                            type: String(row[0]).trim(),
-                            lot: row[1] ? String(row[1]).trim() : "N/A",
-                            qty: Number(row[2]) || 0,
-                            pack: Number(row[3]) || wh.config.defaultPack
-                        });
-                        c++;
-                    }
-                    if(c > 0) { triggerRender(); showToast(`Đã nhập ${c} lô vào ${wh.name}`); }
-                } catch (err) { alert("Lỗi đọc Excel."); }
-                document.getElementById('excelUpload').value = '';
+            const closeReader = (e) => {
+                e.stopPropagation();
+                synth.cancel();
+                setIsSpeaking(false);
+                setActiveBook(null);
+                setView('library');
             };
-            reader.readAsArrayBuffer(file);
+
+            const deleteBook = (e, id) => {
+                e.stopPropagation();
+                setBooks(books.filter(b => b.id !== id));
+            };
+
+            return (
+                <div className="w-full h-full md:max-w-[428px] mx-auto bg-black md:rounded-[40px] md:shadow-2xl overflow-hidden relative font-ui md:border-[8px] border-slate-800 flex flex-col">
+                    
+                    {/* =========================================
+                        LIBRARY VIEW
+                        ========================================= */}
+                    {view === 'library' && (
+                        <div className="flex-1 flex flex-col bg-[#F2F2F7] fade-in">
+                            <div className="pt-[env(safe-area-inset-top,47px)] px-6 pb-2 bg-[#F2F2F7]/90 backdrop-blur-md z-10 sticky top-0">
+                                <div className="flex justify-between items-center mt-4">
+                                    <h1 className="text-[32px] font-black text-slate-900 tracking-tight">Thư viện</h1>
+                                    <button onClick={() => fileInputRef.current.click()} className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-md active:scale-90 transition-transform">
+                                        <Icon name="plus" size={20}/>
+                                    </button>
+                                    <input type="file" accept=".txt" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+                                </div>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto hide-scrollbar px-6 pb-32">
+                                {books.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-64 opacity-50">
+                                        <Icon name="book-x" size={48} className="mb-4"/>
+                                        <p>Chưa có sách nào.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-6 mt-4">
+                                        {books.map(book => (
+                                            <div key={book.id} className="flex flex-col cursor-pointer group relative" onClick={() => { setActiveBook(book); setView('reader'); setUiVisible(true); }}>
+                                                <div className={`w-full aspect-[2/3] ${book.cover} rounded-[16px] shadow-[0_8px_20px_rgba(0,0,0,0.12)] mb-3 flex items-center justify-center relative overflow-hidden group-active:scale-95 transition-transform duration-300`}>
+                                                    <span className="absolute top-2 right-2 bg-black/30 backdrop-blur-md px-2 py-1 rounded-md text-[9px] text-white font-bold uppercase tracking-wider">{book.type}</span>
+                                                    <Icon name={book.type === 'TXT' ? "file-text" : "book-open"} size={36} color="white" className="opacity-30"/>
+                                                </div>
+                                                <h3 className="font-bold text-[14px] text-slate-800 leading-snug line-clamp-2">{book.title}</h3>
+                                                <p className="text-[12px] text-slate-500 mt-1 line-clamp-1">{book.author}</p>
+                                                
+                                                {book.id !== 'mock-1' && (
+                                                    <button onClick={(e) => deleteBook(e, book.id)} className="absolute top-2 left-2 w-8 h-8 bg-black/40 backdrop-blur-md rounded-full text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Icon name="trash-2" size={14}/>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="absolute bottom-0 w-full pb-[env(safe-area-inset-bottom,20px)] pt-3 px-6 z-20">
+                                <div className="bg-white/95 backdrop-blur-xl border border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.08)] rounded-[28px] flex justify-around p-1">
+                                    <button className="flex flex-col items-center p-2.5 w-20 text-blue-600 bg-blue-50/50 rounded-[20px]">
+                                        <Icon name="library" size={24} fill="currentColor" className="opacity-20 absolute"/>
+                                        <Icon name="library" size={22}/>
+                                        <span className="text-[10px] font-bold mt-1">Sách</span>
+                                    </button>
+                                    <button className="flex flex-col items-center p-2.5 w-20 text-slate-400">
+                                        <Icon name="headphones" size={22}/>
+                                        <span className="text-[10px] font-semibold mt-1">Nghe</span>
+                                    </button>
+                                    <button className="flex flex-col items-center p-2.5 w-20 text-slate-400">
+                                        <Icon name="settings" size={22}/>
+                                        <span className="text-[10px] font-semibold mt-1">Cài đặt</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* =========================================
+                        READER VIEW (GIAO DIỆN ĐỌC SÁCH)
+                        ========================================= */}
+                    {view === 'reader' && activeBook && (
+                        <div className={`flex-1 flex flex-col relative transition-colors duration-500 theme-${theme}`}>
+                            
+                            {/* Khu vực chạm để toggle UI */}
+                            <div className="absolute inset-0 z-0" onClick={toggleUI}></div>
+
+                            {/* NỘI DUNG SÁCH */}
+                            <div className="absolute inset-0 overflow-y-auto hide-scrollbar pt-[env(safe-area-inset-top,60px)] pb-[150px] px-6 z-10 pointer-events-none">
+                                <div className="max-w-[600px] mx-auto pointer-events-auto selection:bg-blue-500/30">
+                                    <h1 className="font-book font-bold text-3xl mb-2 mt-4 leading-tight">{activeBook.title}</h1>
+                                    <p className="font-ui text-sm uppercase tracking-widest opacity-40 mb-12">{activeBook.author}</p>
+                                    
+                                    <div className="font-book leading-[1.8] text-justify" style={{ fontSize: `${fontSize}px` }}>
+                                        {activeBook.content.split('\n').map((para, idx) => (
+                                            para.trim() ? <p key={idx} className="mb-6 indent-6">{para.trim()}</p> : null
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* --- UI OVERLAY (HEADER & FOOTER) --- */}
+                            <div className={`absolute inset-0 pointer-events-none z-20 will-change-transform transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${uiVisible ? 'opacity-100' : 'opacity-0'}`}>
+                                
+                                {/* Header */}
+                                <div className={`absolute top-0 w-full pt-[env(safe-area-inset-top,47px)] pb-4 px-4 flex justify-between items-center pointer-events-auto transition-transform duration-400 ${uiVisible ? 'translate-y-0' : '-translate-y-full'}`}
+                                     style={{ background: theme === 'oled' || theme === 'dark' ? 'linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, transparent 100%)' : 'linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, transparent 100%)' }}
+                                >
+                                    <button onClick={closeReader} className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-transform ${theme==='oled'||theme==='dark'?'bg-white/10 text-white':'bg-slate-200/50 text-slate-800'}`}><Icon name="chevron-left" size={24}/></button>
+                                    <div className="flex gap-2">
+                                        <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }} className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-transform ${theme==='oled'||theme==='dark'?'bg-white/10 text-white':'bg-slate-200/50 text-slate-800'}`}><Icon name="type" size={20}/></button>
+                                    </div>
+                                </div>
+
+                                {/* Footer (Trình phát Audio) */}
+                                <div className={`absolute bottom-0 w-full pb-[calc(env(safe-area-inset-bottom,34px)+10px)] pt-10 px-6 pointer-events-auto transition-transform duration-400 ${uiVisible ? 'translate-y-0' : 'translate-y-full'}`}
+                                     style={{ background: theme === 'oled' || theme === 'dark' ? 'linear-gradient(to top, rgba(0,0,0,1) 10%, rgba(0,0,0,0.8) 50%, transparent 100%)' : 'linear-gradient(to top, rgba(255,255,255,1) 10%, rgba(255,255,255,0.8) 50%, transparent 100%)' }}
+                                >
+                                    {/* Audio Player Capsule */}
+                                    <div className={`p-1.5 pl-5 rounded-full flex items-center justify-between shadow-2xl backdrop-blur-xl ${theme === 'oled' || theme === 'dark' ? 'bg-slate-800/80 border border-slate-700' : 'bg-white/90 border border-slate-200'}`}>
+                                        <div className="flex items-center gap-4">
+                                            {isSpeaking ? (
+                                                <div className="flex items-end gap-1 h-5 w-6 justify-center text-blue-500">
+                                                    <div className="playing-bar h-2"></div><div className="playing-bar h-5"></div><div className="playing-bar h-3"></div><div className="playing-bar h-4"></div>
+                                                </div>
+                                            ) : (
+                                                <Icon name="headphones" size={24} className="opacity-50" />
+                                            )}
+                                            <div className="flex flex-col">
+                                                <span className="text-[14px] font-bold leading-tight">{isSpeaking ? 'Siri Đang đọc' : 'Nghe Sách Nói'}</span>
+                                                <span className="text-[10px] opacity-50 uppercase tracking-widest font-semibold mt-0.5">Giọng Tiếng Việt AI</span>
+                                            </div>
+                                        </div>
+                                        <button onClick={handlePlayTTS} className={`w-12 h-12 rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform ${isSpeaking ? 'bg-slate-200 text-slate-800' : 'bg-blue-600 text-white'}`}>
+                                            <Icon name={isSpeaking ? "pause" : "play"} size={20} fill="currentColor" className={isSpeaking ? "" : "ml-1"}/>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* --- BẢNG CÀI ĐẶT FONT/THEME (MODAL) --- */}
+                            {showSettings && (
+                                <div className="absolute inset-0 z-50 flex items-end justify-center pointer-events-auto">
+                                    <div className="absolute inset-0" onClick={() => setShowSettings(false)}></div>
+                                    <div className={`w-full rounded-t-[40px] p-6 slide-up-modal shadow-[0_-10px_50px_rgba(0,0,0,0.3)] ${theme === 'oled' || theme === 'dark' ? 'bg-[#1C1C1E] text-white border-t border-slate-800' : 'bg-white text-slate-900 border-t border-slate-200'} pb-[calc(env(safe-area-inset-bottom,34px)+20px)] relative z-10`}>
+                                        <div className="w-12 h-1.5 bg-slate-500/30 rounded-full mx-auto mb-8"></div>
+                                        
+                                        <h3 className="text-[11px] font-bold uppercase tracking-widest opacity-40 mb-3">Độ sáng & Chủ đề</h3>
+                                        <div className="flex justify-between gap-3 mb-8">
+                                            <button onClick={() => setTheme('light')} className={`flex-1 aspect-square rounded-[20px] bg-[#FFFFFF] border-2 flex items-center justify-center text-slate-900 font-bold text-xl shadow-sm ${theme==='light' ? 'border-blue-500' : 'border-slate-200'}`}>Aa</button>
+                                            <button onClick={() => setTheme('sepia')} className={`flex-1 aspect-square rounded-[20px] bg-[#F4ECD8] border-2 flex items-center justify-center text-[#5B4636] font-bold text-xl shadow-sm ${theme==='sepia' ? 'border-blue-500' : 'border-transparent'}`}>Aa</button>
+                                            <button onClick={() => setTheme('dark')} className={`flex-1 aspect-square rounded-[20px] bg-[#1C1C1E] border-2 flex items-center justify-center text-white font-bold text-xl shadow-sm ${theme==='dark' ? 'border-blue-500' : 'border-slate-700'}`}>Aa</button>
+                                            <button onClick={() => setTheme('oled')} className={`flex-1 aspect-square rounded-[20px] bg-[#000000] border-2 flex items-center justify-center text-white font-bold text-xl shadow-sm ${theme==='oled' ? 'border-blue-500' : 'border-slate-800'}`}>Aa</button>
+                                        </div>
+
+                                        <h3 className="text-[11px] font-bold uppercase tracking-widest opacity-40 mb-3">Kích thước chữ</h3>
+                                        <div className={`flex items-center rounded-[24px] p-2 ${theme === 'oled' || theme === 'dark' ? 'bg-[#2C2C2E]' : 'bg-slate-100'}`}>
+                                            <button onClick={() => setFontSize(Math.max(14, fontSize - 2))} className="w-16 h-14 flex items-center justify-center font-book text-lg active:opacity-50">A-</button>
+                                            <div className="flex-1 text-center font-bold text-[16px]">{fontSize}</div>
+                                            <button onClick={() => setFontSize(Math.min(36, fontSize + 2))} className="w-16 h-14 flex items-center justify-center font-book text-2xl active:opacity-50">A+</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
+                    )}
+                </div>
+            );
         }
 
-        // --- UI UTILS ---
-        function switchPanel(panelId) {
-            document.querySelectorAll('.tab-btn').forEach(b => {
-                b.classList.remove('active', 'text-white', 'border-[#3b82f6]');
-                b.classList.add('text-slate-400', 'border-transparent');
-            });
-            document.querySelectorAll('.panel-section').forEach(p => p.classList.remove('active'));
-
-            if (panelId === 'data') {
-                document.getElementById('tabData').classList.add('active', 'text-white', 'border-[#3b82f6]');
-                document.getElementById('tabData').classList.remove('text-slate-400', 'border-transparent');
-                document.getElementById('panelData').classList.add('active');
-            } else {
-                document.getElementById('tabSettings').classList.add('active', 'text-white', 'border-[#3b82f6]');
-                document.getElementById('tabSettings').classList.remove('text-slate-400', 'border-transparent');
-                document.getElementById('panelSettings').classList.add('active');
-                syncConfigToUI();
-            }
-        }
-
-        function toggleMobileSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
-
-        let toastTimeout;
-        function showToast(msg) {
-            const toast = document.getElementById('toastMsg');
-            document.getElementById('toastText').innerText = msg;
-            toast.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
-            clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => toast.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none'), 2500);
-        }
-
-        window.onload = () => {
-            syncConfigToUI(); triggerRender();
-            if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
-        };
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
