@@ -1,84 +1,135 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" class="antialiased">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Aura Reader</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Aura Reader V4</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-    
-    <!-- React & ReactDOM -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Merriweather:wght@400;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    
-    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- PDF.js Core -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
+    <!-- IndexedDB -->
+    <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.js"></script>
 
     <style>
         :root {
-            --safe-top: env(safe-area-inset-top, 47px);
-            --safe-bottom: env(safe-area-inset-bottom, 34px);
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+            
+            --ios-blur-light: rgba(255, 255, 255, 0.85);
+            --ios-blur-dark: rgba(28, 28, 30, 0.85);
         }
         
-        body { 
-            margin: 0; 
-            background-color: #000; 
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; 
+            background-color: #000;
             -webkit-tap-highlight-color: transparent;
-            user-select: none;
-            overflow: hidden;
+            overscroll-behavior-y: none;
         }
 
-        .font-ui { font-family: 'Inter', sans-serif; }
-        .font-book { font-family: 'Lora', serif; }
-        
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* Hiệu ứng phần cứng cho 120Hz */
-        .will-change-transform { will-change: transform, opacity; }
-        
-        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        .slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .font-sans { font-family: 'Inter', sans-serif; }
+        .font-serif { font-family: 'Lora', serif; }
+        .font-merri { font-family: 'Merriweather', serif; }
 
-        /* Themes */
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .bottom-sheet { transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1); }
+        .bottom-sheet-hidden { transform: translateY(100%); }
+        .bottom-sheet-visible { transform: translateY(0); }
+
+        .sidebar { transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1); }
+        .sidebar-hidden { transform: translateX(-100%); }
+        .sidebar-visible { transform: translateX(0); }
+
         .theme-light { background-color: #FFFFFF; color: #1C1C1E; }
-        .theme-sepia { background-color: #F4ECD8; color: #5B4636; }
-        .theme-dark { background-color: #1C1C1E; color: #D1D1D6; }
+        .theme-sepia { background-color: #F8F1E3; color: #5B4636; }
+        .theme-dark { background-color: #2C2C2E; color: #E5E5EA; }
         .theme-oled { background-color: #000000; color: #8E8E93; }
         
-        .theme-oled h1, .theme-oled h2 { color: #E5E5EA; }
-        .theme-dark h1, .theme-dark h2 { color: #FFFFFF; }
+        .theme-oled h1, .theme-oled h2, .theme-oled h3, .theme-oled strong { color: #E5E5EA; }
+        .theme-dark h1, .theme-dark h2, .theme-dark h3, .theme-dark strong { color: #FFFFFF; }
+        .theme-sepia h1, .theme-sepia h2, .theme-sepia h3, .theme-sepia strong { color: #3A2A1E; }
 
-        /* Audio Bars */
-        .playing-bar {
-            width: 3px; background-color: currentColor; border-radius: 3px;
-            animation: bounce 1s infinite ease-in-out;
-            transform-origin: bottom;
+        .reader-content p { margin-bottom: 1.5em; text-align: justify; }
+        .reader-content.align-left p { text-align: left; }
+        
+        /* Cấu trúc Lật trang Đích thực (Multi-column) */
+        .paged-container {
+            width: 100%;
+            height: calc(100vh - var(--safe-top) - var(--safe-bottom));
+            overflow-x: hidden;
+            overflow-y: hidden;
+            position: relative;
         }
-        .playing-bar:nth-child(1) { animation-delay: 0s; }
-        .playing-bar:nth-child(2) { animation-delay: 0.2s; }
-        .playing-bar:nth-child(3) { animation-delay: 0.4s; }
-        .playing-bar:nth-child(4) { animation-delay: 0.1s; }
-        @keyframes bounce { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
+
+        .paged-content {
+            columns: 100vw auto;
+            column-gap: 0;
+            height: 100%;
+            box-sizing: border-box;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            /* Tránh cắt dòng ngang nửa chữ */
+            orphans: 2;
+            widows: 2;
+        }
+
+        .paged-content > * {
+            /* Fix lỗi vỡ layout cột */
+            max-width: 100%;
+            break-inside: auto;
+        }
+        
+        .paged-content h2 { break-before: column; } /* Header luôn đầu trang */
+
+        .glass-light { background: var(--ios-blur-light); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid rgba(0,0,0,0.1); border-bottom: 0.5px solid rgba(0,0,0,0.1); }
+        .glass-dark { background: var(--ios-blur-dark); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid rgba(255,255,255,0.1); border-bottom: 0.5px solid rgba(255,255,255,0.1); }
+        
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: #fff; border-radius: 50%; width: 36px; height: 36px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .fade-enter { opacity: 0; animation: fadeIn 0.3s forwards; }
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        /* Highlight từ đang đọc TTS */
+        .tts-highlight { background-color: rgba(0, 122, 255, 0.2); border-radius: 4px; padding: 2px 0; }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="font-sans text-slate-900 bg-black">
+    <div id="root" class="w-full h-full"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect } = React;
+
+        const DB = {
+            async saveBook(bookData) {
+                const books = await this.getBooks();
+                const newBooks = [bookData, ...books.filter(b => b.id !== bookData.id)];
+                await idbKeyval.set('aura_books_v4', newBooks);
+            },
+            async getBooks() { return await idbKeyval.get('aura_books_v4') || []; },
+            async deleteBook(id) {
+                const books = await this.getBooks();
+                await idbKeyval.set('aura_books_v4', books.filter(b => b.id !== id));
+                await idbKeyval.del(`content_${id}`);
+            },
+            async saveChapters(bookId, chapters) { await idbKeyval.set(`content_${bookId}`, chapters); },
+            async getChapters(bookId) { return await idbKeyval.get(`content_${bookId}`); },
+            async saveProgress(bookId, data) { await idbKeyval.set(`prog_${bookId}`, data); },
+            async getProgress(bookId) { return await idbKeyval.get(`prog_${bookId}`); }
+        };
 
         const Icon = ({ name, size = 24, className = '', color = 'currentColor', fill="none" }) => {
             const iconRef = useRef(null);
@@ -86,7 +137,7 @@
                 if (iconRef.current && window.lucide) {
                     iconRef.current.innerHTML = '';
                     const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = `<i data-lucide="${name}" style="width:${size}px; height:${size}px; stroke:${color}; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: ${fill};"></i>`;
+                    tempDiv.innerHTML = `<i data-lucide="${name}" style="width:${size}px; height:${size}px; stroke:${color}; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: ${fill};"></i>`;
                     iconRef.current.appendChild(tempDiv.firstChild);
                     window.lucide.createIcons({ root: iconRef.current });
                 }
@@ -94,263 +145,549 @@
             return <span ref={iconRef} className={`inline-flex items-center justify-center ${className}`}></span>;
         };
 
-        const INITIAL_BOOK = { 
-            id: 'mock-1', 
-            title: "Sapiens: Lược Sử Loài Người", 
-            author: "Yuval Noah Harari", 
-            cover: "bg-gradient-to-br from-slate-800 to-slate-900", 
-            type: "MẪU",
-            content: `Khoảng 14 tỷ năm trước, vật chất, năng lượng, thời gian và không gian đã xuất hiện trong một điểm kỳ dị được gọi là Vụ nổ lớn (Big Bang). Câu chuyện về những đặc tính cơ bản của vũ trụ chúng ta được gọi là vật lý học.\n\nKhoảng 300.000 năm sau khi xuất hiện, vật chất và năng lượng bắt đầu kết hợp thành những cấu trúc phức tạp, được gọi là các nguyên tử, sau đó chúng lại kết hợp thành các phân tử. Câu chuyện về các nguyên tử, phân tử, và các tương tác của chúng được gọi là hóa học.\n\nKhoảng 3,8 tỷ năm trước, trên một hành tinh được gọi là Trái Đất, các phân tử nhất định đã kết hợp với nhau để tạo thành các cấu trúc đặc biệt lớn và phức tạp gọi là các sinh vật. Câu chuyện về các sinh vật được gọi là sinh học.\n\nKhoảng 70.000 năm trước, các sinh vật thuộc loài Homo sapiens (Người tinh khôn) bắt đầu hình thành nên các cấu trúc thậm chí còn phức tạp hơn, được gọi là các nền văn hóa. Sự phát triển tiếp theo của những nền văn hóa con người này được gọi là lịch sử.`
+        const FullScreenLoader = ({ text, subText, progress }) => (
+            <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center fade-enter text-white">
+                <div className="spinner mb-6"></div>
+                <h2 className="text-xl font-bold mb-2">{text}</h2>
+                {subText && <p className="text-slate-400 text-sm mb-4 max-w-[80%] text-center">{subText}</p>}
+                {progress !== undefined && (
+                    <div className="w-64 h-2 bg-slate-800 rounded-full overflow-hidden mt-4">
+                        <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                    </div>
+                )}
+            </div>
+        );
+
+        // THUẬT TOÁN SỬA LỖI DẤU CÂU (NFD -> NFC)
+        const cleanVietnameseText = (rawText) => {
+            if (!rawText) return "";
+            let text = rawText.normalize('NFC'); // Chuẩn hóa Unicode, gộp dấu bị tách
+            
+            // Xử lý một số trường hợp PDF cố tình chèn khoảng trắng giữa chữ và dấu
+            // VD: "đê` u" -> "đều", "nê´ u" -> "nếu"
+            const decomposedMap = {
+                '´': '\u0301', '`': '\u0300', '?': '\u0309', '~': '\u0303', '.': '\u0323' // Fallbacks
+            };
+            
+            // Xóa khoảng trắng thừa trước các dấu câu phổ biến
+            text = text.replace(/\s+([.,!?:;])/g, '$1');
+            
+            // Dọn dẹp khoảng trắng kép
+            text = text.replace(/ {2,}/g, ' ');
+            return text;
+        };
+
+        const parsePDFOutline = async (pdfDoc) => {
+            try {
+                const outline = await pdfDoc.getOutline();
+                if (!outline || outline.length === 0) return null;
+                const map = [];
+                const processItems = async (items) => {
+                    for (const item of items) {
+                        let pageIndex = -1;
+                        if (typeof item.dest === 'string') pageIndex = await pdfDoc.getPageIndex(await pdfDoc.getDestination(item.dest));
+                        else if (Array.isArray(item.dest)) {
+                            try { pageIndex = await pdfDoc.getPageIndex(item.dest[0]); } catch (e) {}
+                        }
+                        if (pageIndex !== -1) map.push({ title: item.title, pageIndex });
+                        if (item.items && item.items.length > 0) await processItems(item.items);
+                    }
+                };
+                await processItems(outline);
+                map.sort((a, b) => a.pageIndex - b.pageIndex);
+                const uniqueMap = [];
+                map.forEach(ch => { if (uniqueMap.length === 0 || uniqueMap[uniqueMap.length-1].pageIndex !== ch.pageIndex) uniqueMap.push(ch); });
+                return uniqueMap.length > 0 ? uniqueMap : null;
+            } catch (err) { return null; }
+        };
+
+        const processFile = async (file, onProgress) => {
+            const ext = file.name.split('.').pop().toLowerCase();
+            const bookId = 'book_' + Date.now();
+            let meta = { id: bookId, title: file.name.replace(/\.(pdf|txt)$/i, ''), author: "Unknown", type: ext.toUpperCase(), addedAt: Date.now(), cover: ['bg-gradient-to-br from-indigo-900 to-slate-900', 'bg-gradient-to-br from-emerald-900 to-slate-900', 'bg-gradient-to-br from-rose-900 to-amber-900'][Math.floor(Math.random() * 3)] };
+            let chapters = [];
+
+            if (ext === 'txt') {
+                onProgress({ text: "Đang phân tích TXT..." });
+                let content = await file.text();
+                content = cleanVietnameseText(content); // Clean text immediately
+                
+                const regex = /(?:^|\n)(?:\s*)(Chương|Hồi|Quyển|Tiết|Chapter)(?:\s+)([\d\w]+)[^\n]*/gi;
+                let matches = [...content.matchAll(regex)];
+                
+                if (matches.length === 0) {
+                    const C = 15000;
+                    for (let i = 0; i < content.length; i += C) chapters.push({ id: `ch_${i}`, title: `Phần ${Math.floor(i/C) + 1}`, content: content.slice(i, i + C), order: Math.floor(i/C) });
+                } else {
+                    for (let i = 0; i < matches.length; i++) {
+                        const startIndex = matches[i].index;
+                        const endIndex = (i + 1 < matches.length) ? matches[i + 1].index : content.length;
+                        let text = content.slice(startIndex, endIndex).trim();
+                        text = text.replace(matches[i][0].trim(), '').trim(); // Remove title from body
+                        chapters.push({ id: `ch_${i}`, title: matches[i][0].trim(), content: text, order: i });
+                    }
+                }
+            } 
+            else if (ext === 'pdf') {
+                onProgress({ text: "Khởi động lõi PDF...", progress: 5 });
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await window.pdfjsLib.getDocument(new Uint8Array(arrayBuffer)).promise;
+                const total = pdfDoc.numPages;
+                
+                onProgress({ text: "Đang đọc Mục Lục (TOC)...", progress: 15 });
+                const outlineMap = await parsePDFOutline(pdfDoc);
+                const pagesText = [];
+                
+                for (let i = 1; i <= total; i++) {
+                    if (i % 10 === 0) onProgress({ text: `Xử lý trang ${i}/${total}`, progress: 15 + (i/total)*70 });
+                    try {
+                        const page = await pdfDoc.getPage(i);
+                        const textContent = await page.getTextContent();
+                        let lastY = -1; let str = '';
+                        textContent.items.forEach(item => {
+                            if (lastY !== -1 && Math.abs(item.transform[5] - lastY) > (item.height * 1.5)) str += '\n';
+                            str += item.str + ' ';
+                            lastY = item.transform[5];
+                        });
+                        // Áp dụng thuật toán Fix Dấu câu ở đây
+                        pagesText.push(cleanVietnameseText(str.trim()));
+                    } catch (e) { pagesText.push(""); }
+                }
+
+                onProgress({ text: "Đang ráp nối cấu trúc sách...", progress: 90 });
+                if (outlineMap && outlineMap.length > 0) {
+                    for (let i = 0; i < outlineMap.length; i++) {
+                        const start = outlineMap[i].pageIndex;
+                        const end = outlineMap[i+1] ? outlineMap[i+1].pageIndex : total;
+                        const content = pagesText.slice(start, end).join('\n\n');
+                        if (content.trim()) chapters.push({ id: `ch_${i}`, title: outlineMap[i].title, content, order: i });
+                    }
+                } else {
+                    const CHUNK = 30;
+                    for (let i = 0; i < total; i += CHUNK) {
+                        chapters.push({ id: `ch_${i}`, title: `Phần ${Math.floor(i/CHUNK) + 1}`, content: pagesText.slice(i, i + CHUNK).join('\n\n'), order: Math.floor(i/CHUNK) });
+                    }
+                }
+            }
+
+            await DB.saveChapters(meta.id, chapters);
+            await DB.saveBook(meta);
+            return meta;
         };
 
         function App() {
-            const [view, setView] = useState('library'); 
-            const [books, setBooks] = useState(() => {
-                const saved = localStorage.getItem('aura_books');
-                return saved ? JSON.parse(saved) : [INITIAL_BOOK];
-            });
+            const [books, setBooks] = useState([]);
             const [activeBook, setActiveBook] = useState(null);
-            
-            // Cài đặt Reader
-            const [theme, setTheme] = useState(() => localStorage.getItem('aura_theme') || 'oled');
-            const [fontSize, setFontSize] = useState(() => parseInt(localStorage.getItem('aura_font')) || 18);
-            const [uiVisible, setUiVisible] = useState(true);
-            const [showSettings, setShowSettings] = useState(false);
+            const [sys, setSys] = useState({ isLoading: true, text: "Đang nạp dữ liệu..." });
+            const fileRef = useRef(null);
 
-            // TTS State
-            const [isSpeaking, setIsSpeaking] = useState(false);
-            const synth = window.speechSynthesis;
-            const fileInputRef = useRef(null);
-
-            useEffect(() => { localStorage.setItem('aura_theme', theme); }, [theme]);
-            useEffect(() => { localStorage.setItem('aura_font', fontSize); }, [fontSize]);
-            useEffect(() => { localStorage.setItem('aura_books', JSON.stringify(books)); }, [books]);
-
-            // Dọn dẹp TTS khi unmount
             useEffect(() => {
-                return () => { if (synth.speaking) synth.cancel(); }
+                DB.getBooks().then(res => { setBooks(res); setSys({isLoading: false}); }).catch(() => setSys({isLoading: false}));
             }, []);
 
-            // --- XỬ LÝ NHẬP FILE TEXT ---
-            const handleFileUpload = (e) => {
-                const file = e.target.files[0];
+            const onUpload = async (e) => {
+                const file = e.target.files?.[0];
                 if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (evt) => {
-                    const content = evt.target.result;
-                    const newBook = {
-                        id: 'book-' + Date.now(),
-                        title: file.name.replace('.txt', ''),
-                        author: "Tài liệu nạp vào",
-                        cover: "bg-gradient-to-br from-indigo-500 to-purple-700",
-                        type: "TXT",
-                        content: content
-                    };
-                    setBooks([newBook, ...books]);
-                };
-                reader.readAsText(file);
-            };
-
-            const toggleUI = (e) => {
-                // Chỉ toggle UI nếu bấm vào nền (không phải bấm vào nút/văn bản đang bôi đen)
-                if (showSettings) {
-                    setShowSettings(false);
-                    return;
-                }
-                setUiVisible(!uiVisible);
-            };
-
-            const handlePlayTTS = (e) => {
-                e.stopPropagation();
-                if (!activeBook) return;
-
-                if (isSpeaking) {
-                    synth.pause();
-                    setIsSpeaking(false);
-                } else if (synth.paused) {
-                    synth.resume();
-                    setIsSpeaking(true);
-                } else {
-                    synth.cancel();
-                    const utterance = new SpeechSynthesisUtterance(activeBook.content.substring(0, 1000)); // Đọc thử 1000 ký tự đầu
-                    utterance.lang = 'vi-VN';
-                    utterance.rate = 0.95;
-                    utterance.onend = () => setIsSpeaking(false);
-                    synth.speak(utterance);
-                    setIsSpeaking(true);
-                }
-            };
-
-            const closeReader = (e) => {
-                e.stopPropagation();
-                synth.cancel();
-                setIsSpeaking(false);
-                setActiveBook(null);
-                setView('library');
-            };
-
-            const deleteBook = (e, id) => {
-                e.stopPropagation();
-                setBooks(books.filter(b => b.id !== id));
+                e.target.value = '';
+                try {
+                    setSys({ isLoading: true, text: "Chuẩn bị...", progress: 0 });
+                    const newBook = await processFile(file, st => setSys(p => ({ ...p, ...st })));
+                    setBooks(p => [newBook, ...p]);
+                } catch (error) {
+                    alert("Lỗi đọc file: " + error.message);
+                } finally { setSys({ isLoading: false }); }
             };
 
             return (
-                <div className="w-full h-full md:max-w-[428px] mx-auto bg-black md:rounded-[40px] md:shadow-2xl overflow-hidden relative font-ui md:border-[8px] border-slate-800 flex flex-col">
+                <div className="w-full h-full relative text-slate-900 bg-[#F2F2F7] dark:bg-black">
+                    {sys.isLoading && <FullScreenLoader {...sys} />}
                     
-                    {/* =========================================
-                        LIBRARY VIEW
-                        ========================================= */}
-                    {view === 'library' && (
-                        <div className="flex-1 flex flex-col bg-[#F2F2F7] fade-in">
-                            <div className="pt-[env(safe-area-inset-top,47px)] px-6 pb-2 bg-[#F2F2F7]/90 backdrop-blur-md z-10 sticky top-0">
-                                <div className="flex justify-between items-center mt-4">
-                                    <h1 className="text-[32px] font-black text-slate-900 tracking-tight">Thư viện</h1>
-                                    <button onClick={() => fileInputRef.current.click()} className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-md active:scale-90 transition-transform">
-                                        <Icon name="plus" size={20}/>
-                                    </button>
-                                    <input type="file" accept=".txt" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
-                                </div>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto hide-scrollbar px-6 pb-32">
-                                {books.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center h-64 opacity-50">
-                                        <Icon name="book-x" size={48} className="mb-4"/>
-                                        <p>Chưa có sách nào.</p>
+                    {!activeBook ? (
+                        <div className="w-full h-full overflow-y-auto pt-[var(--safe-top)] px-[var(--safe-left)] pr-[var(--safe-right)]">
+                            <div className="max-w-6xl mx-auto px-6 py-8">
+                                <div className="flex justify-between items-end mb-10">
+                                    <div>
+                                        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">Thư viện</h1>
+                                        <p className="text-slate-500 font-medium mt-1">Đã lưu trữ {books.length} cuốn</p>
                                     </div>
-                                ) : (
-                                    <div className="grid grid-cols-2 gap-x-4 gap-y-6 mt-4">
-                                        {books.map(book => (
-                                            <div key={book.id} className="flex flex-col cursor-pointer group relative" onClick={() => { setActiveBook(book); setView('reader'); setUiVisible(true); }}>
-                                                <div className={`w-full aspect-[2/3] ${book.cover} rounded-[16px] shadow-[0_8px_20px_rgba(0,0,0,0.12)] mb-3 flex items-center justify-center relative overflow-hidden group-active:scale-95 transition-transform duration-300`}>
-                                                    <span className="absolute top-2 right-2 bg-black/30 backdrop-blur-md px-2 py-1 rounded-md text-[9px] text-white font-bold uppercase tracking-wider">{book.type}</span>
-                                                    <Icon name={book.type === 'TXT' ? "file-text" : "book-open"} size={36} color="white" className="opacity-30"/>
-                                                </div>
-                                                <h3 className="font-bold text-[14px] text-slate-800 leading-snug line-clamp-2">{book.title}</h3>
-                                                <p className="text-[12px] text-slate-500 mt-1 line-clamp-1">{book.author}</p>
-                                                
-                                                {book.id !== 'mock-1' && (
-                                                    <button onClick={(e) => deleteBook(e, book.id)} className="absolute top-2 left-2 w-8 h-8 bg-black/40 backdrop-blur-md rounded-full text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Icon name="trash-2" size={14}/>
-                                                    </button>
-                                                )}
+                                    <button onClick={() => fileRef.current?.click()} className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white w-12 h-12 md:w-auto md:px-6 rounded-full flex items-center justify-center gap-2 shadow-lg transition-all">
+                                        <Icon name="plus" size={24} />
+                                        <span className="hidden md:inline font-bold">Thêm Sách</span>
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-10 pb-20">
+                                    {books.map(b => (
+                                        <div key={b.id} className="group cursor-pointer" onClick={() => setActiveBook(b)}>
+                                            <div className={`w-full aspect-[2/3] ${b.cover} rounded-xl shadow-md group-hover:shadow-xl group-active:scale-95 transition-all relative overflow-hidden flex flex-col justify-center`}>
+                                                <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-md px-1.5 py-0.5 rounded text-[9px] font-bold text-white uppercase">{b.type}</div>
+                                                <div className="px-3 text-center text-white/90 font-serif font-bold leading-tight drop-shadow-md line-clamp-4">{b.title}</div>
+                                                <button onClick={(e) => { e.stopPropagation(); DB.deleteBook(b.id).then(()=> setBooks(books.filter(x=>x.id!==b.id))); }} className="absolute bottom-2 right-2 w-8 h-8 bg-red-500/90 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"><Icon name="trash-2" size={16}/></button>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="absolute bottom-0 w-full pb-[env(safe-area-inset-bottom,20px)] pt-3 px-6 z-20">
-                                <div className="bg-white/95 backdrop-blur-xl border border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.08)] rounded-[28px] flex justify-around p-1">
-                                    <button className="flex flex-col items-center p-2.5 w-20 text-blue-600 bg-blue-50/50 rounded-[20px]">
-                                        <Icon name="library" size={24} fill="currentColor" className="opacity-20 absolute"/>
-                                        <Icon name="library" size={22}/>
-                                        <span className="text-[10px] font-bold mt-1">Sách</span>
-                                    </button>
-                                    <button className="flex flex-col items-center p-2.5 w-20 text-slate-400">
-                                        <Icon name="headphones" size={22}/>
-                                        <span className="text-[10px] font-semibold mt-1">Nghe</span>
-                                    </button>
-                                    <button className="flex flex-col items-center p-2.5 w-20 text-slate-400">
-                                        <Icon name="settings" size={22}/>
-                                        <span className="text-[10px] font-semibold mt-1">Cài đặt</span>
-                                    </button>
+                                            <div className="mt-3"><h3 className="font-bold text-sm line-clamp-2 dark:text-white group-hover:text-blue-500">{b.title}</h3></div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
+                            <input type="file" accept=".txt,.pdf" ref={fileRef} onChange={onUpload} className="hidden" />
                         </div>
-                    )}
-
-                    {/* =========================================
-                        READER VIEW (GIAO DIỆN ĐỌC SÁCH)
-                        ========================================= */}
-                    {view === 'reader' && activeBook && (
-                        <div className={`flex-1 flex flex-col relative transition-colors duration-500 theme-${theme}`}>
-                            
-                            {/* Khu vực chạm để toggle UI */}
-                            <div className="absolute inset-0 z-0" onClick={toggleUI}></div>
-
-                            {/* NỘI DUNG SÁCH */}
-                            <div className="absolute inset-0 overflow-y-auto hide-scrollbar pt-[env(safe-area-inset-top,60px)] pb-[150px] px-6 z-10 pointer-events-none">
-                                <div className="max-w-[600px] mx-auto pointer-events-auto selection:bg-blue-500/30">
-                                    <h1 className="font-book font-bold text-3xl mb-2 mt-4 leading-tight">{activeBook.title}</h1>
-                                    <p className="font-ui text-sm uppercase tracking-widest opacity-40 mb-12">{activeBook.author}</p>
-                                    
-                                    <div className="font-book leading-[1.8] text-justify" style={{ fontSize: `${fontSize}px` }}>
-                                        {activeBook.content.split('\n').map((para, idx) => (
-                                            para.trim() ? <p key={idx} className="mb-6 indent-6">{para.trim()}</p> : null
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* --- UI OVERLAY (HEADER & FOOTER) --- */}
-                            <div className={`absolute inset-0 pointer-events-none z-20 will-change-transform transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${uiVisible ? 'opacity-100' : 'opacity-0'}`}>
-                                
-                                {/* Header */}
-                                <div className={`absolute top-0 w-full pt-[env(safe-area-inset-top,47px)] pb-4 px-4 flex justify-between items-center pointer-events-auto transition-transform duration-400 ${uiVisible ? 'translate-y-0' : '-translate-y-full'}`}
-                                     style={{ background: theme === 'oled' || theme === 'dark' ? 'linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, transparent 100%)' : 'linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, transparent 100%)' }}
-                                >
-                                    <button onClick={closeReader} className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-transform ${theme==='oled'||theme==='dark'?'bg-white/10 text-white':'bg-slate-200/50 text-slate-800'}`}><Icon name="chevron-left" size={24}/></button>
-                                    <div className="flex gap-2">
-                                        <button onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }} className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-transform ${theme==='oled'||theme==='dark'?'bg-white/10 text-white':'bg-slate-200/50 text-slate-800'}`}><Icon name="type" size={20}/></button>
-                                    </div>
-                                </div>
-
-                                {/* Footer (Trình phát Audio) */}
-                                <div className={`absolute bottom-0 w-full pb-[calc(env(safe-area-inset-bottom,34px)+10px)] pt-10 px-6 pointer-events-auto transition-transform duration-400 ${uiVisible ? 'translate-y-0' : 'translate-y-full'}`}
-                                     style={{ background: theme === 'oled' || theme === 'dark' ? 'linear-gradient(to top, rgba(0,0,0,1) 10%, rgba(0,0,0,0.8) 50%, transparent 100%)' : 'linear-gradient(to top, rgba(255,255,255,1) 10%, rgba(255,255,255,0.8) 50%, transparent 100%)' }}
-                                >
-                                    {/* Audio Player Capsule */}
-                                    <div className={`p-1.5 pl-5 rounded-full flex items-center justify-between shadow-2xl backdrop-blur-xl ${theme === 'oled' || theme === 'dark' ? 'bg-slate-800/80 border border-slate-700' : 'bg-white/90 border border-slate-200'}`}>
-                                        <div className="flex items-center gap-4">
-                                            {isSpeaking ? (
-                                                <div className="flex items-end gap-1 h-5 w-6 justify-center text-blue-500">
-                                                    <div className="playing-bar h-2"></div><div className="playing-bar h-5"></div><div className="playing-bar h-3"></div><div className="playing-bar h-4"></div>
-                                                </div>
-                                            ) : (
-                                                <Icon name="headphones" size={24} className="opacity-50" />
-                                            )}
-                                            <div className="flex flex-col">
-                                                <span className="text-[14px] font-bold leading-tight">{isSpeaking ? 'Siri Đang đọc' : 'Nghe Sách Nói'}</span>
-                                                <span className="text-[10px] opacity-50 uppercase tracking-widest font-semibold mt-0.5">Giọng Tiếng Việt AI</span>
-                                            </div>
-                                        </div>
-                                        <button onClick={handlePlayTTS} className={`w-12 h-12 rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform ${isSpeaking ? 'bg-slate-200 text-slate-800' : 'bg-blue-600 text-white'}`}>
-                                            <Icon name={isSpeaking ? "pause" : "play"} size={20} fill="currentColor" className={isSpeaking ? "" : "ml-1"}/>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* --- BẢNG CÀI ĐẶT FONT/THEME (MODAL) --- */}
-                            {showSettings && (
-                                <div className="absolute inset-0 z-50 flex items-end justify-center pointer-events-auto">
-                                    <div className="absolute inset-0" onClick={() => setShowSettings(false)}></div>
-                                    <div className={`w-full rounded-t-[40px] p-6 slide-up-modal shadow-[0_-10px_50px_rgba(0,0,0,0.3)] ${theme === 'oled' || theme === 'dark' ? 'bg-[#1C1C1E] text-white border-t border-slate-800' : 'bg-white text-slate-900 border-t border-slate-200'} pb-[calc(env(safe-area-inset-bottom,34px)+20px)] relative z-10`}>
-                                        <div className="w-12 h-1.5 bg-slate-500/30 rounded-full mx-auto mb-8"></div>
-                                        
-                                        <h3 className="text-[11px] font-bold uppercase tracking-widest opacity-40 mb-3">Độ sáng & Chủ đề</h3>
-                                        <div className="flex justify-between gap-3 mb-8">
-                                            <button onClick={() => setTheme('light')} className={`flex-1 aspect-square rounded-[20px] bg-[#FFFFFF] border-2 flex items-center justify-center text-slate-900 font-bold text-xl shadow-sm ${theme==='light' ? 'border-blue-500' : 'border-slate-200'}`}>Aa</button>
-                                            <button onClick={() => setTheme('sepia')} className={`flex-1 aspect-square rounded-[20px] bg-[#F4ECD8] border-2 flex items-center justify-center text-[#5B4636] font-bold text-xl shadow-sm ${theme==='sepia' ? 'border-blue-500' : 'border-transparent'}`}>Aa</button>
-                                            <button onClick={() => setTheme('dark')} className={`flex-1 aspect-square rounded-[20px] bg-[#1C1C1E] border-2 flex items-center justify-center text-white font-bold text-xl shadow-sm ${theme==='dark' ? 'border-blue-500' : 'border-slate-700'}`}>Aa</button>
-                                            <button onClick={() => setTheme('oled')} className={`flex-1 aspect-square rounded-[20px] bg-[#000000] border-2 flex items-center justify-center text-white font-bold text-xl shadow-sm ${theme==='oled' ? 'border-blue-500' : 'border-slate-800'}`}>Aa</button>
-                                        </div>
-
-                                        <h3 className="text-[11px] font-bold uppercase tracking-widest opacity-40 mb-3">Kích thước chữ</h3>
-                                        <div className={`flex items-center rounded-[24px] p-2 ${theme === 'oled' || theme === 'dark' ? 'bg-[#2C2C2E]' : 'bg-slate-100'}`}>
-                                            <button onClick={() => setFontSize(Math.max(14, fontSize - 2))} className="w-16 h-14 flex items-center justify-center font-book text-lg active:opacity-50">A-</button>
-                                            <div className="flex-1 text-center font-bold text-[16px]">{fontSize}</div>
-                                            <button onClick={() => setFontSize(Math.min(36, fontSize + 2))} className="w-16 h-14 flex items-center justify-center font-book text-2xl active:opacity-50">A+</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                        </div>
+                    ) : (
+                        <ReaderView book={activeBook} onClose={() => setActiveBook(null)} />
                     )}
                 </div>
+            );
+        }
+
+        function ReaderView({ book, onClose }) {
+            const [chapters, setChapters] = useState([]);
+            const [chIdx, setChIdx] = useState(0);
+            const [isLoading, setIsLoading] = useState(true);
+            const [uiVisible, setUiVisible] = useState(true);
+            const [activePanel, setActivePanel] = useState(null); // 'toc', 'settings', null
+            
+            // Settings
+            const getSet = (k,d) => { try{ return localStorage.getItem(k)||d; }catch(e){return d;} };
+            const [theme, setTheme] = useState(getSet('ar_theme','light'));
+            const [fontFam, setFontFam] = useState(getSet('ar_font','font-serif'));
+            const [fontSize, setFontSize] = useState(parseInt(getSet('ar_size', 20)));
+            const [lineH, setLineH] = useState(parseFloat(getSet('ar_lh', 1.8)));
+            const [mode, setMode] = useState(getSet('ar_mode', 'paged')); // 'scroll' or 'paged'
+            
+            // Paging State
+            const contentRef = useRef(null);
+            const containerRef = useRef(null);
+            const [totalPages, setTotalPages] = useState(1);
+            const [currentPage, setCurrentPage] = useState(0);
+            const [searchTOC, setSearchTOC] = useState("");
+            const [autoScroll, setAutoScroll] = useState(false);
+
+            // Tải dữ liệu
+            useEffect(() => {
+                DB.getChapters(book.id).then(async chaps => {
+                    if(!chaps) return setIsLoading(false);
+                    setChapters(chaps.sort((a,b)=>a.order-b.order));
+                    const prog = await DB.getProgress(book.id);
+                    if(prog && prog.chIdx < chaps.length) {
+                        setChIdx(prog.chIdx);
+                        if (mode === 'scroll') {
+                            setTimeout(() => { if(containerRef.current) containerRef.current.scrollTop = prog.scroll || 0; }, 100);
+                        } else {
+                            setCurrentPage(prog.page || 0);
+                        }
+                    }
+                    setIsLoading(false);
+                });
+            }, []);
+
+            // Lưu Settings
+            useEffect(() => {
+                ['ar_theme','ar_font','ar_size','ar_lh','ar_mode'].forEach((k, i) => {
+                    try{ localStorage.setItem(k, [theme, fontFam, fontSize, lineH, mode][i]); }catch(e){}
+                });
+            }, [theme, fontFam, fontSize, lineH, mode]);
+
+            // THUẬT TOÁN TÍNH TRANG (PAGED MODE)
+            const calculatePages = useCallback(() => {
+                if (mode !== 'paged' || !contentRef.current || !containerRef.current) return;
+                
+                // Chiều rộng tổng của content sinh ra bởi multi-column
+                const totalWidth = contentRef.current.scrollWidth;
+                // Chiều rộng khung nhìn
+                const viewWidth = containerRef.current.clientWidth;
+                
+                let pages = Math.ceil(totalWidth / viewWidth);
+                if (pages < 1) pages = 1;
+                
+                setTotalPages(pages);
+                // Giữ trang hiện tại ko vượt quá tổng
+                if (currentPage >= pages) setCurrentPage(pages - 1);
+            }, [fontSize, lineH, fontFam, chIdx, mode, currentPage]);
+
+            // Resize Observer để tính lại trang khi xoay màn hình
+            useLayoutEffect(() => {
+                if(mode !== 'paged') return;
+                const observer = new ResizeObserver(() => calculatePages());
+                if(containerRef.current) observer.observe(containerRef.current);
+                
+                // Chờ DOM render xong chữ để tính scrollWidth chuẩn
+                const timer = setTimeout(() => calculatePages(), 150);
+                return () => { observer.disconnect(); clearTimeout(timer); };
+            }, [calculatePages, chIdx, mode, chapters]);
+
+            // Logic Auto Scroll
+            useEffect(() => {
+                let interval;
+                if (autoScroll && mode === 'scroll' && containerRef.current) {
+                    interval = setInterval(() => {
+                        containerRef.current.scrollBy({ top: 1, behavior: 'auto' });
+                    }, 20); // Tốc độ cuộn 20ms/pixel
+                }
+                return () => clearInterval(interval);
+            }, [autoScroll, mode]);
+
+            // Lưu Progress
+            const saveProg = (data) => DB.saveProgress(book.id, { chIdx, ...data });
+
+            // Điều hướng
+            const changeCh = (idx) => {
+                if (idx >= 0 && idx < chapters.length) {
+                    setChIdx(idx);
+                    setCurrentPage(0);
+                    if(containerRef.current) containerRef.current.scrollTop = 0;
+                    setActivePanel(null);
+                    saveProg({ scroll: 0, page: 0, chIdx: idx });
+                }
+            };
+
+            const turnPage = (dir) => {
+                if (dir === 1) { // Tới
+                    if (currentPage < totalPages - 1) {
+                        setCurrentPage(p => p + 1);
+                        saveProg({ page: currentPage + 1 });
+                    }
+                    else changeCh(chIdx + 1); // Hết trang nhảy qua chương mới
+                } else { // Lùi
+                    if (currentPage > 0) {
+                        setCurrentPage(p => p - 1);
+                        saveProg({ page: currentPage - 1 });
+                    }
+                    else if (chIdx > 0) changeCh(chIdx - 1);
+                }
+            };
+
+            // Vùng chạm lật trang
+            const handleTap = (e) => {
+                const w = window.innerWidth;
+                const x = e.clientX;
+                if (activePanel) return setActivePanel(null);
+                
+                if (mode === 'paged') {
+                    if (x < w * 0.25) turnPage(-1); // 25% trái
+                    else if (x > w * 0.75) turnPage(1); // 25% phải
+                    else setUiVisible(!uiVisible); // Ở giữa
+                } else {
+                    setUiVisible(!uiVisible);
+                }
+            };
+
+            const estReadingTime = useMemo(() => {
+                if(!chapters[chIdx]) return 0;
+                const words = chapters[chIdx].content.split(/\s+/).length;
+                return Math.ceil(words / 250); // 250 từ/phút
+            }, [chIdx, chapters]);
+
+            if (isLoading) return <FullScreenLoader text="Đang mở sách..." />;
+            const ch = chapters[chIdx];
+
+            return (
+                <div className={`w-full h-full relative theme-${theme} flex flex-col transition-colors duration-300`}>
+                    
+                    {/* KHU VỰC ĐỌC SÁCH CHÍNH */}
+                    <div 
+                        ref={containerRef}
+                        className={`flex-1 w-full hide-scroll relative ${mode === 'scroll' ? 'overflow-y-auto' : 'overflow-hidden paged-container'}`}
+                        onClick={handleTap}
+                        onScroll={(e) => mode === 'scroll' && saveProg({scroll: e.target.scrollTop})}
+                    >
+                        <div 
+                            ref={contentRef}
+                            className={`
+                                reader-content
+                                ${fontFam}
+                                ${mode === 'scroll' ? 'max-w-3xl mx-auto px-6 pt-[calc(var(--safe-top)+100px)] pb-32' : 'paged-content pt-[calc(var(--safe-top)+60px)] px-6 sm:px-12'}
+                            `} 
+                            style={{ 
+                                fontSize: `${fontSize}px`, 
+                                lineHeight: lineH,
+                                transform: mode === 'paged' ? `translateX(-${currentPage * containerRef.current?.clientWidth}px)` : 'none',
+                                // Fix column width properly in inline style for React recalculation
+                                columnWidth: mode === 'paged' ? '100vw' : 'auto'
+                            }}
+                        >
+                            <h2 className={`font-bold text-3xl md:text-4xl mb-8 pb-4 opacity-90 leading-snug ${mode==='paged'?'border-b-2 border-current border-opacity-10':''}`}>
+                                {ch.title}
+                            </h2>
+                            {ch.content.split('\n').map((p, i) => {
+                                const txt = p.trim();
+                                if(!txt) return null;
+                                return <p key={i} className="indent-8 text-justify opacity-[0.85]">{txt}</p>;
+                            })}
+                            
+                            {/* Phân trang tự nhiên (Mode Scroll) */}
+                            {mode === 'scroll' && (
+                                <div className="mt-16 flex justify-between pt-8 border-t border-current border-opacity-10">
+                                    <button onClick={(e) => { e.stopPropagation(); changeCh(chIdx-1); }} disabled={chIdx===0} className="px-6 py-3 font-semibold opacity-70 disabled:opacity-20 active:bg-current active:bg-opacity-10 rounded-xl">Chương trước</button>
+                                    <button onClick={(e) => { e.stopPropagation(); changeCh(chIdx+1); }} disabled={chIdx===chapters.length-1} className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-md active:scale-95 disabled:opacity-50">Chương sau</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* HIỂN THỊ SỐ TRANG Ở ĐÁY (PAGED MODE) */}
+                    {mode === 'paged' && !uiVisible && totalPages > 1 && (
+                        <div className="absolute bottom-4 left-0 w-full text-center text-xs font-semibold opacity-30 pointer-events-none font-sans tracking-widest z-10">
+                            {currentPage + 1} / {totalPages}
+                        </div>
+                    )}
+
+                    {/* HEADER */}
+                    <div className={`absolute top-0 w-full pt-[var(--safe-top)] px-2 pb-3 flex justify-between items-center z-20 transition-transform duration-300 ${theme==='light'||theme==='sepia'?'glass-light text-slate-900':'glass-dark text-white'} ${uiVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+                        <button onClick={onClose} className="p-3 opacity-80 active:opacity-40"><Icon name="chevron-down" size={24}/></button>
+                        <div className="flex-1 text-center px-2">
+                            <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 truncate">{book.title}</p>
+                            <p className="text-sm font-semibold truncate opacity-90">{ch.title}</p>
+                        </div>
+                        <button onClick={() => setActivePanel('toc')} className="p-3 opacity-80 active:opacity-40"><Icon name="list" size={22}/></button>
+                    </div>
+
+                    {/* BOTTOM BAR */}
+                    <div className={`absolute bottom-0 w-full pb-[calc(var(--safe-bottom)+12px)] pt-4 px-6 z-20 transition-transform duration-300 ${theme==='light'||theme==='sepia'?'glass-light text-slate-900':'glass-dark text-white'} ${uiVisible ? 'translate-y-0' : 'translate-y-full'}`}>
+                        {/* Status Line */}
+                        <div className="flex justify-between items-center text-[11px] font-semibold opacity-60 mb-4 px-2 uppercase tracking-wide">
+                            <span>Chương {chIdx + 1}/{chapters.length}</span>
+                            <span>{estReadingTime} phút đọc</span>
+                            {mode === 'paged' && <span>Trang {currentPage+1}/{totalPages}</span>}
+                        </div>
+
+                        {/* Controls */}
+                        <div className="flex justify-between items-center max-w-sm mx-auto">
+                            <button onClick={()=>changeCh(chIdx-1)} disabled={chIdx===0} className="p-3 opacity-70 disabled:opacity-20"><Icon name="skip-back" size={24}/></button>
+                            
+                            <TTSController text={ch.content} />
+                            
+                            <button onClick={()=>setActivePanel('settings')} className="p-3 opacity-70"><Icon name="a-large-small" size={24}/></button>
+                            <button onClick={()=>changeCh(chIdx+1)} disabled={chIdx===chapters.length-1} className="p-3 opacity-70 disabled:opacity-20"><Icon name="skip-forward" size={24}/></button>
+                        </div>
+                    </div>
+
+                    {/* SIDEBAR MỤC LỤC */}
+                    <div className="fixed inset-0 z-50 pointer-events-none">
+                        <div className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 pointer-events-auto ${activePanel === 'toc' ? 'opacity-100' : 'opacity-0 hidden'}`} onClick={() => setActivePanel(null)}></div>
+                        <div className={`absolute top-0 left-0 h-full w-[85%] max-w-[380px] shadow-2xl sidebar ${activePanel === 'toc' ? 'sidebar-visible' : 'sidebar-hidden'} pointer-events-auto flex flex-col ${theme==='light'||theme==='sepia'?'bg-[#F2F2F7]':'bg-[#1C1C1E]'}`}>
+                            <div className="pt-[calc(var(--safe-top)+20px)] pb-4 px-6 border-b border-current border-opacity-10">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-2xl font-bold">Mục lục</h3>
+                                    <button onClick={()=>setActivePanel(null)} className="p-2 bg-current bg-opacity-10 rounded-full"><Icon name="x" size={18}/></button>
+                                </div>
+                                {/* Khung Tìm Kiếm Cực Quan Trọng cho file nghìn trang */}
+                                <div className="relative">
+                                    <Icon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50" />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Tìm tên chương..." 
+                                        value={searchTOC}
+                                        onChange={e => setSearchTOC(e.target.value)}
+                                        className="w-full bg-current bg-opacity-5 rounded-xl py-2.5 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500" 
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex-1 overflow-y-auto hide-scroll p-4">
+                                {chapters.filter(c => c.title.toLowerCase().includes(searchTOC.toLowerCase())).map(c => (
+                                    <div key={c.id} onClick={() => changeCh(c.order)} className={`p-4 rounded-xl mb-2 text-sm font-medium cursor-pointer active:scale-95 ${c.order === chIdx ? 'bg-blue-500 text-white shadow-md' : 'hover:bg-current hover:bg-opacity-5 opacity-80'}`}>
+                                        {c.title}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* BOTTOM SHEET CÀI ĐẶT (PRO) */}
+                    <div className="fixed inset-0 z-50 pointer-events-none">
+                        <div className={`absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity pointer-events-auto ${activePanel === 'settings' ? 'opacity-100' : 'opacity-0 hidden'}`} onClick={() => setActivePanel(null)}></div>
+                        <div className={`absolute bottom-0 w-full rounded-t-[32px] bottom-sheet ${activePanel === 'settings' ? 'bottom-sheet-visible' : 'bottom-sheet-hidden'} pointer-events-auto pb-[var(--safe-bottom)] shadow-[0_-10px_40px_rgba(0,0,0,0.2)] ${theme==='light'||theme==='sepia'?'bg-[#F2F2F7]':'bg-[#1C1C1E]'}`}>
+                            <div className="w-full flex justify-center py-4" onClick={() => setActivePanel(null)}><div className="w-12 h-1.5 bg-current bg-opacity-20 rounded-full"></div></div>
+                            <div className="px-6 pb-8 space-y-7">
+                                
+                                {/* Trải nghiệm đọc (Scroll/Page) */}
+                                <div>
+                                    <p className="text-[11px] font-bold uppercase tracking-widest opacity-50 mb-3 ml-1">Kiểu Lật Trang</p>
+                                    <div className="flex gap-3">
+                                        <button onClick={()=>setMode('paged')} className={`flex-1 py-3.5 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold border-2 transition-all ${mode==='paged'?'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400':'border-transparent bg-current bg-opacity-5 opacity-70'}`}><Icon name="book-open" size={18}/> Chạm lật</button>
+                                        <button onClick={()=>setMode('scroll')} className={`flex-1 py-3.5 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold border-2 transition-all ${mode==='scroll'?'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400':'border-transparent bg-current bg-opacity-5 opacity-70'}`}><Icon name="arrow-down-to-line" size={18}/> Cuộn dọc</button>
+                                    </div>
+                                    
+                                    {/* Auto scroll toggle (chỉ hiện khi cuộn dọc) */}
+                                    {mode === 'scroll' && (
+                                        <button onClick={()=>setAutoScroll(!autoScroll)} className={`mt-3 w-full py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 ${autoScroll?'bg-blue-500 text-white shadow-lg shadow-blue-500/30':'bg-current bg-opacity-5'}`}>
+                                            <Icon name="chevrons-down" size={18}/> {autoScroll ? 'Đang tự động cuộn (Tắt)' : 'Bật Tự động cuộn'}
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Giao diện */}
+                                <div>
+                                    <p className="text-[11px] font-bold uppercase tracking-widest opacity-50 mb-3 ml-1">Giao diện (Màu nền)</p>
+                                    <div className="flex gap-3">
+                                        {[{id:'light',bg:'#FFFFFF',c:'#000'},{id:'sepia',bg:'#F8F1E3',c:'#5B4636'},{id:'dark',bg:'#2C2C2E',c:'#FFF'},{id:'oled',bg:'#000000',c:'#8E8E93'}].map(t => (
+                                            <button key={t.id} onClick={()=>setTheme(t.id)} className={`flex-1 h-12 rounded-full font-bold text-lg border-2 transition-transform ${theme===t.id?'border-blue-500 scale-110':'border-transparent'}`} style={{background:t.bg, color:t.c, boxShadow:'inset 0 0 0 1px rgba(128,128,128,0.2)'}}>Aa</button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Font / Size */}
+                                <div className="flex gap-4">
+                                    <div className="flex-1">
+                                        <p className="text-[11px] font-bold uppercase tracking-widest opacity-50 mb-3 ml-1">Phông chữ</p>
+                                        <div className="flex bg-current bg-opacity-5 rounded-2xl p-1">
+                                            <button onClick={()=>setFontFam('font-sans')} className={`flex-1 py-2 text-sm font-semibold rounded-xl ${fontFam==='font-sans'?'bg-white dark:bg-[#2C2C2E] shadow-sm':''}`}>Hiện đại</button>
+                                            <button onClick={()=>setFontFam('font-serif')} className={`flex-1 py-2 text-sm font-semibold rounded-xl ${fontFam==='font-serif'?'bg-white dark:bg-[#2C2C2E] shadow-sm':''}`}>Truyền thống</button>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-[11px] font-bold uppercase tracking-widest opacity-50 mb-3 ml-1">Cỡ chữ</p>
+                                        <div className="flex items-center bg-current bg-opacity-5 rounded-2xl p-1 h-[44px]">
+                                            <button onClick={()=>setFontSize(s=>Math.max(14,s-2))} className="w-12 h-full flex justify-center items-center font-serif text-base active:opacity-50">A-</button>
+                                            <span className="flex-1 text-center font-bold">{fontSize}</span>
+                                            <button onClick={()=>setFontSize(s=>Math.min(40,s+2))} className="w-12 h-full flex justify-center items-center font-serif text-xl active:opacity-50">A+</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function TTSController({ text }) {
+            const [isPlay, setIsPlay] = useState(false);
+            const synth = window.speechSynthesis;
+            const utRef = useRef(null);
+            
+            // Chia nhỏ câu để API không bị crash khi đọc văn bản nghìn chữ
+            const sentences = useMemo(() => text ? text.match(/[^.!?\n]+[.!?\n]+/g) || [text] : [], [text]);
+            const sIdx = useRef(0);
+
+            const playNext = useCallback(() => {
+                if (sIdx.current >= sentences.length) { setIsPlay(false); return; }
+                const txt = sentences[sIdx.current].trim();
+                if (!txt) { sIdx.current++; playNext(); return; }
+
+                const u = new SpeechSynthesisUtterance(txt);
+                u.lang = 'vi-VN'; u.rate = 1.0;
+                u.onend = () => { sIdx.current++; playNext(); };
+                u.onerror = (e) => { if(e.error!=='canceled') setIsPlay(false); };
+                
+                utRef.current = u;
+                synth.speak(u);
+            }, [sentences, synth]);
+
+            const toggle = (e) => {
+                e.stopPropagation();
+                if (!synth) return alert("Trình duyệt không hỗ trợ");
+                if (isPlay) { synth.cancel(); setIsPlay(false); } 
+                else { synth.cancel(); setIsPlay(true); playNext(); }
+            };
+
+            useEffect(() => {
+                sIdx.current = 0;
+                if(isPlay) { synth.cancel(); playNext(); }
+                return () => synth?.cancel();
+            }, [text]);
+
+            return (
+                <button onClick={toggle} className={`h-14 w-14 rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-transform ${isPlay ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'bg-blue-600 text-white'}`}>
+                    <Icon name={isPlay ? "square" : "headphones"} size={22} fill={isPlay?"currentColor":"none"}/>
+                </button>
             );
         }
 
