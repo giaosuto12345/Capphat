@@ -85,7 +85,7 @@
             async getProgress(bookId) { return await idbKeyval.get(`prog_${bookId}`); },
             async savePrefs(prefs) { await idbKeyval.set('ar_global_prefs', prefs); },
             async getPrefs() { 
-                return await idbKeyval.get('ar_global_prefs') || { theme: 'light', fontSize: 18, lineHeight: 1.6 }; 
+                return await idbKeyval.get('ar_global_prefs') || { theme: 'light', fontSize: 18, lineHeight: 1.6, readMode: 'scroll' }; 
             }
         };
 
@@ -128,6 +128,37 @@
             s = s.replace(/\s{2,}/g, ' ');
             
             return s.trim();
+        };
+
+        const extractPDFText = async (pdfDoc, pageNum) => {
+            try {
+                const page = await pdfDoc.getPage(pageNum);
+                const textContentData = await page.getTextContent();
+                let paragraphs = [];
+                let currentPara = "";
+                let lastY = -1;
+                for (const item of textContentData.items) {
+                    if (!item.str || item.str.trim() === '') continue;
+                    let cleanStr = cleanExtractedText(item.str);
+                    const itemY = item.transform[5];
+                    if (lastY !== -1 && Math.abs(lastY - itemY) > 5) {
+                        if (currentPara.match(/[.!?:"']$/) || cleanStr.match(/^[A-ZĐ]/)) {
+                            paragraphs.push(currentPara);
+                            currentPara = cleanStr;
+                        } else {
+                            currentPara += " " + cleanStr;
+                        }
+                    } else {
+                        currentPara += (currentPara ? " " : "") + cleanStr;
+                    }
+                    lastY = itemY;
+                }
+                if (currentPara) paragraphs.push(currentPara);
+                return paragraphs;
+            } catch (err) {
+                console.error("Lỗi trích xuất trang", pageNum, err);
+                return [];
+            }
         };
 
         const parsePDFOutline = async (pdfDoc) => {
@@ -370,12 +401,21 @@
                             </div>
 
                              {/* Giãn dòng */}
-                             <div>
+                             <div className="mb-8">
                                 <p className="text-xs font-bold uppercase tracking-widest opacity-50 mb-3">Giãn dòng</p>
                                 <div className="flex items-center gap-4 bg-gray-500/10 p-2 rounded-2xl">
                                     <button onClick={()=>updatePrefs({lineHeight: 1.4})} className={`flex-1 h-12 flex items-center justify-center rounded-xl font-bold shadow-sm active:scale-95 ${prefs.lineHeight === 1.4 ? 'bg-white dark:bg-black' : ''}`}>Hẹp</button>
                                     <button onClick={()=>updatePrefs({lineHeight: 1.8})} className={`flex-1 h-12 flex items-center justify-center rounded-xl font-bold shadow-sm active:scale-95 ${prefs.lineHeight === 1.8 ? 'bg-white dark:bg-black' : ''}`}>Vừa</button>
                                     <button onClick={()=>updatePrefs({lineHeight: 2.2})} className={`flex-1 h-12 flex items-center justify-center rounded-xl font-bold shadow-sm active:scale-95 ${prefs.lineHeight === 2.2 ? 'bg-white dark:bg-black' : ''}`}>Rộng</button>
+                                </div>
+                            </div>
+
+                            {/* Chế độ đọc */}
+                             <div>
+                                <p className="text-xs font-bold uppercase tracking-widest opacity-50 mb-3">Kiểu cuộn trang</p>
+                                <div className="flex items-center gap-4 bg-gray-500/10 p-2 rounded-2xl">
+                                    <button onClick={()=>updatePrefs({readMode: 'scroll'})} className={`flex-1 h-12 flex items-center justify-center rounded-xl font-bold shadow-sm active:scale-95 ${prefs.readMode === 'scroll' ? 'bg-white dark:bg-black' : ''}`}><Icon name="arrow-down" size={16} className="mr-2"/> Cuộn dọc</button>
+                                    <button onClick={()=>updatePrefs({readMode: 'paged'})} className={`flex-1 h-12 flex items-center justify-center rounded-xl font-bold shadow-sm active:scale-95 ${prefs.readMode === 'paged' ? 'bg-white dark:bg-black' : ''}`}><Icon name="arrow-right" size={16} className="mr-2"/> Lật ngang</button>
                                 </div>
                             </div>
                         </div>
@@ -386,9 +426,11 @@
 
         function PDFTextReflow({ book, currentPage, onPageChange, onTapCenter, prefs }) {
             const [pdfDoc, setPdfDoc] = useState(null);
-            const [textContent, setTextContent] = useState([]);
+            const [pagesData, setPagesData] = useState([]); // Array: [{page: 1, paragraphs: []}]
             const [isExtracting, setIsExtracting] = useState(true);
-            const scrollContainerRef = useRef(null);
+            const [fetchingNext, setFetchingNext] = useState(false);
+            const containerRef = useRef(null);
+            const observerRef = useRef(null);
 
             // Nạp PDF vào bộ nhớ ảo
             useEffect(() => {
@@ -403,139 +445,166 @@
                 return () => { active = false; pdfDoc && pdfDoc.destroy(); };
             }, [book.id]);
 
-            // Trích xuất văn bản (Extract Text) khi chuyển trang
+            // Trích xuất trang (Khởi tạo khi đổi Chapter)
             useEffect(() => {
                 if (!pdfDoc) return;
                 let active = true;
-                setIsExtracting(true);
-
-                const extractText = async () => {
-                    try {
-                        const page = await pdfDoc.getPage(currentPage);
-                        const textContentData = await page.getTextContent();
-                        
-                        // Thuật toán gộp dòng thành đoạn văn
-                        let paragraphs = [];
-                        let currentPara = "";
-                        let lastY = -1;
-
-                        for (const item of textContentData.items) {
-                            // Bỏ qua các ký tự rỗng do lỗi font
-                            if (!item.str || item.str.trim() === '') continue;
-                            
-                            // Làm sạch chữ tiếng Việt
-                            let cleanStr = cleanExtractedText(item.str);
-                            
-                            // Kiểm tra tọa độ Y để biết có xuống dòng hay không
-                            const itemY = item.transform[5];
-                            
-                            if (lastY !== -1 && Math.abs(lastY - itemY) > 5) {
-                                // Nếu có khoảng cách lớn, có thể là dòng mới. 
-                                // Kiểm tra xem dòng trước kết thúc bằng dấu chấm/hỏi/than chưa?
-                                if (currentPara.match(/[.!?:"']$/) || cleanStr.match(/^[A-ZĐ]/)) {
-                                    paragraphs.push(currentPara);
-                                    currentPara = cleanStr;
-                                } else {
-                                    currentPara += " " + cleanStr;
-                                }
-                            } else {
-                                currentPara += (currentPara ? " " : "") + cleanStr;
-                            }
-                            lastY = itemY;
-                        }
-                        if (currentPara) paragraphs.push(currentPara);
-
-                        if (active) {
-                            setTextContent(paragraphs);
-                            setIsExtracting(false);
-                            // Cuộn lên đầu khi chuyển trang
-                            if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
-                        }
-                    } catch (error) {
-                        console.error("Lỗi trích xuất chữ:", error);
-                        if(active) setIsExtracting(false);
+                
+                const initPage = async () => {
+                    setIsExtracting(true);
+                    if (containerRef.current) {
+                        containerRef.current.scrollTop = 0;
+                        containerRef.current.scrollLeft = 0;
+                    }
+                    
+                    const paras = await extractPDFText(pdfDoc, currentPage);
+                    if (active) {
+                        setPagesData([{ page: currentPage, paragraphs: paras }]);
+                        setIsExtracting(false);
                     }
                 };
-
-                extractText();
+                initPage();
                 return () => { active = false; };
             }, [pdfDoc, currentPage]);
 
-            // Xử lý chạm màn hình
-            const handleTouch = (e) => {
-                // Lấy vị trí click
+            // Tải ngầm trang tiếp theo (Infinite Scroll)
+            const loadNextPage = useCallback(async () => {
+                if (!pdfDoc || fetchingNext) return;
+                const lastLoadedPage = pagesData.length > 0 ? pagesData[pagesData.length - 1].page : currentPage;
+                if (lastLoadedPage >= book.totalPages) return;
+
+                setFetchingNext(true);
+                const nextPageNum = lastLoadedPage + 1;
+                const paras = await extractPDFText(pdfDoc, nextPageNum);
+                
+                setPagesData(prev => {
+                    if (prev.some(p => p.page === nextPageNum)) return prev;
+                    return [...prev, { page: nextPageNum, paragraphs: paras }];
+                });
+                
+                // Cập nhật Database ngầm (không đổi State currentPage để tránh reload)
+                DB.saveProgress(book.id, { page: nextPageNum });
+                setFetchingNext(false);
+            }, [pdfDoc, fetchingNext, pagesData, book.id, book.totalPages, currentPage]);
+
+            // Intersection Observer (Cuộn dọc)
+            useEffect(() => {
+                if (prefs.readMode !== 'scroll' || isExtracting || fetchingNext) return;
+                
+                const options = { root: containerRef.current, rootMargin: '600px', threshold: 0 };
+                const callback = (entries) => {
+                    if (entries[0].isIntersecting) loadNextPage();
+                };
+                
+                const observer = new IntersectionObserver(callback, options);
+                if (observerRef.current) observer.observe(observerRef.current);
+                
+                return () => observer.disconnect();
+            }, [prefs.readMode, isExtracting, fetchingNext, loadNextPage]);
+
+            // Xử lý chạm màn hình (Vuốt/Chạm)
+            const handleTap = (e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 const width = rect.width;
                 
-                // Nếu bấm vào nút bên dưới thì bỏ qua
                 if(e.target.closest('button')) return;
 
                 if (x < width * 0.25) {
-                    // Chạm lề trái -> lùi trang (nếu đang ở đầu cuộn)
-                    if (scrollContainerRef.current.scrollTop <= 10 && currentPage > 1) {
-                        onPageChange(currentPage - 1);
+                    if (prefs.readMode === 'paged') {
+                        if (containerRef.current) containerRef.current.scrollBy({ left: -width, behavior: 'smooth' });
                     }
                 } else if (x > width * 0.75) {
-                    // Chạm lề phải -> nhảy trang
-                     if (currentPage < book.totalPages) {
-                        onPageChange(currentPage + 1);
+                    if (prefs.readMode === 'paged') {
+                         if (containerRef.current) {
+                            const maxScroll = containerRef.current.scrollWidth - containerRef.current.clientWidth;
+                            if (containerRef.current.scrollLeft + width + 10 >= maxScroll) {
+                                // Gần hết văn bản đã tải, nối thêm trang mới vào đuôi
+                                loadNextPage().then(() => {
+                                    setTimeout(() => containerRef.current.scrollBy({ left: width, behavior: 'smooth' }), 50);
+                                });
+                            } else {
+                                containerRef.current.scrollBy({ left: width, behavior: 'smooth' });
+                            }
+                        }
+                    } else {
+                        // Chạm để cuộn 1 đoạn
+                        if (containerRef.current) containerRef.current.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
                     }
                 } else {
-                    // Chạm giữa -> hiện menu
                     onTapCenter();
                 }
             };
 
+            const isPaged = prefs.readMode === 'paged';
+
             return (
                 <div 
-                    ref={scrollContainerRef}
-                    onClick={handleTouch}
-                    className="w-full h-full overflow-y-auto scroll-smooth"
+                    ref={containerRef}
+                    onClick={handleTap}
+                    className={`w-full h-full scroll-smooth transition-all duration-300 ${isPaged ? 'overflow-y-hidden overflow-x-hidden' : 'overflow-y-auto overflow-x-hidden'}`}
                 >
-                    <div className="max-w-3xl mx-auto px-6 md:px-12 pt-[calc(var(--safe-top)+100px)] pb-[calc(var(--safe-bottom)+120px)] min-h-full flex flex-col">
+                    <div 
+                        className={isPaged ? 'w-full h-full' : 'max-w-3xl mx-auto min-h-full flex flex-col'}
+                        style={isPaged ? {
+                            columnWidth: '100vw', // Tự động chia cột ngang
+                            columnGap: '0px',
+                            height: '100vh',
+                            paddingTop: 'calc(var(--safe-top) + 80px)',
+                            paddingBottom: 'calc(var(--safe-bottom) + 80px)',
+                        } : {
+                            paddingTop: 'calc(var(--safe-top) + 100px)',
+                            paddingBottom: 'calc(var(--safe-bottom) + 120px)',
+                        }}
+                    >
                         
-                        {isExtracting ? (
-                            <div className="flex-1 flex flex-col items-center justify-center opacity-50">
+                        {isExtracting && pagesData.length === 0 ? (
+                            <div className="flex-1 flex flex-col items-center justify-center opacity-50 h-full w-full">
                                 <div className="spinner mb-4 !border-current !border-l-transparent"></div>
                                 <p className="font-medium animate-pulse">Đang trích xuất văn bản...</p>
                             </div>
-                        ) : textContent.length === 0 ? (
-                            <div className="flex-1 flex flex-col items-center justify-center opacity-30 text-center">
+                        ) : pagesData.length === 0 ? (
+                            <div className="flex-1 flex flex-col items-center justify-center opacity-30 text-center h-full w-full">
                                 <Icon name="file-image" size={64} className="mb-4" />
-                                <p className="font-medium text-lg">Trang này chỉ có hình ảnh hoặc không thể trích xuất chữ.</p>
+                                <p className="font-medium text-lg">Trang này chỉ có hình ảnh.</p>
                             </div>
                         ) : (
                             <div 
-                                className="font-serif text-justify transition-all duration-300"
+                                className="font-serif text-justify"
                                 style={{
                                     fontSize: `${prefs.fontSize}px`,
                                     lineHeight: prefs.lineHeight,
-                                    letterSpacing: '0.01em'
+                                    letterSpacing: '0.01em',
+                                    paddingLeft: isPaged ? '0' : '1.5rem',
+                                    paddingRight: isPaged ? '0' : '1.5rem',
                                 }}
                             >
-                                {textContent.map((para, idx) => (
-                                    <p key={idx} className="mb-6 indent-8 break-words">{para}</p>
+                                {pagesData.map(pageData => (
+                                    <React.Fragment key={pageData.page}>
+                                        {pageData.paragraphs.map((para, idx) => (
+                                            <p 
+                                                key={`${pageData.page}-${idx}`} 
+                                                className={`mb-6 indent-8 break-words ${isPaged ? 'px-6 max-w-[100vw]' : ''}`}
+                                            >
+                                                {para}
+                                            </p>
+                                        ))}
+                                    </React.Fragment>
                                 ))}
                                 
-                                {/* Nút chuyển trang ở cuối bài đọc */}
-                                <div className="mt-16 pt-8 border-t border-gray-500/20 flex justify-between items-center opacity-80">
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); onPageChange(currentPage - 1); }}
-                                        disabled={currentPage <= 1}
-                                        className="px-6 py-3 rounded-2xl bg-gray-500/10 font-bold active:scale-95 disabled:opacity-20 flex items-center gap-2"
-                                    >
-                                        <Icon name="arrow-left" size={18} /> Trang trước
-                                    </button>
-                                    <span className="font-mono text-sm opacity-50">-{currentPage}-</span>
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); onPageChange(currentPage + 1); }}
-                                        disabled={currentPage >= book.totalPages}
-                                        className="px-6 py-3 rounded-2xl bg-gray-500/10 font-bold active:scale-95 disabled:opacity-20 flex items-center gap-2"
-                                    >
-                                        Trang sau <Icon name="arrow-right" size={18} />
-                                    </button>
-                                </div>
+                                {/* Nút tải tiếp ở cuối trang (Dành cho Cuộn dọc) */}
+                                {!isPaged && (
+                                    <div ref={observerRef} className="mt-8 py-8 flex justify-center items-center opacity-80 h-32">
+                                        {fetchingNext ? (
+                                             <div className="flex items-center text-blue-500 font-medium">
+                                                 <div className="spinner w-5 h-5 mr-3 !border-current !border-l-transparent"></div>
+                                                 Đang tải trang sau...
+                                             </div>
+                                        ) : (
+                                            <div className="w-16 h-1 rounded-full bg-gray-500/20"></div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
