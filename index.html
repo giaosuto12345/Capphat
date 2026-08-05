@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Aura Reader V4</title>
+    <title>Aura Reader V5</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Merriweather:wght@400;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+    
+    <!-- React & DOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -27,22 +29,17 @@
             --safe-bottom: env(safe-area-inset-bottom, 0px);
             --safe-left: env(safe-area-inset-left, 0px);
             --safe-right: env(safe-area-inset-right, 0px);
-            
             --ios-blur-light: rgba(255, 255, 255, 0.85);
             --ios-blur-dark: rgba(28, 28, 30, 0.85);
         }
         
         html, body {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; 
-            background-color: #000;
+            overflow: hidden; background-color: #000;
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior-y: none;
+            touch-action: pan-x pan-y; /* Cho phép zoom trên canvas */
         }
-
-        .font-sans { font-family: 'Inter', sans-serif; }
-        .font-serif { font-family: 'Lora', serif; }
-        .font-merri { font-family: 'Merriweather', serif; }
 
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
@@ -55,222 +52,140 @@
         .sidebar-hidden { transform: translateX(-100%); }
         .sidebar-visible { transform: translateX(0); }
 
+        /* TXT Themes */
         .theme-light { background-color: #FFFFFF; color: #1C1C1E; }
         .theme-sepia { background-color: #F8F1E3; color: #5B4636; }
         .theme-dark { background-color: #2C2C2E; color: #E5E5EA; }
-        .theme-oled { background-color: #000000; color: #8E8E93; }
         
-        .theme-oled h1, .theme-oled h2, .theme-oled h3, .theme-oled strong { color: #E5E5EA; }
-        .theme-dark h1, .theme-dark h2, .theme-dark h3, .theme-dark strong { color: #FFFFFF; }
-        .theme-sepia h1, .theme-sepia h2, .theme-sepia h3, .theme-sepia strong { color: #3A2A1E; }
-
-        .reader-content p { margin-bottom: 1.5em; text-align: justify; }
-        .reader-content.align-left p { text-align: left; }
-        
-        /* Cấu trúc Lật trang Đích thực (Multi-column) */
-        .paged-container {
-            width: 100%;
-            height: calc(100vh - var(--safe-top) - var(--safe-bottom));
-            overflow-x: hidden;
-            overflow-y: hidden;
-            position: relative;
-        }
-
-        .paged-content {
-            columns: 100vw auto;
-            column-gap: 0;
-            height: 100%;
-            box-sizing: border-box;
-            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            /* Tránh cắt dòng ngang nửa chữ */
-            orphans: 2;
-            widows: 2;
-        }
-
-        .paged-content > * {
-            /* Fix lỗi vỡ layout cột */
-            max-width: 100%;
-            break-inside: auto;
-        }
-        
-        .paged-content h2 { break-before: column; } /* Header luôn đầu trang */
-
-        .glass-light { background: var(--ios-blur-light); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid rgba(0,0,0,0.1); border-bottom: 0.5px solid rgba(0,0,0,0.1); }
-        .glass-dark { background: var(--ios-blur-dark); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid rgba(255,255,255,0.1); border-bottom: 0.5px solid rgba(255,255,255,0.1); }
+        .glass-light { background: var(--ios-blur-light); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 0.5px solid rgba(0,0,0,0.1); }
+        .glass-dark { background: var(--ios-blur-dark); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 0.5px solid rgba(255,255,255,0.1); }
         
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: #fff; border-radius: 50%; width: 36px; height: 36px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .fade-enter { opacity: 0; animation: fadeIn 0.3s forwards; }
-        @keyframes fadeIn { to { opacity: 1; } }
 
-        /* Highlight từ đang đọc TTS */
-        .tts-highlight { background-color: rgba(0, 122, 255, 0.2); border-radius: 4px; padding: 2px 0; }
+        /* Canvas Wrapper cho PDF */
+        .pdf-canvas-container {
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100%; width: 100%;
+            background-color: #E5E5EA; /* Nền xám bao quanh viền trang PDF */
+            overflow: auto;
+        }
+        
+        .dark .pdf-canvas-container { background-color: #1C1C1E; }
+        
+        canvas {
+            max-width: 100%;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            background: white; /* Bắt buộc trang PDF nền trắng */
+        }
     </style>
 </head>
-<body class="font-sans text-slate-900 bg-black">
+<body class="text-slate-900 bg-black">
     <div id="root" class="w-full h-full"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect } = React;
 
+        // NEW DATABASE ENGINE: PDF lưu nguyên file (ArrayBuffer)
         const DB = {
             async saveBook(bookData) {
                 const books = await this.getBooks();
                 const newBooks = [bookData, ...books.filter(b => b.id !== bookData.id)];
-                await idbKeyval.set('aura_books_v4', newBooks);
+                await idbKeyval.set('ar_library_v5', newBooks);
             },
-            async getBooks() { return await idbKeyval.get('aura_books_v4') || []; },
+            async getBooks() { return await idbKeyval.get('ar_library_v5') || []; },
             async deleteBook(id) {
                 const books = await this.getBooks();
-                await idbKeyval.set('aura_books_v4', books.filter(b => b.id !== id));
-                await idbKeyval.del(`content_${id}`);
+                await idbKeyval.set('ar_library_v5', books.filter(b => b.id !== id));
+                await idbKeyval.del(`file_${id}`); // Xóa file thật
+                await idbKeyval.del(`prog_${id}`); // Xóa tiến trình
             },
-            async saveChapters(bookId, chapters) { await idbKeyval.set(`content_${bookId}`, chapters); },
-            async getChapters(bookId) { return await idbKeyval.get(`content_${bookId}`); },
+            async saveFile(bookId, data) { await idbKeyval.set(`file_${bookId}`, data); },
+            async getFile(bookId) { return await idbKeyval.get(`file_${bookId}`); },
             async saveProgress(bookId, data) { await idbKeyval.set(`prog_${bookId}`, data); },
             async getProgress(bookId) { return await idbKeyval.get(`prog_${bookId}`); }
         };
 
-        const Icon = ({ name, size = 24, className = '', color = 'currentColor', fill="none" }) => {
+        const Icon = ({ name, size = 24, className = '' }) => {
             const iconRef = useRef(null);
             useEffect(() => {
                 if (iconRef.current && window.lucide) {
                     iconRef.current.innerHTML = '';
                     const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = `<i data-lucide="${name}" style="width:${size}px; height:${size}px; stroke:${color}; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: ${fill};"></i>`;
+                    tempDiv.innerHTML = `<i data-lucide="${name}" style="width:${size}px; height:${size}px; stroke:currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none;"></i>`;
                     iconRef.current.appendChild(tempDiv.firstChild);
                     window.lucide.createIcons({ root: iconRef.current });
                 }
-            }, [name, size, color, fill]);
+            }, [name, size]);
             return <span ref={iconRef} className={`inline-flex items-center justify-center ${className}`}></span>;
         };
 
-        const FullScreenLoader = ({ text, subText, progress }) => (
-            <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center fade-enter text-white">
-                <div className="spinner mb-6"></div>
-                <h2 className="text-xl font-bold mb-2">{text}</h2>
-                {subText && <p className="text-slate-400 text-sm mb-4 max-w-[80%] text-center">{subText}</p>}
-                {progress !== undefined && (
-                    <div className="w-64 h-2 bg-slate-800 rounded-full overflow-hidden mt-4">
-                        <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${progress}%` }}></div>
-                    </div>
-                )}
+        const Loader = ({ text }) => (
+            <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center text-white transition-opacity">
+                <div className="spinner mb-4"></div>
+                <h2 className="text-xl font-bold animate-pulse">{text}</h2>
             </div>
         );
-
-        // THUẬT TOÁN SỬA LỖI DẤU CÂU (NFD -> NFC)
-        const cleanVietnameseText = (rawText) => {
-            if (!rawText) return "";
-            let text = rawText.normalize('NFC'); // Chuẩn hóa Unicode, gộp dấu bị tách
-            
-            // Xử lý một số trường hợp PDF cố tình chèn khoảng trắng giữa chữ và dấu
-            // VD: "đê` u" -> "đều", "nê´ u" -> "nếu"
-            const decomposedMap = {
-                '´': '\u0301', '`': '\u0300', '?': '\u0309', '~': '\u0303', '.': '\u0323' // Fallbacks
-            };
-            
-            // Xóa khoảng trắng thừa trước các dấu câu phổ biến
-            text = text.replace(/\s+([.,!?:;])/g, '$1');
-            
-            // Dọn dẹp khoảng trắng kép
-            text = text.replace(/ {2,}/g, ' ');
-            return text;
-        };
 
         const parsePDFOutline = async (pdfDoc) => {
             try {
                 const outline = await pdfDoc.getOutline();
-                if (!outline || outline.length === 0) return null;
+                if (!outline || outline.length === 0) return [];
                 const map = [];
-                const processItems = async (items) => {
+                const processItems = async (items, depth = 0) => {
                     for (const item of items) {
                         let pageIndex = -1;
                         if (typeof item.dest === 'string') pageIndex = await pdfDoc.getPageIndex(await pdfDoc.getDestination(item.dest));
                         else if (Array.isArray(item.dest)) {
-                            try { pageIndex = await pdfDoc.getPageIndex(item.dest[0]); } catch (e) {}
+                            try { pageIndex = await pdfDoc.getPageIndex(item.dest[0]); } catch(e){}
                         }
-                        if (pageIndex !== -1) map.push({ title: item.title, pageIndex });
-                        if (item.items && item.items.length > 0) await processItems(item.items);
+                        if (pageIndex !== -1) map.push({ title: item.title, page: pageIndex + 1, depth });
+                        if (item.items && item.items.length > 0) await processItems(item.items, depth + 1);
                     }
                 };
                 await processItems(outline);
-                map.sort((a, b) => a.pageIndex - b.pageIndex);
-                const uniqueMap = [];
-                map.forEach(ch => { if (uniqueMap.length === 0 || uniqueMap[uniqueMap.length-1].pageIndex !== ch.pageIndex) uniqueMap.push(ch); });
-                return uniqueMap.length > 0 ? uniqueMap : null;
-            } catch (err) { return null; }
+                return map;
+            } catch (err) { return []; }
         };
 
         const processFile = async (file, onProgress) => {
             const ext = file.name.split('.').pop().toLowerCase();
             const bookId = 'book_' + Date.now();
-            let meta = { id: bookId, title: file.name.replace(/\.(pdf|txt)$/i, ''), author: "Unknown", type: ext.toUpperCase(), addedAt: Date.now(), cover: ['bg-gradient-to-br from-indigo-900 to-slate-900', 'bg-gradient-to-br from-emerald-900 to-slate-900', 'bg-gradient-to-br from-rose-900 to-amber-900'][Math.floor(Math.random() * 3)] };
-            let chapters = [];
+            let meta = { id: bookId, title: file.name.replace(/\.(pdf|txt)$/i, ''), type: ext.toUpperCase(), cover: `hsl(${Math.random()*360}, 70%, 20%)`, totalPages: 0 };
 
-            if (ext === 'txt') {
-                onProgress({ text: "Đang phân tích TXT..." });
-                let content = await file.text();
-                content = cleanVietnameseText(content); // Clean text immediately
+            if (ext === 'pdf') {
+                onProgress("Đang phân tích cấu trúc PDF...");
+                const arrayBuffer = await file.arrayBuffer();
                 
-                const regex = /(?:^|\n)(?:\s*)(Chương|Hồi|Quyển|Tiết|Chapter)(?:\s+)([\d\w]+)[^\n]*/gi;
+                // Mở thử để lấy số trang và mục lục (Dùng bản sao slice(0) để tránh detach buffer)
+                const pdfDoc = await window.pdfjsLib.getDocument(new Uint8Array(arrayBuffer.slice(0))).promise;
+                meta.totalPages = pdfDoc.numPages;
+                meta.toc = await parsePDFOutline(pdfDoc);
+                
+                // Lưu NGUYÊN GỐC file nhị phân vào DB (Chìa khóa để không hỏng định dạng)
+                await DB.saveFile(bookId, arrayBuffer);
+            } 
+            else if (ext === 'txt') {
+                onProgress("Đang phân tích văn bản...");
+                let content = await file.text();
+                // Phân tích chương cơ bản cho TXT
+                const chapters = [];
+                const regex = /(?:^|\n)(?:\s*)(Chương|Hồi|Quyển)(?:\s+)([\d\w]+)[^\n]*/gi;
                 let matches = [...content.matchAll(regex)];
                 
                 if (matches.length === 0) {
-                    const C = 15000;
-                    for (let i = 0; i < content.length; i += C) chapters.push({ id: `ch_${i}`, title: `Phần ${Math.floor(i/C) + 1}`, content: content.slice(i, i + C), order: Math.floor(i/C) });
+                    chapters.push({ title: "Toàn bộ nội dung", content: content, order: 0 });
                 } else {
                     for (let i = 0; i < matches.length; i++) {
-                        const startIndex = matches[i].index;
-                        const endIndex = (i + 1 < matches.length) ? matches[i + 1].index : content.length;
-                        let text = content.slice(startIndex, endIndex).trim();
-                        text = text.replace(matches[i][0].trim(), '').trim(); // Remove title from body
-                        chapters.push({ id: `ch_${i}`, title: matches[i][0].trim(), content: text, order: i });
+                        const start = matches[i].index;
+                        const end = (i + 1 < matches.length) ? matches[i + 1].index : content.length;
+                        chapters.push({ title: matches[i][0].trim(), content: content.slice(start, end).trim(), order: i });
                     }
                 }
-            } 
-            else if (ext === 'pdf') {
-                onProgress({ text: "Khởi động lõi PDF...", progress: 5 });
-                const arrayBuffer = await file.arrayBuffer();
-                const pdfDoc = await window.pdfjsLib.getDocument(new Uint8Array(arrayBuffer)).promise;
-                const total = pdfDoc.numPages;
-                
-                onProgress({ text: "Đang đọc Mục Lục (TOC)...", progress: 15 });
-                const outlineMap = await parsePDFOutline(pdfDoc);
-                const pagesText = [];
-                
-                for (let i = 1; i <= total; i++) {
-                    if (i % 10 === 0) onProgress({ text: `Xử lý trang ${i}/${total}`, progress: 15 + (i/total)*70 });
-                    try {
-                        const page = await pdfDoc.getPage(i);
-                        const textContent = await page.getTextContent();
-                        let lastY = -1; let str = '';
-                        textContent.items.forEach(item => {
-                            if (lastY !== -1 && Math.abs(item.transform[5] - lastY) > (item.height * 1.5)) str += '\n';
-                            str += item.str + ' ';
-                            lastY = item.transform[5];
-                        });
-                        // Áp dụng thuật toán Fix Dấu câu ở đây
-                        pagesText.push(cleanVietnameseText(str.trim()));
-                    } catch (e) { pagesText.push(""); }
-                }
-
-                onProgress({ text: "Đang ráp nối cấu trúc sách...", progress: 90 });
-                if (outlineMap && outlineMap.length > 0) {
-                    for (let i = 0; i < outlineMap.length; i++) {
-                        const start = outlineMap[i].pageIndex;
-                        const end = outlineMap[i+1] ? outlineMap[i+1].pageIndex : total;
-                        const content = pagesText.slice(start, end).join('\n\n');
-                        if (content.trim()) chapters.push({ id: `ch_${i}`, title: outlineMap[i].title, content, order: i });
-                    }
-                } else {
-                    const CHUNK = 30;
-                    for (let i = 0; i < total; i += CHUNK) {
-                        chapters.push({ id: `ch_${i}`, title: `Phần ${Math.floor(i/CHUNK) + 1}`, content: pagesText.slice(i, i + CHUNK).join('\n\n'), order: Math.floor(i/CHUNK) });
-                    }
-                }
+                meta.totalPages = chapters.length; // Trong txt, totalPages đại diện số chương
+                await DB.saveFile(bookId, chapters);
             }
 
-            await DB.saveChapters(meta.id, chapters);
             await DB.saveBook(meta);
             return meta;
         };
@@ -278,11 +193,11 @@
         function App() {
             const [books, setBooks] = useState([]);
             const [activeBook, setActiveBook] = useState(null);
-            const [sys, setSys] = useState({ isLoading: true, text: "Đang nạp dữ liệu..." });
+            const [sys, setSys] = useState({ isLoading: true, text: "Đang tải thư viện..." });
             const fileRef = useRef(null);
 
             useEffect(() => {
-                DB.getBooks().then(res => { setBooks(res); setSys({isLoading: false}); }).catch(() => setSys({isLoading: false}));
+                DB.getBooks().then(res => { setBooks(res); setSys({isLoading: false}); }).catch(()=>setSys({isLoading:false}));
             }, []);
 
             const onUpload = async (e) => {
@@ -290,40 +205,42 @@
                 if (!file) return;
                 e.target.value = '';
                 try {
-                    setSys({ isLoading: true, text: "Chuẩn bị...", progress: 0 });
-                    const newBook = await processFile(file, st => setSys(p => ({ ...p, ...st })));
+                    setSys({ isLoading: true, text: "Đang đọc file..." });
+                    const newBook = await processFile(file, txt => setSys({isLoading: true, text: txt}));
                     setBooks(p => [newBook, ...p]);
                 } catch (error) {
-                    alert("Lỗi đọc file: " + error.message);
+                    alert("Lỗi tải sách. File quá lớn hoặc bị hỏng.");
+                    console.error(error);
                 } finally { setSys({ isLoading: false }); }
             };
 
             return (
-                <div className="w-full h-full relative text-slate-900 bg-[#F2F2F7] dark:bg-black">
-                    {sys.isLoading && <FullScreenLoader {...sys} />}
+                <div className="w-full h-full relative bg-[#F2F2F7] dark:bg-black font-sans">
+                    {sys.isLoading && <Loader text={sys.text} />}
                     
                     {!activeBook ? (
                         <div className="w-full h-full overflow-y-auto pt-[var(--safe-top)] px-[var(--safe-left)] pr-[var(--safe-right)]">
                             <div className="max-w-6xl mx-auto px-6 py-8">
                                 <div className="flex justify-between items-end mb-10">
                                     <div>
-                                        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">Thư viện</h1>
-                                        <p className="text-slate-500 font-medium mt-1">Đã lưu trữ {books.length} cuốn</p>
+                                        <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white">Thư viện</h1>
+                                        <p className="text-slate-500 mt-1">Đã lưu trữ {books.length} cuốn</p>
                                     </div>
-                                    <button onClick={() => fileRef.current?.click()} className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white w-12 h-12 md:w-auto md:px-6 rounded-full flex items-center justify-center gap-2 shadow-lg transition-all">
-                                        <Icon name="plus" size={24} />
-                                        <span className="hidden md:inline font-bold">Thêm Sách</span>
+                                    <button onClick={() => fileRef.current?.click()} className="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg active:scale-95">
+                                        <Icon name="plus" />
                                     </button>
                                 </div>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-10 pb-20">
+                                
+                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 pb-20">
                                     {books.map(b => (
-                                        <div key={b.id} className="group cursor-pointer" onClick={() => setActiveBook(b)}>
-                                            <div className={`w-full aspect-[2/3] ${b.cover} rounded-xl shadow-md group-hover:shadow-xl group-active:scale-95 transition-all relative overflow-hidden flex flex-col justify-center`}>
-                                                <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-md px-1.5 py-0.5 rounded text-[9px] font-bold text-white uppercase">{b.type}</div>
-                                                <div className="px-3 text-center text-white/90 font-serif font-bold leading-tight drop-shadow-md line-clamp-4">{b.title}</div>
-                                                <button onClick={(e) => { e.stopPropagation(); DB.deleteBook(b.id).then(()=> setBooks(books.filter(x=>x.id!==b.id))); }} className="absolute bottom-2 right-2 w-8 h-8 bg-red-500/90 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"><Icon name="trash-2" size={16}/></button>
+                                        <div key={b.id} className="group relative">
+                                            <div onClick={() => setActiveBook(b)} className="w-full aspect-[2/3] rounded-xl shadow-md overflow-hidden cursor-pointer active:scale-95 transition-transform flex flex-col justify-center items-center p-4" style={{backgroundColor: b.cover}}>
+                                                <span className="absolute top-2 left-2 bg-black/40 px-1.5 py-0.5 rounded text-[10px] font-bold text-white uppercase">{b.type}</span>
+                                                <h3 className="text-white font-serif font-bold text-center line-clamp-4 drop-shadow-md">{b.title}</h3>
                                             </div>
-                                            <div className="mt-3"><h3 className="font-bold text-sm line-clamp-2 dark:text-white group-hover:text-blue-500">{b.title}</h3></div>
+                                            <button onClick={() => DB.deleteBook(b.id).then(()=>setBooks(books.filter(x=>x.id!==b.id)))} className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white shadow-lg md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Icon name="trash-2" size={16}/>
+                                            </button>
                                         </div>
                                     ))}
                                 </div>
@@ -331,363 +248,184 @@
                             <input type="file" accept=".txt,.pdf" ref={fileRef} onChange={onUpload} className="hidden" />
                         </div>
                     ) : (
-                        <ReaderView book={activeBook} onClose={() => setActiveBook(null)} />
+                        <ReaderEngine book={activeBook} onClose={() => setActiveBook(null)} />
                     )}
                 </div>
             );
         }
 
-        function ReaderView({ book, onClose }) {
-            const [chapters, setChapters] = useState([]);
-            const [chIdx, setChIdx] = useState(0);
-            const [isLoading, setIsLoading] = useState(true);
+        function ReaderEngine({ book, onClose }) {
             const [uiVisible, setUiVisible] = useState(true);
-            const [activePanel, setActivePanel] = useState(null); // 'toc', 'settings', null
+            const [showToc, setShowToc] = useState(false);
+            const [currentPage, setCurrentPage] = useState(1);
             
-            // Settings
-            const getSet = (k,d) => { try{ return localStorage.getItem(k)||d; }catch(e){return d;} };
-            const [theme, setTheme] = useState(getSet('ar_theme','light'));
-            const [fontFam, setFontFam] = useState(getSet('ar_font','font-serif'));
-            const [fontSize, setFontSize] = useState(parseInt(getSet('ar_size', 20)));
-            const [lineH, setLineH] = useState(parseFloat(getSet('ar_lh', 1.8)));
-            const [mode, setMode] = useState(getSet('ar_mode', 'paged')); // 'scroll' or 'paged'
-            
-            // Paging State
-            const contentRef = useRef(null);
-            const containerRef = useRef(null);
-            const [totalPages, setTotalPages] = useState(1);
-            const [currentPage, setCurrentPage] = useState(0);
-            const [searchTOC, setSearchTOC] = useState("");
-            const [autoScroll, setAutoScroll] = useState(false);
-
-            // Tải dữ liệu
+            // Lấy tiến trình
             useEffect(() => {
-                DB.getChapters(book.id).then(async chaps => {
-                    if(!chaps) return setIsLoading(false);
-                    setChapters(chaps.sort((a,b)=>a.order-b.order));
-                    const prog = await DB.getProgress(book.id);
-                    if(prog && prog.chIdx < chaps.length) {
-                        setChIdx(prog.chIdx);
-                        if (mode === 'scroll') {
-                            setTimeout(() => { if(containerRef.current) containerRef.current.scrollTop = prog.scroll || 0; }, 100);
-                        } else {
-                            setCurrentPage(prog.page || 0);
-                        }
-                    }
-                    setIsLoading(false);
+                DB.getProgress(book.id).then(prog => {
+                    if (prog && prog.page) setCurrentPage(prog.page);
                 });
-            }, []);
+            }, [book.id]);
 
-            // Lưu Settings
-            useEffect(() => {
-                ['ar_theme','ar_font','ar_size','ar_lh','ar_mode'].forEach((k, i) => {
-                    try{ localStorage.setItem(k, [theme, fontFam, fontSize, lineH, mode][i]); }catch(e){}
-                });
-            }, [theme, fontFam, fontSize, lineH, mode]);
-
-            // THUẬT TOÁN TÍNH TRANG (PAGED MODE)
-            const calculatePages = useCallback(() => {
-                if (mode !== 'paged' || !contentRef.current || !containerRef.current) return;
-                
-                // Chiều rộng tổng của content sinh ra bởi multi-column
-                const totalWidth = contentRef.current.scrollWidth;
-                // Chiều rộng khung nhìn
-                const viewWidth = containerRef.current.clientWidth;
-                
-                let pages = Math.ceil(totalWidth / viewWidth);
-                if (pages < 1) pages = 1;
-                
-                setTotalPages(pages);
-                // Giữ trang hiện tại ko vượt quá tổng
-                if (currentPage >= pages) setCurrentPage(pages - 1);
-            }, [fontSize, lineH, fontFam, chIdx, mode, currentPage]);
-
-            // Resize Observer để tính lại trang khi xoay màn hình
-            useLayoutEffect(() => {
-                if(mode !== 'paged') return;
-                const observer = new ResizeObserver(() => calculatePages());
-                if(containerRef.current) observer.observe(containerRef.current);
-                
-                // Chờ DOM render xong chữ để tính scrollWidth chuẩn
-                const timer = setTimeout(() => calculatePages(), 150);
-                return () => { observer.disconnect(); clearTimeout(timer); };
-            }, [calculatePages, chIdx, mode, chapters]);
-
-            // Logic Auto Scroll
-            useEffect(() => {
-                let interval;
-                if (autoScroll && mode === 'scroll' && containerRef.current) {
-                    interval = setInterval(() => {
-                        containerRef.current.scrollBy({ top: 1, behavior: 'auto' });
-                    }, 20); // Tốc độ cuộn 20ms/pixel
-                }
-                return () => clearInterval(interval);
-            }, [autoScroll, mode]);
-
-            // Lưu Progress
-            const saveProg = (data) => DB.saveProgress(book.id, { chIdx, ...data });
-
-            // Điều hướng
-            const changeCh = (idx) => {
-                if (idx >= 0 && idx < chapters.length) {
-                    setChIdx(idx);
-                    setCurrentPage(0);
-                    if(containerRef.current) containerRef.current.scrollTop = 0;
-                    setActivePanel(null);
-                    saveProg({ scroll: 0, page: 0, chIdx: idx });
-                }
+            const updatePage = (p) => {
+                setCurrentPage(p);
+                DB.saveProgress(book.id, { page: p });
             };
 
-            const turnPage = (dir) => {
-                if (dir === 1) { // Tới
-                    if (currentPage < totalPages - 1) {
-                        setCurrentPage(p => p + 1);
-                        saveProg({ page: currentPage + 1 });
-                    }
-                    else changeCh(chIdx + 1); // Hết trang nhảy qua chương mới
-                } else { // Lùi
-                    if (currentPage > 0) {
-                        setCurrentPage(p => p - 1);
-                        saveProg({ page: currentPage - 1 });
-                    }
-                    else if (chIdx > 0) changeCh(chIdx - 1);
-                }
-            };
-
-            // Vùng chạm lật trang
-            const handleTap = (e) => {
-                const w = window.innerWidth;
-                const x = e.clientX;
-                if (activePanel) return setActivePanel(null);
-                
-                if (mode === 'paged') {
-                    if (x < w * 0.25) turnPage(-1); // 25% trái
-                    else if (x > w * 0.75) turnPage(1); // 25% phải
-                    else setUiVisible(!uiVisible); // Ở giữa
-                } else {
-                    setUiVisible(!uiVisible);
-                }
-            };
-
-            const estReadingTime = useMemo(() => {
-                if(!chapters[chIdx]) return 0;
-                const words = chapters[chIdx].content.split(/\s+/).length;
-                return Math.ceil(words / 250); // 250 từ/phút
-            }, [chIdx, chapters]);
-
-            if (isLoading) return <FullScreenLoader text="Đang mở sách..." />;
-            const ch = chapters[chIdx];
+            const toggleUI = () => setUiVisible(!uiVisible);
 
             return (
-                <div className={`w-full h-full relative theme-${theme} flex flex-col transition-colors duration-300`}>
+                <div className="w-full h-full relative bg-white dark:bg-[#1C1C1E]">
                     
-                    {/* KHU VỰC ĐỌC SÁCH CHÍNH */}
-                    <div 
-                        ref={containerRef}
-                        className={`flex-1 w-full hide-scroll relative ${mode === 'scroll' ? 'overflow-y-auto' : 'overflow-hidden paged-container'}`}
-                        onClick={handleTap}
-                        onScroll={(e) => mode === 'scroll' && saveProg({scroll: e.target.scrollTop})}
-                    >
-                        <div 
-                            ref={contentRef}
-                            className={`
-                                reader-content
-                                ${fontFam}
-                                ${mode === 'scroll' ? 'max-w-3xl mx-auto px-6 pt-[calc(var(--safe-top)+100px)] pb-32' : 'paged-content pt-[calc(var(--safe-top)+60px)] px-6 sm:px-12'}
-                            `} 
-                            style={{ 
-                                fontSize: `${fontSize}px`, 
-                                lineHeight: lineH,
-                                transform: mode === 'paged' ? `translateX(-${currentPage * containerRef.current?.clientWidth}px)` : 'none',
-                                // Fix column width properly in inline style for React recalculation
-                                columnWidth: mode === 'paged' ? '100vw' : 'auto'
-                            }}
-                        >
-                            <h2 className={`font-bold text-3xl md:text-4xl mb-8 pb-4 opacity-90 leading-snug ${mode==='paged'?'border-b-2 border-current border-opacity-10':''}`}>
-                                {ch.title}
-                            </h2>
-                            {ch.content.split('\n').map((p, i) => {
-                                const txt = p.trim();
-                                if(!txt) return null;
-                                return <p key={i} className="indent-8 text-justify opacity-[0.85]">{txt}</p>;
-                            })}
-                            
-                            {/* Phân trang tự nhiên (Mode Scroll) */}
-                            {mode === 'scroll' && (
-                                <div className="mt-16 flex justify-between pt-8 border-t border-current border-opacity-10">
-                                    <button onClick={(e) => { e.stopPropagation(); changeCh(chIdx-1); }} disabled={chIdx===0} className="px-6 py-3 font-semibold opacity-70 disabled:opacity-20 active:bg-current active:bg-opacity-10 rounded-xl">Chương trước</button>
-                                    <button onClick={(e) => { e.stopPropagation(); changeCh(chIdx+1); }} disabled={chIdx===chapters.length-1} className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-md active:scale-95 disabled:opacity-50">Chương sau</button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* HIỂN THỊ SỐ TRANG Ở ĐÁY (PAGED MODE) */}
-                    {mode === 'paged' && !uiVisible && totalPages > 1 && (
-                        <div className="absolute bottom-4 left-0 w-full text-center text-xs font-semibold opacity-30 pointer-events-none font-sans tracking-widest z-10">
-                            {currentPage + 1} / {totalPages}
-                        </div>
+                    {/* KHU VỰC ĐỌC (Tách biệt PDF và TXT) */}
+                    {book.type === 'PDF' ? (
+                        <PDFRenderer book={book} currentPage={currentPage} onPageChange={updatePage} onToggleUI={toggleUI} />
+                    ) : (
+                        <TXTRenderer book={book} currentPage={currentPage} onPageChange={updatePage} onToggleUI={toggleUI} />
                     )}
 
-                    {/* HEADER */}
-                    <div className={`absolute top-0 w-full pt-[var(--safe-top)] px-2 pb-3 flex justify-between items-center z-20 transition-transform duration-300 ${theme==='light'||theme==='sepia'?'glass-light text-slate-900':'glass-dark text-white'} ${uiVisible ? 'translate-y-0' : '-translate-y-full'}`}>
-                        <button onClick={onClose} className="p-3 opacity-80 active:opacity-40"><Icon name="chevron-down" size={24}/></button>
-                        <div className="flex-1 text-center px-2">
-                            <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 truncate">{book.title}</p>
-                            <p className="text-sm font-semibold truncate opacity-90">{ch.title}</p>
+                    {/* OVERLAY UI (HEADER / FOOTER) */}
+                    <div className={`absolute top-0 w-full pt-[var(--safe-top)] z-20 transition-transform duration-300 ${uiVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+                        <div className="glass-light dark:glass-dark text-slate-900 dark:text-white flex justify-between items-center px-2 pb-2 pt-2">
+                            <button onClick={onClose} className="p-3 active:opacity-50"><Icon name="chevron-left" /></button>
+                            <div className="text-center flex-1 px-4 truncate font-semibold text-sm">{book.title}</div>
+                            <button onClick={() => setShowToc(true)} className="p-3 active:opacity-50"><Icon name="list" /></button>
                         </div>
-                        <button onClick={() => setActivePanel('toc')} className="p-3 opacity-80 active:opacity-40"><Icon name="list" size={22}/></button>
                     </div>
 
-                    {/* BOTTOM BAR */}
-                    <div className={`absolute bottom-0 w-full pb-[calc(var(--safe-bottom)+12px)] pt-4 px-6 z-20 transition-transform duration-300 ${theme==='light'||theme==='sepia'?'glass-light text-slate-900':'glass-dark text-white'} ${uiVisible ? 'translate-y-0' : 'translate-y-full'}`}>
-                        {/* Status Line */}
-                        <div className="flex justify-between items-center text-[11px] font-semibold opacity-60 mb-4 px-2 uppercase tracking-wide">
-                            <span>Chương {chIdx + 1}/{chapters.length}</span>
-                            <span>{estReadingTime} phút đọc</span>
-                            {mode === 'paged' && <span>Trang {currentPage+1}/{totalPages}</span>}
-                        </div>
-
-                        {/* Controls */}
-                        <div className="flex justify-between items-center max-w-sm mx-auto">
-                            <button onClick={()=>changeCh(chIdx-1)} disabled={chIdx===0} className="p-3 opacity-70 disabled:opacity-20"><Icon name="skip-back" size={24}/></button>
-                            
-                            <TTSController text={ch.content} />
-                            
-                            <button onClick={()=>setActivePanel('settings')} className="p-3 opacity-70"><Icon name="a-large-small" size={24}/></button>
-                            <button onClick={()=>changeCh(chIdx+1)} disabled={chIdx===chapters.length-1} className="p-3 opacity-70 disabled:opacity-20"><Icon name="skip-forward" size={24}/></button>
+                    {/* PDF FOOTER (Điều hướng trang) */}
+                    <div className={`absolute bottom-0 w-full pb-[var(--safe-bottom)] z-20 transition-transform duration-300 ${uiVisible ? 'translate-y-0' : 'translate-y-full'}`}>
+                        <div className="glass-light dark:glass-dark text-slate-900 dark:text-white p-4">
+                            <div className="flex items-center justify-between max-w-md mx-auto">
+                                <button onClick={() => updatePage(Math.max(1, currentPage - 1))} disabled={currentPage <= 1} className="p-3 disabled:opacity-20"><Icon name="arrow-left" /></button>
+                                <span className="font-mono font-medium text-sm">Trang {currentPage} / {book.totalPages}</span>
+                                <button onClick={() => updatePage(Math.min(book.totalPages, currentPage + 1))} disabled={currentPage >= book.totalPages} className="p-3 disabled:opacity-20"><Icon name="arrow-right" /></button>
+                            </div>
                         </div>
                     </div>
 
                     {/* SIDEBAR MỤC LỤC */}
-                    <div className="fixed inset-0 z-50 pointer-events-none">
-                        <div className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 pointer-events-auto ${activePanel === 'toc' ? 'opacity-100' : 'opacity-0 hidden'}`} onClick={() => setActivePanel(null)}></div>
-                        <div className={`absolute top-0 left-0 h-full w-[85%] max-w-[380px] shadow-2xl sidebar ${activePanel === 'toc' ? 'sidebar-visible' : 'sidebar-hidden'} pointer-events-auto flex flex-col ${theme==='light'||theme==='sepia'?'bg-[#F2F2F7]':'bg-[#1C1C1E]'}`}>
-                            <div className="pt-[calc(var(--safe-top)+20px)] pb-4 px-6 border-b border-current border-opacity-10">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-2xl font-bold">Mục lục</h3>
-                                    <button onClick={()=>setActivePanel(null)} className="p-2 bg-current bg-opacity-10 rounded-full"><Icon name="x" size={18}/></button>
-                                </div>
-                                {/* Khung Tìm Kiếm Cực Quan Trọng cho file nghìn trang */}
-                                <div className="relative">
-                                    <Icon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50" />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Tìm tên chương..." 
-                                        value={searchTOC}
-                                        onChange={e => setSearchTOC(e.target.value)}
-                                        className="w-full bg-current bg-opacity-5 rounded-xl py-2.5 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500" 
-                                    />
-                                </div>
+                    <div className={`fixed inset-0 z-50 transition-opacity ${showToc ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                        <div className="absolute inset-0 bg-black/50" onClick={() => setShowToc(false)}></div>
+                        <div className={`absolute top-0 left-0 w-4/5 max-w-[350px] h-full bg-white dark:bg-[#1C1C1E] shadow-2xl flex flex-col transition-transform duration-300 ${showToc ? 'translate-x-0' : '-translate-x-full'}`}>
+                            <div className="p-5 pt-[calc(var(--safe-top)+20px)] border-b dark:border-slate-800 text-slate-900 dark:text-white font-bold text-xl flex justify-between">
+                                <span>Mục lục</span>
+                                <button onClick={() => setShowToc(false)}><Icon name="x" size={20}/></button>
                             </div>
-                            <div className="flex-1 overflow-y-auto hide-scroll p-4">
-                                {chapters.filter(c => c.title.toLowerCase().includes(searchTOC.toLowerCase())).map(c => (
-                                    <div key={c.id} onClick={() => changeCh(c.order)} className={`p-4 rounded-xl mb-2 text-sm font-medium cursor-pointer active:scale-95 ${c.order === chIdx ? 'bg-blue-500 text-white shadow-md' : 'hover:bg-current hover:bg-opacity-5 opacity-80'}`}>
-                                        {c.title}
-                                    </div>
-                                ))}
+                            <div className="flex-1 overflow-y-auto hide-scroll p-2">
+                                {book.type === 'PDF' && book.toc ? (
+                                    book.toc.map((item, idx) => (
+                                        <div key={idx} onClick={() => { updatePage(item.page); setShowToc(false); }} className={`p-3 text-sm border-b dark:border-slate-800 cursor-pointer active:bg-slate-100 dark:active:bg-slate-800 text-slate-800 dark:text-slate-300`} style={{ paddingLeft: `${(item.depth*12) + 12}px` }}>
+                                            {item.title} <span className="text-xs opacity-50 float-right">Tr.{item.page}</span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="p-4 text-center text-sm opacity-50 text-slate-900 dark:text-white">Không có mục lục cụ thể</div>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    {/* BOTTOM SHEET CÀI ĐẶT (PRO) */}
-                    <div className="fixed inset-0 z-50 pointer-events-none">
-                        <div className={`absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity pointer-events-auto ${activePanel === 'settings' ? 'opacity-100' : 'opacity-0 hidden'}`} onClick={() => setActivePanel(null)}></div>
-                        <div className={`absolute bottom-0 w-full rounded-t-[32px] bottom-sheet ${activePanel === 'settings' ? 'bottom-sheet-visible' : 'bottom-sheet-hidden'} pointer-events-auto pb-[var(--safe-bottom)] shadow-[0_-10px_40px_rgba(0,0,0,0.2)] ${theme==='light'||theme==='sepia'?'bg-[#F2F2F7]':'bg-[#1C1C1E]'}`}>
-                            <div className="w-full flex justify-center py-4" onClick={() => setActivePanel(null)}><div className="w-12 h-1.5 bg-current bg-opacity-20 rounded-full"></div></div>
-                            <div className="px-6 pb-8 space-y-7">
-                                
-                                {/* Trải nghiệm đọc (Scroll/Page) */}
-                                <div>
-                                    <p className="text-[11px] font-bold uppercase tracking-widest opacity-50 mb-3 ml-1">Kiểu Lật Trang</p>
-                                    <div className="flex gap-3">
-                                        <button onClick={()=>setMode('paged')} className={`flex-1 py-3.5 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold border-2 transition-all ${mode==='paged'?'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400':'border-transparent bg-current bg-opacity-5 opacity-70'}`}><Icon name="book-open" size={18}/> Chạm lật</button>
-                                        <button onClick={()=>setMode('scroll')} className={`flex-1 py-3.5 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold border-2 transition-all ${mode==='scroll'?'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400':'border-transparent bg-current bg-opacity-5 opacity-70'}`}><Icon name="arrow-down-to-line" size={18}/> Cuộn dọc</button>
-                                    </div>
-                                    
-                                    {/* Auto scroll toggle (chỉ hiện khi cuộn dọc) */}
-                                    {mode === 'scroll' && (
-                                        <button onClick={()=>setAutoScroll(!autoScroll)} className={`mt-3 w-full py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 ${autoScroll?'bg-blue-500 text-white shadow-lg shadow-blue-500/30':'bg-current bg-opacity-5'}`}>
-                                            <Icon name="chevrons-down" size={18}/> {autoScroll ? 'Đang tự động cuộn (Tắt)' : 'Bật Tự động cuộn'}
-                                        </button>
-                                    )}
-                                </div>
-
-                                {/* Giao diện */}
-                                <div>
-                                    <p className="text-[11px] font-bold uppercase tracking-widest opacity-50 mb-3 ml-1">Giao diện (Màu nền)</p>
-                                    <div className="flex gap-3">
-                                        {[{id:'light',bg:'#FFFFFF',c:'#000'},{id:'sepia',bg:'#F8F1E3',c:'#5B4636'},{id:'dark',bg:'#2C2C2E',c:'#FFF'},{id:'oled',bg:'#000000',c:'#8E8E93'}].map(t => (
-                                            <button key={t.id} onClick={()=>setTheme(t.id)} className={`flex-1 h-12 rounded-full font-bold text-lg border-2 transition-transform ${theme===t.id?'border-blue-500 scale-110':'border-transparent'}`} style={{background:t.bg, color:t.c, boxShadow:'inset 0 0 0 1px rgba(128,128,128,0.2)'}}>Aa</button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Font / Size */}
-                                <div className="flex gap-4">
-                                    <div className="flex-1">
-                                        <p className="text-[11px] font-bold uppercase tracking-widest opacity-50 mb-3 ml-1">Phông chữ</p>
-                                        <div className="flex bg-current bg-opacity-5 rounded-2xl p-1">
-                                            <button onClick={()=>setFontFam('font-sans')} className={`flex-1 py-2 text-sm font-semibold rounded-xl ${fontFam==='font-sans'?'bg-white dark:bg-[#2C2C2E] shadow-sm':''}`}>Hiện đại</button>
-                                            <button onClick={()=>setFontFam('font-serif')} className={`flex-1 py-2 text-sm font-semibold rounded-xl ${fontFam==='font-serif'?'bg-white dark:bg-[#2C2C2E] shadow-sm':''}`}>Truyền thống</button>
-                                        </div>
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-[11px] font-bold uppercase tracking-widest opacity-50 mb-3 ml-1">Cỡ chữ</p>
-                                        <div className="flex items-center bg-current bg-opacity-5 rounded-2xl p-1 h-[44px]">
-                                            <button onClick={()=>setFontSize(s=>Math.max(14,s-2))} className="w-12 h-full flex justify-center items-center font-serif text-base active:opacity-50">A-</button>
-                                            <span className="flex-1 text-center font-bold">{fontSize}</span>
-                                            <button onClick={()=>setFontSize(s=>Math.min(40,s+2))} className="w-12 h-full flex justify-center items-center font-serif text-xl active:opacity-50">A+</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             );
         }
 
-        function TTSController({ text }) {
-            const [isPlay, setIsPlay] = useState(false);
-            const synth = window.speechSynthesis;
-            const utRef = useRef(null);
-            
-            // Chia nhỏ câu để API không bị crash khi đọc văn bản nghìn chữ
-            const sentences = useMemo(() => text ? text.match(/[^.!?\n]+[.!?\n]+/g) || [text] : [], [text]);
-            const sIdx = useRef(0);
+        function PDFRenderer({ book, currentPage, onPageChange, onToggleUI }) {
+            const canvasRef = useRef(null);
+            const [pdfDoc, setPdfDoc] = useState(null);
+            const [scale, setScale] = useState(1.0); // Mặc định vừa màn hình
+            const [loadingPage, setLoadingPage] = useState(true);
 
-            const playNext = useCallback(() => {
-                if (sIdx.current >= sentences.length) { setIsPlay(false); return; }
-                const txt = sentences[sIdx.current].trim();
-                if (!txt) { sIdx.current++; playNext(); return; }
+            // Tải raw data và khởi tạo PDFjs
+            useEffect(() => {
+                let active = true;
+                DB.getFile(book.id).then(async arrayBuffer => {
+                    if (!active || !arrayBuffer) return;
+                    try {
+                        // Tránh lỗi detach ArrayBuffer khi load lại
+                        const pdf = await window.pdfjsLib.getDocument(new Uint8Array(arrayBuffer.slice(0))).promise;
+                        if(active) setPdfDoc(pdf);
+                    } catch(e) { console.error("Lỗi nạp PDF", e); }
+                });
+                return () => { active = false; pdfDoc && pdfDoc.destroy(); };
+            }, [book.id]);
 
-                const u = new SpeechSynthesisUtterance(txt);
-                u.lang = 'vi-VN'; u.rate = 1.0;
-                u.onend = () => { sIdx.current++; playNext(); };
-                u.onerror = (e) => { if(e.error!=='canceled') setIsPlay(false); };
-                
-                utRef.current = u;
-                synth.speak(u);
-            }, [sentences, synth]);
+            // Hàm render 1 trang ra Canvas
+            const renderPage = useCallback(async (pageNum) => {
+                if (!pdfDoc || !canvasRef.current) return;
+                setLoadingPage(true);
+                try {
+                    const page = await pdfDoc.getPage(pageNum);
+                    const canvas = canvasRef.current;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Tính toán Scale để vừa chiều rộng màn hình thiết bị
+                    const viewportTheoTyLe1 = page.getViewport({ scale: 1 });
+                    const screenWidth = window.innerWidth;
+                    // Lấy tỷ lệ scale sao cho bề rộng trang PDF fit bề rộng màn hình
+                    const fitScale = screenWidth / viewportTheoTyLe1.width;
+                    const finalScale = fitScale * scale; 
+                    
+                    const viewport = page.getViewport({ scale: finalScale });
+                    
+                    // Tăng độ nét (Resolution) cho màn hình Retina
+                    const outputScale = window.devicePixelRatio || 1;
+                    canvas.width = Math.floor(viewport.width * outputScale);
+                    canvas.height = Math.floor(viewport.height * outputScale);
+                    canvas.style.width = Math.floor(viewport.width) + "px";
+                    canvas.style.height =  Math.floor(viewport.height) + "px";
 
-            const toggle = (e) => {
-                e.stopPropagation();
-                if (!synth) return alert("Trình duyệt không hỗ trợ");
-                if (isPlay) { synth.cancel(); setIsPlay(false); } 
-                else { synth.cancel(); setIsPlay(true); playNext(); }
-            };
+                    const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+
+                    const renderContext = { canvasContext: ctx, transform: transform, viewport: viewport };
+                    await page.render(renderContext).promise;
+                } catch(e) { console.error("Render Page Error", e); }
+                setLoadingPage(false);
+            }, [pdfDoc, scale]);
 
             useEffect(() => {
-                sIdx.current = 0;
-                if(isPlay) { synth.cancel(); playNext(); }
-                return () => synth?.cancel();
-            }, [text]);
+                renderPage(currentPage);
+            }, [currentPage, renderPage]);
+
+            // Chạm lật trang PDF
+            const handleTap = (e) => {
+                const w = window.innerWidth;
+                const x = e.clientX;
+                if (x < w * 0.2) { // Cạnh trái
+                    if(currentPage > 1) onPageChange(currentPage - 1);
+                } else if (x > w * 0.8) { // Cạnh phải
+                    if(currentPage < book.totalPages) onPageChange(currentPage + 1);
+                } else {
+                    onToggleUI(); // Giữa màn hình
+                }
+            };
 
             return (
-                <button onClick={toggle} className={`h-14 w-14 rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-transform ${isPlay ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'bg-blue-600 text-white'}`}>
-                    <Icon name={isPlay ? "square" : "headphones"} size={22} fill={isPlay?"currentColor":"none"}/>
-                </button>
+                <div className="pdf-canvas-container" onClick={handleTap}>
+                    {loadingPage && <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-black/50 z-10"><div className="spinner !border-blue-500"></div></div>}
+                    <canvas ref={canvasRef} className="transition-opacity duration-300" style={{opacity: loadingPage ? 0.3 : 1}}></canvas>
+                </div>
+            );
+        }
+
+        function TXTRenderer({ book, currentPage, onPageChange, onToggleUI }) {
+            const [content, setContent] = useState("");
+            
+            useEffect(() => {
+                DB.getFile(book.id).then(chapters => {
+                    if (chapters && chapters[currentPage - 1]) {
+                        setContent(chapters[currentPage - 1].content);
+                    }
+                });
+            }, [book.id, currentPage]);
+
+            return (
+                <div className="w-full h-full overflow-y-auto bg-[#F8F1E3] dark:bg-[#2C2C2E] text-[#5B4636] dark:text-[#E5E5EA]" onClick={onToggleUI}>
+                    <div className="max-w-2xl mx-auto px-6 pt-[calc(var(--safe-top)+80px)] pb-[calc(var(--safe-bottom)+100px)] text-lg leading-relaxed font-serif text-justify">
+                        {content.split('\n').map((p, i) => (
+                            <p key={i} className="mb-4 indent-6">{p}</p>
+                        ))}
+                    </div>
+                </div>
             );
         }
 
